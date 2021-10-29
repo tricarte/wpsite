@@ -3,6 +3,7 @@
 # TODO: sub_install wpstarter source repos from github.
 # TODO: use tmpDir form script boilerplate from sniploc
 # TODO: Make mysql credentials variables. Or try to read from somewhere else.
+# TODO: sub_update could use --yes
 
 # set -x # Print any command before running
 # set -u # Treat unset variables as errors
@@ -47,6 +48,57 @@ if [ ! $? ]; then
     exit 1
 fi
 
+# Global option parsing
+# FIXME: Option parsing should be improved, maybe using case statement.
+# https://medium.com/@Drew_Stokes/bash-argument-parsing-54f3b81a6a8f
+PARAMS=""
+while (( "$#" )); do
+case "$1" in
+    -y|--yes)
+        PROCEED=1
+        shift # Pop the first element off the array on each iteration.
+        ;;
+    -p|--purge)
+        PURGE=1
+        shift
+        ;;
+    -n|--no-browse)
+        NOBROWSE=1
+        shift
+        ;;
+    -b|--my-flag-with-argument) # Not used, for future reference only
+        # -d /some/path/to/some/dir style arguments.
+        if [ -n "$2" ] && [ ${2:0:1} != "-" ]; then
+            MY_FLAG_ARG=$2
+            shift 2
+        else
+            _e "Error: Argument for $1 is missing" >&2
+            exit 1
+        fi
+        ;;
+    -*|--*=) # unsupported flags
+        _e "Error: Unsupported flag $1" >&2
+        exit 1
+        ;;
+    *) # preserve positional arguments
+        PARAMS="$PARAMS $1"
+        shift
+        ;;
+esac
+done
+# set positional arguments in their proper place
+eval set -- "$PARAMS"
+
+# Old style of option parsing
+# NOBROWSE=""
+# args=("$@")
+# for val in "${args[@]}"
+# do
+#     if [[ $val == "--no-browse" ]]; then
+#         NOBROWSE="--no-browse"
+#     fi
+# done
+
 # Used by sub_restore() and sub_create()
 function openBrowser() {
     if [[ -n "$XDG_CURRENT_DESKTOP" ]]; then
@@ -66,17 +118,6 @@ function killSite() {
 progname=$(basename "$0")
 subcommand=$1
 
-# Global option parsing
-# FIXME: Option parsing should be improved, maybe using case statement.
-# https://medium.com/@Drew_Stokes/bash-argument-parsing-54f3b81a6a8f
-NOBROWSE=""
-args=("$@")
-for val in "${args[@]}"
-do
-    if [[ $val == "--no-browse" ]]; then
-        NOBROWSE="--no-browse"
-    fi
-done
 
 WPSTARTERDIR="$HOME/repos/wpready3"
 BACKUPSDIR="$HOME/backups/sites"
@@ -150,8 +191,11 @@ function sub_boilerplate(){
             ;;
     esac
 
-    wpsite create boiler --no-browse
-    wpsite backup boiler
+    if [[ -d "$SITESDIR/boiler" ]]; then
+        wpsite kill boiler
+    fi
+    wpsite create boiler --no-browse && \
+    wpsite backup boiler && \
     wpsite kill boiler --yes
 
     _w ""
@@ -221,7 +265,7 @@ function sub_restore(){
     subhelp=$1
     case $subhelp in
         "" | "-h" | "--help")
-            _w "Usage: $progname restore <site_name> [new_site_name] [--no-browse]"
+            _w "Usage: $progname restore <site_name> [new_site_name] [-n|--no-browse]"
             _w ""
             _w "       The backup named <site_name> inside $BACKUPSDIR"
             _w "       will be restored either to the same name"
@@ -351,8 +395,7 @@ function sub_restore(){
     $VALET link "$FINALDIR" > /dev/null 2>&1
     _w "$FINALDIR has been restored."
 
-
-    if [[ -n $NOBROWSE ]] && [[ $NOBROWSE == "--no-browse" ]] ; then
+    if [[ $NOBROWSE ]]; then
         return
     else
         openBrowser "$FINALDIR"
@@ -369,9 +412,10 @@ function sub_backup(){
     subhelp=$1
     case $subhelp in
         "" | "-h" | "--help")
-            _w "Usage: $progname backup <site_name> [--purge]"
+            _w "Usage: $progname backup <site_name> [-p|--purge]"
             _w ""
             _w "       The directory <site_name> in $SITESDIR will be backed up to $BACKUPSDIR."
+            _w "       To delete older backups of <site_name> use --purge option."
             _w ""
             return
             ;;
@@ -379,7 +423,7 @@ function sub_backup(){
 
     # Check if any argument is provided
     DOCROOT=$1
-    PURGE=$2
+    # PURGE=$2
 
     # Because of subhelp, below is no longer necessary.
     # if [[ -z $DOCROOT ]] ; then
@@ -401,7 +445,7 @@ function sub_backup(){
         fi
     fi
 
-    if [[ -n $PURGE ]] && [[ $PURGE == "--purge" ]] ; then
+    if [[ $PURGE ]]; then
         # Delete older backups if there are more than two.
         cd "$BACKUPSDIR/$DOCROOT" || exit
         # BACKUPSLIST=( $(find -- * -maxdepth 0 -type d) )
@@ -470,16 +514,16 @@ function sub_kill(){
     esac
 
     SITES_TO_DELETE=()
-    PROCEED=""
-    args=("$@")
-    find="--yes"
-
-    for val in "${args[@]}"
-    do
-        if [[ $val == "--yes" ]]; then
-            PROCEED="--yes"
-        fi
-    done
+    # PROCEED=""
+    # args=("$@")
+    # find="--yes"
+    #
+    # for val in "${args[@]}"
+    # do
+    #     if [[ $val == "--yes" ]]; then
+    #         PROCEED="--yes"
+    #     fi
+    # done
     
     SITES_TO_DELETE=(${@/$find})
 
@@ -506,7 +550,7 @@ function sub_kill(){
         fi
     done
 
-    if [[ -n $PROCEED ]] && [[ $PROCEED == "--yes" ]] ; then
+    if [[ $PROCEED ]]; then
         for site in "${SITES_TO_DELETE[@]}"
         do
             killSite "$site"
@@ -602,7 +646,7 @@ function sub_create(){
     subhelp=$1
     case $subhelp in
         "" | "-h" | "--help")
-            _w "Usage: $progname create <site_name> [--no-browse]"
+            _w "Usage: $progname create <site_name> [-n|--no-browse]"
             _w ""
             _w "       <site_name> will be created in $SITESDIR."
             _w ""
@@ -666,11 +710,12 @@ function sub_create(){
     $VALET link "$DOCROOT" > /dev/null 2>&1
     _w "Site has been created in $SITESDIR/$DOCROOT."
 
-    if [[ -n $NOBROWSE ]] && [[ $NOBROWSE == "--no-browse" ]] ; then
+    if [[ $NOBROWSE ]]; then
         return
     else
         openBrowser "$DOCROOT"
     fi
+
     return
 }
 export -f sub_create
@@ -759,7 +804,7 @@ function sub_quick(){
     subhelp=$1
     case $subhelp in
         "-h" | "--help")
-            _w "Usage: $progname quick [--no-browse]"
+            _w "Usage: $progname quick [-n|--no-browse]"
             _w ""
             _w "       Quickly create a random site by restoring the boilerplate backup."
             _w ""
@@ -767,7 +812,7 @@ function sub_quick(){
             ;;
     esac
 
-    if [[ -n $NOBROWSE ]] && [[ $NOBROWSE == "--no-browse" ]] ; then
+    if [[ $NOBROWSE ]]; then
         wpsite restore boiler $RANDOM --no-browse
     else
         wpsite restore boiler $RANDOM
@@ -777,17 +822,17 @@ function sub_quick(){
 }
 export -f sub_quick
 
-##############
-#  sub_open  #
-##############
-function sub_open(){
+###############
+#  sub_admin  #
+###############
+function sub_admin(){
     subhelp=$1
     case $subhelp in
         "-h" | "--help")
-            _w "Usage: $progname open <site_name>"
+            _w "Usage: $progname admin <site_name>"
             _w ""
-            _w "       Open specified site in browser."
-            _w "       It will be search in \"$SITESDIR\"."
+            _w "       Open specified site's dashboard in browser."
+            _w "       It will be searched in \"$SITESDIR\"."
             _w ""
             return
             ;;
@@ -818,7 +863,7 @@ function sub_open(){
     openBrowser "$DOCROOT"
     return
 }
-export -f sub_open
+export -f sub_admin
 
 case $subcommand in
     "" | "-h" | "--help")
