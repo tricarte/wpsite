@@ -2,14 +2,25 @@
 # TODO: autocompletion for language names maybe
 # TODO: sub_install wpstarter source repos from github.
 # TODO: use tmpDir form script boilerplate from sniploc
-# TODO: Make mysql credentials variables. Or try to read from somewhere else.
-# TODO: sub_update could use --yes
 
 # set -x # Print any command before running
 # set -u # Treat unset variables as errors
 # You have to use ${VAR:-} everywhere when using set -u
 # set -E # You must use this if you want "trap" apply to everything including subshells.
 set -eo pipefail # Exit when a command and any command in a pipe fails
+
+#####################################
+#  Edit below paths to your liking  #
+#####################################
+WPSTARTERDIR="$HOME/repos/wpready3" # Path to wpstarter base project template repo
+BACKUPSDIR="$HOME/backups/sites"
+SITESDIR="$HOME/sites"
+NUMBACKUPSTOKEEP=2
+DBUSER="root"
+DBPASS="vagrant"
+#####################################
+#             OK, Stop              #
+#####################################
 
 WORKING_DIR_ORIGINAL="$(pwd)"
 
@@ -108,7 +119,7 @@ function openBrowser() {
 }
 
 function killSite() {
-    mysql -u root -pvagrant -e "DROP DATABASE IF EXISTS \`$1\`"
+    mysql -u $DBUSER -p$DBPASS -e "DROP DATABASE IF EXISTS \`$1\`"
     rm -rf "${SITESDIR:?}/${1:?}"
     $VALET unlink "$DOCROOT" > /dev/null 2>&1
     _w "Site $1 has been deleted."
@@ -117,12 +128,6 @@ function killSite() {
 
 progname=$(basename "$0")
 subcommand=$1
-
-
-WPSTARTERDIR="$HOME/repos/wpready3"
-BACKUPSDIR="$HOME/backups/sites"
-SITESDIR="$HOME/sites"
-NUMBACKUPSTOKEEP=2
 
 #################
 #  sub_default  #
@@ -228,30 +233,32 @@ function sub_update(){
         _e "It was searched in $WPSTARTER".
         return 1
     fi
-    read -p "Source wpstarter repository will be updated! Proceed?  (y/n) (Default No): " -r
 
-    if [[ ! $REPLY =~ ^[Yy]$ ]]
-    then
-        _w "Updating aborted."
-        return 1
-    else
-        cp "$WPSTARTERDIR/composer.lock" /tmp/composer.lock
-        # result=$(diff -sq "$WPSTARTERDIR/composer.lock" /tmp/composer.lock )
-
-        _w "Updating composer packages..."
-        $COMPOSERBIN --working-dir="$WPSTARTERDIR" update -q
-
-        if grep -q "identical" <<< "$(diff -sq "$WPSTARTERDIR/composer.lock" /tmp/composer.lock)"; then
-            _w "No updates are available."
-            return
-        else
-            git --git-dir="$WPSTARTERDIR/.git" --work-tree="$WPSTARTERDIR" add composer.lock
-            git --git-dir="$WPSTARTERDIR/.git" --work-tree="$WPSTARTERDIR" commit -m"versions updated"
-            _w "$WPSTARTERDIR updated."
-            _w ""
-            _w "You may want to create a new boilerplate backup to use with
-            \"wpsite quick\" using \"wpsite boilerplate\"."
+    if [[ ! $PROCEED ]]; then
+        read -p "wpstarter source repository will be updated! Proceed?  (y/n) (Default No): " -r
+        if [[ ! $REPLY =~ ^[Yy]$ ]]
+        then
+            _w "Update aborted."
+            return 1
         fi
+    fi
+
+    cp "$WPSTARTERDIR/composer.lock" /tmp/composer.lock
+    # result=$(diff -sq "$WPSTARTERDIR/composer.lock" /tmp/composer.lock )
+
+    _w "Updating composer packages..."
+    $COMPOSERBIN --working-dir="$WPSTARTERDIR" update -q
+
+    if grep -q "identical" <<< "$(diff -sq "$WPSTARTERDIR/composer.lock" /tmp/composer.lock)"; then
+        _w "No updates are available."
+        return
+    else
+        git --git-dir="$WPSTARTERDIR/.git" --work-tree="$WPSTARTERDIR" add composer.lock
+        git --git-dir="$WPSTARTERDIR/.git" --work-tree="$WPSTARTERDIR" commit -m"versions updated"
+        _w "$WPSTARTERDIR updated."
+        _w ""
+        _w "You may want to create a new boilerplate backup to use with
+        \"wpsite quick\" using \"wpsite boilerplate\"."
     fi
 
     return
@@ -331,12 +338,12 @@ function sub_restore(){
     fi
 
     if [[ -n $NEWDOCROOT ]] ; then
-            mysql -u root -pvagrant "$NEWDOCROOT" -e exit > /dev/null 2>&1 && \
+            mysql -u $DBUSER -p$DBPASS "$NEWDOCROOT" -e exit > /dev/null 2>&1 && \
                 _e "Err: A database with the same new name already exists." && \
                 return 1
-            mysql -u root -pvagrant -e"CREATE DATABASE \`$NEWDOCROOT\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" && \
+            mysql -u $DBUSER -p$DBPASS -e"CREATE DATABASE \`$NEWDOCROOT\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" && \
                 _w "Creating the database $NEWDOCROOT... DONE."
-            gunzip < "$BACKUPSDIR/$DOCROOT/$LATEST_BACKUP/database.sql.gz" | mysql -u root -pvagrant "$NEWDOCROOT" && \
+            gunzip < "$BACKUPSDIR/$DOCROOT/$LATEST_BACKUP/database.sql.gz" | mysql -u $DBUSER -p$DBPASS "$NEWDOCROOT" && \
                 _w "Importing the database backup... DONE."
             tar zxf "$BACKUPSDIR/$DOCROOT/$LATEST_BACKUP/files.tar.gz" --checkpoint=.1000 -C "/tmp" && \
                 _w "" && _w "Extracting files from backup... DONE."
@@ -347,7 +354,7 @@ function sub_restore(){
                 _e "Err: wpstarter.json could not be found in the backup."
                 _e "This may not be a wpstarter project. Aborting..."
                 rm -rf "/tmp/${DOCROOT:?}"
-                mysql -u root -pvagrant -e "DROP DATABASE IF EXISTS $NEWDOCROOT"
+                mysql -u $DBUSER -p$DBPASS -e "DROP DATABASE IF EXISTS $NEWDOCROOT"
                 _w "Changes reverted. No backup is restored."
                 return 1
             fi
@@ -366,12 +373,12 @@ function sub_restore(){
 
             FINALDIR=$NEWDOCROOT
         else
-            mysql -u root -pvagrant "$DOCROOT" -e exit > /dev/null 2>&1 && \
+            mysql -u $DBUSER -p$DBPASS "$DOCROOT" -e exit > /dev/null 2>&1 && \
                 _e "Err: A database with the same name already exists." && \
                 return 1
-            mysql -u root -pvagrant -e"CREATE DATABASE \`$DOCROOT\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" && \
+            mysql -u $DBUSER -p$DBPASS -e"CREATE DATABASE \`$DOCROOT\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" && \
                 _w "Creating the dabase $DOCROOT... DONE."
-            gunzip < "$BACKUPSDIR/$DOCROOT/$LATEST_BACKUP/database.sql.gz" | mysql -u root -pvagrant "$DOCROOT" && \
+            gunzip < "$BACKUPSDIR/$DOCROOT/$LATEST_BACKUP/database.sql.gz" | mysql -u $DBUSER -p$DBPASS "$DOCROOT" && \
                 _w "Importing the database backup... DONE."
             tar zxf "$BACKUPSDIR/$DOCROOT/$LATEST_BACKUP/files.tar.gz" --checkpoint=.1000 -C "$SITESDIR" && \
                 _w "" && _w "Extracting files from backup... DONE."
@@ -382,7 +389,7 @@ function sub_restore(){
                 _e "Err: wpstarter.json could not be found in the backup."
                 _e "This may not be a wpstarter project. Aborting..."
                 rm -rf "${SITESDIR:?}/${DOCROOT:?}"
-                mysql -u root -pvagrant -e "DROP DATABASE IF EXISTS $DOCROOT"
+                mysql -u $DBUSER -p$DBPASS -e "DROP DATABASE IF EXISTS $DOCROOT"
                 _w "Changes reverted. No backup is restored."
                 return 1
             fi
@@ -688,7 +695,7 @@ function sub_create(){
     fi
 
     # Exit if DB already exists.
-    mysql -u root -pvagrant "$DOCROOT" -e exit > /dev/null 2>&1 && \
+    mysql -u $DBUSER -p$DBPASS "$DOCROOT" -e exit > /dev/null 2>&1 && \
     _e "Err: A database with the same name already exists." && \
     return 1
     # We can't rely on below, because it's possible that we don't have the necessary permissions.
