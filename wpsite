@@ -17,9 +17,9 @@ SITESDIR="$HOME/sites"
 NUMBACKUPSTOKEEP=2
 DBUSER="root"
 DBPASS="vagrant"
-#####################################
-#             OK, Stop              #
-#####################################
+#############################################
+#             OK, Stop editing              #
+#############################################
 
 WORKING_DIR_ORIGINAL="$(pwd)"
 
@@ -155,12 +155,12 @@ function sub_default(){
     _w "    ${purple}backup${normal}          Backup an existing WP site."
     _w "    ${purple}kill${normal}            Kill an existing WP site."
     _w "    ${purple}restore${normal}         Restore an existing WP site from backup."
-    _w "    ${purple}list${normal}            List all wpstarter-enabled sites in $SITESDIR."
+    _w "    ${purple}list${normal}            List all wpstarter-enabled sites in \"$SITESDIR\"."
     _w "    ${purple}lang${normal}            Install a new language into an existing wpstarter installation."
     _w "    ${purple}quick${normal}           Quickly create a new WP test site without asking too much."
     _w "    ${purple}update${normal}          Apply \"composer update\" to the wpstarter repository."
     _w "    ${purple}open${normal}            Open site in browser."
-    _w "    ${purple}boilerplate${normal}     Create boilerplate template backup for use with \"wpsite quick\" in $BACKUPSDIR."
+    _w "    ${purple}boilerplate${normal}     Create boilerplate template backup for use with \"wpsite quick\" in \"$BACKUPSDIR\"."
     _w ""
     _w "For help with each subcommand run:"
     _w "${purple}$progname <subcommand> -h|--help${normal}"
@@ -204,7 +204,7 @@ function sub_boilerplate(){
         "-h" | "--help")
             _w "Usage: $progname boilerplate"
             _w ""
-            _w "       Create a boilerplate template backup for use with \"wpsite quick\" in $BACKUPSDIR."
+            _w "       Create a boilerplate template backup for use with \"wpsite quick\" in \"$BACKUPSDIR\"."
             _w ""
             return
             ;;
