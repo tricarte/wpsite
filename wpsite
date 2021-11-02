@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # TODO: autocompletion for language names maybe
 # TODO: sub_install wpstarter source repos from github.
-# TODO: use tmpDir form script boilerplate from sniploc
 
 # set -x # Print any command before running
 # set -u # Treat unset variables as errors
@@ -10,7 +9,7 @@
 set -eo pipefail # Exit when a command and any command in a pipe fails
 
 #####################################
-#  Edit below paths to your liking  #
+#  Edit below to your liking  #
 #####################################
 WPSTARTERDIR="$HOME/repos/wpready3" # Path to wpstarter base project template repo
 BACKUPSDIR="$HOME/backups/sites"
@@ -38,6 +37,12 @@ _w() {
 _a() { _w " > $1"; }
 _e() { _a "${red}$1${normal}"; }
 _s() { _a "${green}$1${normal}"; }
+
+function createTmpDir() {
+    tmpDir="/tmp/$(basename "$0").$RANDOM.$RANDOM.$RANDOM.$$"
+    (umask 077 && mkdir "${tmpDir}") || \
+        { _e "Could not create temporary directory! Exiting."; exit 1; }
+}
 
 [[ -n ${SUDO_USER:-} ]] && { _e "sudo detected, exiting normally!"; exit; }
 
@@ -243,13 +248,15 @@ function sub_update(){
         fi
     fi
 
-    cp "$WPSTARTERDIR/composer.lock" /tmp/composer.lock
+    createTmpDir
+
+    cp "$WPSTARTERDIR/composer.lock" $tmpDir/composer.lock
     # result=$(diff -sq "$WPSTARTERDIR/composer.lock" /tmp/composer.lock )
 
     _w "Updating composer packages..."
     $COMPOSERBIN --working-dir="$WPSTARTERDIR" update -q
 
-    if grep -q "identical" <<< "$(diff -sq "$WPSTARTERDIR/composer.lock" /tmp/composer.lock)"; then
+    if grep -q "identical" <<< "$(diff -sq "$WPSTARTERDIR/composer.lock" $tmpDir/composer.lock)"; then
         _w "No updates are available."
         return
     else
@@ -337,6 +344,8 @@ function sub_restore(){
         return 1
     fi
 
+    createTmpDir
+
     if [[ -n $NEWDOCROOT ]] ; then
             mysql -u $DBUSER -p$DBPASS "$NEWDOCROOT" -e exit > /dev/null 2>&1 && \
                 _e "Err: A database with the same new name already exists." && \
@@ -345,21 +354,21 @@ function sub_restore(){
                 _w "Creating the database $NEWDOCROOT... DONE."
             gunzip < "$BACKUPSDIR/$DOCROOT/$LATEST_BACKUP/database.sql.gz" | mysql -u $DBUSER -p$DBPASS "$NEWDOCROOT" && \
                 _w "Importing the database backup... DONE."
-            tar zxf "$BACKUPSDIR/$DOCROOT/$LATEST_BACKUP/files.tar.gz" --checkpoint=.1000 -C "/tmp" && \
+            tar zxf "$BACKUPSDIR/$DOCROOT/$LATEST_BACKUP/files.tar.gz" --checkpoint=.1000 -C "$tmpDir" && \
                 _w "" && _w "Extracting files from backup... DONE."
 
             # Check if this is a wpstarter project
-            if [[ ! -f "/tmp/$DOCROOT/wpstarter.json" ]]
+            if [[ ! -f "$tmpDir/$DOCROOT/wpstarter.json" ]]
             then
                 _e "Err: wpstarter.json could not be found in the backup."
                 _e "This may not be a wpstarter project. Aborting..."
-                rm -rf "/tmp/${DOCROOT:?}"
+                rm -rf "$tmpDir/${DOCROOT:?}"
                 mysql -u $DBUSER -p$DBPASS -e "DROP DATABASE IF EXISTS $NEWDOCROOT"
                 _w "Changes reverted. No backup is restored."
                 return 1
             fi
 
-            mv "/tmp/$DOCROOT" "$SITESDIR/$NEWDOCROOT"
+            mv "$tmpDir/$DOCROOT" "$SITESDIR/$NEWDOCROOT"
             replace -s "$DOCROOT" "$NEWDOCROOT" -- "$SITESDIR/$NEWDOCROOT/.env"
             rm -f "$SITESDIR/$NEWDOCROOT/.env.cached.php"
             cd "$SITESDIR/$NEWDOCROOT/public" || exit
