@@ -82,6 +82,15 @@ case "$1" in
         NOBROWSE=1
         shift
         ;;
+    -r|--repo)
+        if [ -n "$2" ] && [ ${2:0:1} != "-" ]; then
+            REPO_PATH=$2
+            shift 2
+        else
+            _e "Error: Argument for $1 is missing" >&2
+            exit 1
+        fi
+        ;;
     -b|--my-flag-with-argument) # Not used, for future reference only
         # -d /some/path/to/some/dir style arguments.
         if [ -n "$2" ] && [ ${2:0:1} != "-" ]; then
@@ -139,7 +148,7 @@ subcommand=$1
 #################
 function sub_default(){
     _w ""
-    _w "Usage: ${purple}$progname <subcommand> [dir1] [dir2] [--no-browse]${normal}"
+    _w "Usage: ${purple}$progname <subcommand> [dir1] [dir2] OPTIONS${normal}"
     _w ""
     _w "Subcommands:"
     _w "    ${purple}create${normal}          Create a new WP site."
@@ -662,13 +671,21 @@ function sub_create(){
     subhelp=$1
     case $subhelp in
         "" | "-h" | "--help")
-            _w "Usage: $progname create <site_name> [-n|--no-browse]"
             _w ""
-            _w "       <site_name> will be created in $SITESDIR."
+            _w "Usage: ${red}$progname create <site_name> [-n|--no-browse] [-r|--repo /path/to/wpstarter/repo]${normal}"
+            _w ""
+            _w "       The site will be created in $SITESDIR."
+            _w "       Use -r to specify different repo path with which you will base the created site on."
+            _w "       If not defined, default wpstarter repository will be" 
+            _w "       searched in \"$WPSTARTERDIR\"."
             _w ""
             return
             ;;
     esac
+
+    if [[ -n "$REPO_PATH" ]] && [[ -d "$REPO_PATH" ]] ; then
+        WPSTARTERDIR=$REPO_PATH
+    fi
 
     # Check source repo exists.
     if [[ ! -d "$WPSTARTERDIR" ]]
