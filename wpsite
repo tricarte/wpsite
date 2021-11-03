@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # TODO: autocompletion for language names maybe
-# TODO: sub_install wpstarter source repos from github.
+# TODO: dbport
 
 # set -x # Print any command before running
 # set -u # Treat unset variables as errors
@@ -8,9 +8,10 @@
 # set -E # You must use this if you want "trap" apply to everything including subshells.
 set -eo pipefail # Exit when a command and any command in a pipe fails
 
-#####################################
-#  Edit below to your liking  #
-#####################################
+#############################################
+#         Edit below to your liking         #
+#############################################
+WPSTARTERREPO="https://github.com/tricarte/wpready3"
 WPSTARTERDIR="$HOME/repos/wpready3" # Path to wpstarter base project template repo
 BACKUPSDIR="$HOME/backups/sites"
 SITESDIR="$HOME/sites"
@@ -40,7 +41,7 @@ _s() { _a "${green}$1${normal}"; }
 
 function createTmpDir() {
     tmpDir="/tmp/$(basename "$0").$RANDOM.$RANDOM.$RANDOM.$$"
-    (umask 077 && mkdir "${tmpDir}") || \
+    (umask 077 && mkdir -p "${tmpDir}") || \
         { _e "Could not create temporary directory! Exiting."; exit 1; }
 }
 
@@ -49,6 +50,12 @@ function createTmpDir() {
 VALET=$(command -v valet)
 if [ ! $? ]; then
     _e "Err: valet-linux is not installed."
+    exit 1
+fi
+
+GIT=$(command -v git)
+if [ ! $? ]; then
+    _e "Err: git is not installed."
     exit 1
 fi
 
@@ -161,6 +168,7 @@ function sub_default(){
     _w "    ${purple}update${normal}          Apply \"composer update\" to the wpstarter repository."
     _w "    ${purple}open${normal}            Open site in browser."
     _w "    ${purple}boilerplate${normal}     Create boilerplate template backup for use with \"wpsite quick\" in \"$BACKUPSDIR\"."
+    _w "    ${purple}clone-repo${normal}      Download wpstarter source repo from github."
     _w ""
     _w "For help with each subcommand run:"
     _w "${purple}$progname <subcommand> -h|--help${normal}"
@@ -244,7 +252,7 @@ function sub_update(){
     if [[ ! -d "$WPSTARTERDIR" ]]
     then
         _e "Err: wpstarter repository does not exist."
-        _e "It was searched in $WPSTARTER".
+        _e "It was searched in $WPSTARTERDIR".
         return 1
     fi
 
@@ -688,10 +696,9 @@ function sub_create(){
     fi
 
     # Check source repo exists.
-    if [[ ! -d "$WPSTARTERDIR" ]]
-    then
-        _e "Err: wpstarter repository does not exist."
-        _e "It was searched in $WPSTARTER"
+    if [[ ! -d "$WPSTARTERDIR" ]]; then
+        _e "Err: \"$WPSTARTERDIR\" directory does not exist."
+        _e "Use \"wpsite clone-repo\" to download it from github."
         return 1
     fi
 
@@ -731,12 +738,12 @@ function sub_create(){
 
     if [[ ! -d "$SITESDIR" ]]
     then
-        mkdir "$SITESDIR"
+        mkdir -p "$SITESDIR"
     fi
 
     # Create the site
     cd "$SITESDIR" || exit
-    git clone "$WPSTARTERDIR" "$DOCROOT"
+    $GIT clone "$WPSTARTERDIR" "$DOCROOT"
     cd "$DOCROOT" || exit
     $COMPOSERBIN install # Most of the magic happens here thanks to wpstarter.
     cd public || exit
@@ -897,6 +904,35 @@ function sub_admin(){
     return
 }
 export -f sub_admin
+
+###############
+#  sub_clone-repo  #
+###############
+function sub_clone-repo(){
+    subhelp=$1
+    case $subhelp in
+        "-h" | "--help")
+            _w "Usage: $progname clone-repo"
+            _w ""
+            _w "       Download wpstarter source repository."
+            _w "       It will be cloned to \"${purple}$WPSTARTERDIR${normal}\"."
+            _w ""
+            return
+            ;;
+    esac
+
+    if [[ ! -d "$WPSTARTERDIR" ]]; then
+        $GIT clone https://github.com/tricarte/wpready3 "$HOME/repos/wpready3" && \
+        _w ""
+        _w "\"${purple}$WPSTARTERREPO${normal}\" has been cloned to \"${purple}$WPSTARTERDIR${normal}\"."
+        _w "Now you can use \"wpsite create\" to create a new site."
+            else
+                _w "\"${purple}$WPSTARTERDIR${normal}\" already exists."
+    fi
+
+    return
+}
+export -f sub_clone-repo
 
 case $subcommand in
     "" | "-h" | "--help")
