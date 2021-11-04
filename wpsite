@@ -9,6 +9,8 @@
 # set -E # You must use this if you want "trap" apply to everything including subshells.
 set -eo pipefail # Exit when a command and any command in a pipe fails
 
+[[ -n ${SUDO_USER:-} ]] && { _e "sudo detected, exiting normally!"; exit; }
+
 #############################################
 #         Edit below to your liking         #
 #############################################
@@ -33,31 +35,6 @@ DBPASS="vagrant"
 #############################################
 #             OK, Stop editing              #
 #############################################
-
-WORKING_DIR_ORIGINAL="$(pwd)"
-
-red='\033[0;31m'
-green='\033[0;32m'
-purple='\033[0;35m'
-normal='\033[0m'
-
-# Utility functions
-# https://github.com/CodelyTV/dotly/blob/master/installer#L21
-_w() {
-  local -r text="${1:-}"
-  echo -e "$text"
-}
-_a() { _w " > $1"; }
-_e() { _a "${red}$1${normal}"; }
-_s() { _a "${green}$1${normal}"; }
-
-function createTmpDir() {
-    tmpDir="/tmp/$(basename "$0").$RANDOM.$RANDOM.$RANDOM.$$"
-    (umask 077 && mkdir -p "${tmpDir}") || \
-        { _e "Could not create temporary directory! Exiting."; exit 1; }
-}
-
-[[ -n ${SUDO_USER:-} ]] && { _e "sudo detected, exiting normally!"; exit; }
 
 ###################
 #  Prerequisites  #
@@ -85,6 +62,48 @@ if [ ! $? ]; then
     _e "Err: Composer cli is not installed."
     exit 1
 fi
+##########################
+#  End of prerequisites  #
+##########################
+
+WORKING_DIR_ORIGINAL="$(pwd)"
+
+red='\033[0;31m'
+green='\033[0;32m'
+purple='\033[0;35m'
+normal='\033[0m'
+
+# Utility functions
+# https://github.com/CodelyTV/dotly/blob/master/installer#L21
+_w() {
+  local -r text="${1:-}"
+  echo -e "$text"
+}
+_a() { _w " > $1"; }
+_e() { _a "${red}$1${normal}"; }
+_s() { _a "${green}$1${normal}"; }
+
+function createTmpDir() {
+    tmpDir="/tmp/$(basename "$0").$RANDOM.$RANDOM.$RANDOM.$$"
+    (umask 077 && mkdir -p "${tmpDir}") || \
+        { _e "Could not create temporary directory! Exiting."; exit 1; }
+}
+
+# Used by sub_restore() and sub_create()
+function openBrowser() {
+    if [[ -n "$XDG_CURRENT_DESKTOP" ]]; then
+        $WP admin --skip-plugins --path="$SITESDIR/$1/public/cms" > /dev/null 2>&1
+    fi
+    return
+}
+
+function deleteSite() {
+    mysql -u $DBUSER -p$DBPASS -e "DROP DATABASE IF EXISTS \`$1\`"
+    rm -rf "${SITESDIR:?}/${1:?}"
+    $VALET unlink "$DOCROOT" > /dev/null 2>&1
+    _w "Site $1 has been deleted."
+    return
+}
 
 # Global option parsing
 # https://medium.com/@Drew_Stokes/bash-argument-parsing-54f3b81a6a8f
@@ -125,24 +144,12 @@ done
 # set positional arguments in their proper place
 eval set -- "$PARAMS"
 
-# Used by sub_restore() and sub_create()
-function openBrowser() {
-    if [[ -n "$XDG_CURRENT_DESKTOP" ]]; then
-        $WP admin --skip-plugins --path="$SITESDIR/$1/public/cms" > /dev/null 2>&1
-    fi
-    return
-}
-
-function killSite() {
-    mysql -u $DBUSER -p$DBPASS -e "DROP DATABASE IF EXISTS \`$1\`"
-    rm -rf "${SITESDIR:?}/${1:?}"
-    $VALET unlink "$DOCROOT" > /dev/null 2>&1
-    _w "Site $1 has been deleted."
-    return
-}
-
 progname=$(basename "$0")
 subcommand=$1
+
+#################
+#  SUBCOMMANDS  #
+#################
 
 #################
 #  sub_default  #
@@ -154,7 +161,7 @@ function sub_default(){
     _w "Subcommands:"
     _w "    ${purple}create${normal}          Create a new WP site."
     _w "    ${purple}backup${normal}          Backup an existing WP site."
-    _w "    ${purple}kill${normal}            Kill an existing WP site."
+    _w "    ${purple}delete${normal}          Delete an existing WP site."
     _w "    ${purple}restore${normal}         Restore an existing WP site from backup."
     _w "    ${purple}list${normal}            List all wpstarter-enabled sites in \"$SITESDIR\"."
     _w "    ${purple}lang${normal}            Install a new language into an existing wpstarter installation."
@@ -214,11 +221,11 @@ function sub_boilerplate(){
     esac
 
     if [[ -d "$SITESDIR/boiler" ]]; then
-        wpsite kill boiler
+        wpsite delete boiler
     fi
     wpsite create boiler -n && \
     wpsite backup boiler && \
-    wpsite kill boiler -y
+    wpsite delete boiler -y
 
     _w ""
     _w "Boilerplate template created in $BACKUPSDIR."
@@ -518,14 +525,14 @@ function sub_backup(){
 }
 export -f sub_backup
 
-##############
-#  sub_kill  #
-##############
-function sub_kill(){
+################
+#  sub_delete  #
+################
+function sub_delete(){
     subhelp=$1
     case $subhelp in
         "" | "-h" | "--help")
-            _w "Usage: $progname kill <site_name1> <site_name2>"
+            _w "Usage: $progname delete <site_name1> <site_name2>"
             _w ""
             _w "       Sites will be deleted from $SITESDIR."
             _w ""
@@ -546,7 +553,7 @@ function sub_kill(){
     
     SITES_TO_DELETE=(${@})
 
-    # Below may run with wpsite kill --yes
+    # Below may run with wpsite delete --yes
     if [[ ${#SITES_TO_DELETE[@]} == 0 ]] ; then
         _e "Err: Specify one or more sites to delete."
         return 1
@@ -572,7 +579,7 @@ function sub_kill(){
     if [[ $PROCEED ]]; then
         for site in "${SITES_TO_DELETE[@]}"
         do
-            killSite "$site"
+            deleteSite "$site"
         done
         return
     fi
@@ -590,11 +597,11 @@ function sub_kill(){
 
     for site in "${SITES_TO_DELETE[@]}"
     do
-        killSite "$site"
+        deleteSite "$site"
     done
     return
 }
-export -f sub_kill
+export -f sub_delete
 
 ################
 #  sub_create  #
