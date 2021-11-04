@@ -89,6 +89,7 @@ function createTmpDir() {
         { _e "Could not create temporary directory! Exiting."; exit 1; }
 }
 
+# function openBrowser()
 # Used by sub_restore() and sub_create()
 function openBrowser() {
     if [[ -n "$XDG_CURRENT_DESKTOP" ]]; then
@@ -195,10 +196,10 @@ function sub_list(){
 
     FD=$(command -v fd)
     if [ ! $? ]; then
-        $FD wpstarter.json --max-depth 2 --type f --base-directory "$HOME/sites" --color never --exec dirname
+        $FD wpstarter.json --max-depth 2 --type f --base-directory "$SITESDIR" --color never --exec dirname
     else
         # FIXME
-        find "$HOME/sites/" -maxdepth 2 -type f -name wpstarter.json -exec dirname {} \; | xargs -i basename {}
+        find "$SITESDIR/" -maxdepth 2 -type f -name wpstarter.json -exec dirname {} \; | xargs -i basename {}
     fi
 
     return
@@ -336,7 +337,7 @@ function sub_restore(){
     if [[ ! -d "$BACKUPSDIR/$DOCROOT" ]]
     then
         _e "Err: Backup directory 'boiler' does not exist in $BACKUPSDIR."
-        -w "You can create one with \"wpsite boilerplate\"."
+        _w "You can create one with \"wpsite boilerplate\"."
         return 1
     fi
 
@@ -540,28 +541,18 @@ function sub_delete(){
             ;;
     esac
 
-    # PROCEED=""
-    # args=("$@")
-    # find="--yes"
-    #
-    # for val in "${args[@]}"
-    # do
-    #     if [[ $val == "--yes" ]]; then
-    #         PROCEED="--yes"
-    #     fi
-    # done
-    
     SITES_TO_DELETE=(${@})
 
-    # Below may run with wpsite delete --yes
+    # Below code will never run.
     if [[ ${#SITES_TO_DELETE[@]} == 0 ]] ; then
         _e "Err: Specify one or more sites to delete."
         return 1
     fi
 
-    # Deletion will be aborted if any check fails.
     for site in "${SITES_TO_DELETE[@]}"
     do
+        # Deletion will be aborted if any check fails.
+
         if [[ ! -d "$SITESDIR/$site" ]]
         then
             _e "Err: Site \"$site\" does not exist."
@@ -747,7 +738,7 @@ function sub_lang(){
 
     if [[ -n $WPLANG ]] ; then
         cd "$SITESDIR/$DOCROOT" || exit
-        if [[ ! " ${LANG_ARR[*]} " =~ " ${WPLANG} " ]]; then
+        if [[ ! " ${LANG_ARR[*]} " =~ ${WPLANG} ]]; then
             _e "Err: You entered a wrong language code."
             return 1
         else
@@ -777,6 +768,8 @@ function sub_quick(){
             _w "Usage: $progname quick [-n|--no-browse]"
             _w ""
             _w "       Quickly create a random site by restoring the boilerplate backup."
+            _w "       You can create the boilerplate backup using \"wpsite boilerplate\""
+            _w "       if it does not exist."
             _w ""
             return
             ;;
