@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# TODO: autocompletion for language names maybe
-# TODO: dbport
+##############################################################################
+#  wpsite: Easily create composer and wpstarter based WP test installations  #
+##############################################################################
 
 # set -x # Print any command before running
 # set -u # Treat unset variables as errors
@@ -12,10 +13,21 @@ set -eo pipefail # Exit when a command and any command in a pipe fails
 #         Edit below to your liking         #
 #############################################
 WPSTARTERREPO="https://github.com/tricarte/wpready3"
-WPSTARTERDIR="$HOME/repos/wpready3" # Path to wpstarter base project template repo
-BACKUPSDIR="$HOME/backups/sites"
+
+# Clone of above repo, downloadable with "wpsite clone-repo"
+WPSTARTERDIR="$HOME/repos/wpready3"
+
+# Where to host sites using valet-linux
 SITESDIR="$HOME/sites"
+
+# Where to store/retore backups
+BACKUPSDIR="$HOME/backups/sites"
+
+# How many backups to keep 
+# while using "wpsite backup your-site --purge"
 NUMBACKUPSTOKEEP=2
+
+# DB credentials
 DBUSER="root"
 DBPASS="vagrant"
 #############################################
@@ -47,6 +59,9 @@ function createTmpDir() {
 
 [[ -n ${SUDO_USER:-} ]] && { _e "sudo detected, exiting normally!"; exit; }
 
+###################
+#  Prerequisites  #
+###################
 VALET=$(command -v valet)
 if [ ! $? ]; then
     _e "Err: valet-linux is not installed."
@@ -72,7 +87,6 @@ if [ ! $? ]; then
 fi
 
 # Global option parsing
-# FIXME: Option parsing should be improved, maybe using case statement.
 # https://medium.com/@Drew_Stokes/bash-argument-parsing-54f3b81a6a8f
 PARAMS=""
 while (( "$#" )); do
@@ -90,7 +104,7 @@ case "$1" in
         shift
         ;;
     -r|--repo)
-        if [ -n "$2" ] && [ ${2:0:1} != "-" ]; then
+        if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
             REPO_PATH=$2
             shift 2
         else
@@ -98,17 +112,7 @@ case "$1" in
             exit 1
         fi
         ;;
-    -b|--my-flag-with-argument) # Not used, for future reference only
-        # -d /some/path/to/some/dir style arguments.
-        if [ -n "$2" ] && [ ${2:0:1} != "-" ]; then
-            MY_FLAG_ARG=$2
-            shift 2
-        else
-            _e "Error: Argument for $1 is missing" >&2
-            exit 1
-        fi
-        ;;
-    -*|--*=) # unsupported flags
+    --*|-*) # unsupported flags
         _e "Error: Unsupported flag $1" >&2
         exit 1
         ;;
@@ -120,16 +124,6 @@ esac
 done
 # set positional arguments in their proper place
 eval set -- "$PARAMS"
-
-# Old style of option parsing
-# NOBROWSE=""
-# args=("$@")
-# for val in "${args[@]}"
-# do
-#     if [[ $val == "--no-browse" ]]; then
-#         NOBROWSE="--no-browse"
-#     fi
-# done
 
 # Used by sub_restore() and sub_create()
 function openBrowser() {
@@ -196,6 +190,7 @@ function sub_list(){
     if [ ! $? ]; then
         $FD wpstarter.json --max-depth 2 --type f --base-directory "$HOME/sites" --color never --exec dirname
     else
+        # FIXME
         find "$HOME/sites/" -maxdepth 2 -type f -name wpstarter.json -exec dirname {} \; | xargs -i basename {}
     fi
 
@@ -221,9 +216,9 @@ function sub_boilerplate(){
     if [[ -d "$SITESDIR/boiler" ]]; then
         wpsite kill boiler
     fi
-    wpsite create boiler --no-browse && \
+    wpsite create boiler -n && \
     wpsite backup boiler && \
-    wpsite kill boiler --yes
+    wpsite kill boiler -y
 
     _w ""
     _w "Boilerplate template created in $BACKUPSDIR."
@@ -267,13 +262,13 @@ function sub_update(){
 
     createTmpDir
 
-    cp "$WPSTARTERDIR/composer.lock" $tmpDir/composer.lock
+    cp "$WPSTARTERDIR/composer.lock" "$tmpDir/composer.lock"
     # result=$(diff -sq "$WPSTARTERDIR/composer.lock" /tmp/composer.lock )
 
     _w "Updating composer packages..."
     $COMPOSERBIN --working-dir="$WPSTARTERDIR" update -q
 
-    if grep -q "identical" <<< "$(diff -sq "$WPSTARTERDIR/composer.lock" $tmpDir/composer.lock)"; then
+    if grep -q "identical" <<< "$(diff -sq "$WPSTARTERDIR/composer.lock" "$tmpDir/composer.lock")"; then
         _w "No updates are available."
         return
     else
@@ -281,8 +276,8 @@ function sub_update(){
         git --git-dir="$WPSTARTERDIR/.git" --work-tree="$WPSTARTERDIR" commit -m"versions updated"
         _w "$WPSTARTERDIR updated."
         _w ""
-        _w "You may want to create a new boilerplate backup to use with
-        \"wpsite quick\" using \"wpsite boilerplate\"."
+        _w "You may want to create a new boilerplate backup to use with"
+        _w "\"wpsite quick\" using \"wpsite boilerplate\"."
     fi
 
     return
@@ -306,7 +301,6 @@ function sub_restore(){
             ;;
     esac
 
-    # Assign provided arguments
     DOCROOT=$1
     NEWDOCROOT=$2
 
@@ -456,13 +450,6 @@ function sub_backup(){
 
     # Check if any argument is provided
     DOCROOT=$1
-    # PURGE=$2
-
-    # Because of subhelp, below is no longer necessary.
-    # if [[ -z $DOCROOT ]] ; then
-    #     echo "Err: Specify a WP site to backup. It will be searched in \"~/sites/\"."
-    #     exit 1
-    # fi
 
     # Exit if directory does not exist.
     if [[ ! -d "$SITESDIR/$DOCROOT" ]]
@@ -470,7 +457,7 @@ function sub_backup(){
         _e "Err: Directory does not exist. See \"wpsite backup -h\" for help."
         return 1
     else
-        # Check if this is a WP installation.
+        # Check if this is a wpstarter installation.
         if [[ ! -f "$SITESDIR/$DOCROOT/wpstarter.json" ]]
         then
             _e "Err: $DOCROOT is not a WP installation that is installed via wpstarter."
@@ -540,13 +527,12 @@ function sub_kill(){
         "" | "-h" | "--help")
             _w "Usage: $progname kill <site_name1> <site_name2>"
             _w ""
-            _w "       The directory with name <site_name> will be deleted from $SITESDIR."
+            _w "       Sites will be deleted from $SITESDIR."
             _w ""
             return
             ;;
     esac
 
-    SITES_TO_DELETE=()
     # PROCEED=""
     # args=("$@")
     # find="--yes"
@@ -558,7 +544,7 @@ function sub_kill(){
     #     fi
     # done
     
-    SITES_TO_DELETE=(${@/$find})
+    SITES_TO_DELETE=(${@})
 
     # Below may run with wpsite kill --yes
     if [[ ${#SITES_TO_DELETE[@]} == 0 ]] ; then
@@ -609,68 +595,6 @@ function sub_kill(){
     return
 }
 export -f sub_kill
-
-#########################
-#  sub_kill_deprecated  #
-#########################
-function sub_kill_deprecated(){
-    subhelp=$1
-    case $subhelp in
-        "" | "-h" | "--help")
-            _w "Usage: $progname kill <site_name>"
-            _w ""
-            _w "       The directory with name <site_name> will be deleted from $SITESDIR."
-            _w ""
-            return
-            ;;
-    esac
-
-    # Check if any argument is provided
-    DOCROOT=$1
-    PROCEED=$2
-
-    if [[ -z $DOCROOT ]] ; then
-        _e "Err: Specify a wp root directory to delete."
-        return 1
-    fi
-
-    # Check directory exists.
-    if [[ ! -d "$SITESDIR/$DOCROOT" ]]
-    then
-        _e "Err: Directory does not exist."
-        return 1
-    fi
-
-    if [[ ! -f "$SITESDIR/$DOCROOT/wpstarter.json" ]]
-    then
-        _e "Err: wpstarter.json could not be found in site root."
-        _e "$DOCROOT is not wpstarter project."
-        return 1
-    fi
-
-    if [[ -n $PROCEED ]] && [[ $PROCEED == "--yes" ]] ; then
-        killSite "$DOCROOT"
-        return
-    fi
-
-    read -p "$DOCROOT will be deleted! Are you sure?  (y/n) (Default No): " -r
-    if [[ ! $REPLY =~ ^[Yy]$ ]]
-    then
-        _w "Deletion aborted!"
-        return 1
-    fi
-
-    # cd ~ || exit
-
-    # Start deletion
-    # mysql -u root -pvagrant -e "DROP DATABASE IF EXISTS \`$DOCROOT\`"
-    # rm -rf "${SITESDIR:?}/${DOCROOT:?}"
-    # $VALET unlink "$DOCROOT" > /dev/null 2>&1
-    # _w "Site $DOCROOT has been deleted."
-    killSite "$DOCROOT"
-    return
-}
-export -f sub_kill_deprecated
 
 ################
 #  sub_create  #
@@ -797,7 +721,6 @@ function sub_lang(){
         ru_RU sah si_LK skr sk_SK sl_SI snd sq sr_RS sv_SE sw szl tah ta_IN ta_LK te th
         tl tr_TR tt_RU ug_CN uk ur uz_UZ vi zh_CN zh_HK zh_TW)
 
-    # Check if any argument is provided
     DOCROOT=$1
     WPLANG=$2
 
@@ -853,7 +776,7 @@ function sub_quick(){
     esac
 
     if [[ $NOBROWSE ]]; then
-        wpsite restore boiler $RANDOM --no-browse
+        wpsite restore boiler $RANDOM -n
     else
         wpsite restore boiler $RANDOM
     fi
@@ -899,15 +822,14 @@ function sub_admin(){
         return 1
     fi
 
-    # $WP admin --skip-plugins --path="$SITESDIR/$DOCROOT/public/cms" > /dev/null 2>&1
     openBrowser "$DOCROOT"
     return
 }
 export -f sub_admin
 
-###############
+####################
 #  sub_clone-repo  #
-###############
+####################
 function sub_clone-repo(){
     subhelp=$1
     case $subhelp in
@@ -935,15 +857,16 @@ function sub_clone-repo(){
 export -f sub_clone-repo
 
 case $subcommand in
-    "" | "-h" | "--help")
+    "" | "-h" | "--help" | "help")
         sub_default
         ;;
     *)
         shift
-        sub_${subcommand} "$@"
+        "sub_${subcommand}" "$@"
+        # FIXME: Below will not run with "set -eo" directive.
         if [ $? = 127 ]; then
             _e "Error: '$subcommand' is not a known subcommand." >&2
-            _e "       Run '$progname --help' for a list of known subcommands." >&2
+            _e "Run '$progname --help' for a list of known subcommands." >&2
             _w ""
             exit 1
         fi
