@@ -475,7 +475,6 @@ function sub_backup(){
     if [[ $PURGE ]]; then
         # Delete older backups if there are more than $NUMBACKUPSTOKEEP.
         cd "$BACKUPSDIR/$DOCROOT" || exit
-        # BACKUPSLIST=( $(find -- * -maxdepth 0 -type d) )
         mapfile -t BACKUPSLIST < <(find -- * -maxdepth 0 -type d -printf "%f\n" -regextype 'posix-extended' -regex "^[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{6}$")
         # mapfile -t BACKUPSLIST < <(find -- * -maxdepth 0 -type d ! -newer $TSTAMP)
         # BACKUPSLIST=( $(find "$BACKUPSDIR/$DOCROOT" -maxdepth 0 -type d -printf "%f\n" -regextype 'posix-extended' -regex "^[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{6}$") )
@@ -489,12 +488,12 @@ function sub_backup(){
             else
                 _w ""
                 _w "Removing older backups..."
-                for (( i = 0; i < ( ${#BACKUPSLIST[@]} - $NUMBACKUPSTOKEEP ); i++ )); do
+                for (( i = 0; i < ( ${#BACKUPSLIST[@]} - NUMBACKUPSTOKEEP ); i++ )); do
                     rm -rfv "${BACKUPSLIST[i]}"
                 done
             fi
         else
-            _w "You don't have much enough backups to purge."
+            _w "You don't have more than $NUMBACKUPSTOKEEP backup[s] to purge."
             return 0
         fi
         return
