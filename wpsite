@@ -198,8 +198,7 @@ function sub_list(){
     if [ ! $? ]; then
         $FD wpstarter.json --max-depth 2 --type f --base-directory "$SITESDIR" --color never --exec dirname
     else
-        # FIXME
-        find "$SITESDIR/" -maxdepth 2 -type f -name wpstarter.json -exec dirname {} \; | xargs -i basename {}
+        find "$SITESDIR/" -maxdepth 2 -type f -name wpstarter.json -exec dirname {} \; | xargs -i basename {} -0
     fi
 
     return
@@ -474,7 +473,7 @@ function sub_backup(){
     fi
 
     if [[ $PURGE ]]; then
-        # Delete older backups if there are more than two.
+        # Delete older backups if there are more than $NUMBACKUPSTOKEEP.
         cd "$BACKUPSDIR/$DOCROOT" || exit
         # BACKUPSLIST=( $(find -- * -maxdepth 0 -type d) )
         mapfile -t BACKUPSLIST < <(find -- * -maxdepth 0 -type d -printf "%f\n" -regextype 'posix-extended' -regex "^[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{6}$")
