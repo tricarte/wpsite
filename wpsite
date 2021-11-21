@@ -539,7 +539,7 @@ function sub_delete(){
             ;;
     esac
 
-    SITES_TO_DELETE=(${@})
+    SITES_TO_DELETE=("${@}")
 
     # Below code will never run.
     if [[ ${#SITES_TO_DELETE[@]} == 0 ]] ; then
