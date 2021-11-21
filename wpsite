@@ -62,6 +62,12 @@ if [ ! $? ]; then
     _e "Err: Composer cli is not installed."
     exit 1
 fi
+
+MYSQLBIN=$(command -v mysql)
+if [ ! $? ]; then
+    _e "Err: mysql/mardiadb client is not installed."
+    exit 1
+fi
 ##########################
 #  End of prerequisites  #
 ##########################
@@ -648,7 +654,7 @@ function sub_create(){
     fi
 
     # Exit if DB already exists.
-    mysql -u $DBUSER -p$DBPASS "$DOCROOT" -e exit > /dev/null 2>&1 && \
+    $MYSQLBIN -u $DBUSER -p$DBPASS "$DOCROOT" -e exit > /dev/null 2>&1 && \
     _e "Err: A database with the same name already exists." && \
     return 1
     # We can't rely on below, because it's possible that we don't have the necessary permissions.
