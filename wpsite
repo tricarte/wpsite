@@ -108,7 +108,7 @@ function deleteSite() {
     mysql -u $DBUSER -p$DBPASS -e "DROP DATABASE IF EXISTS \`$1\`"
     rm -rf "${SITESDIR:?}/${1:?}"
     $VALET unlink "$DOCROOT" > /dev/null 2>&1
-    _w "Site $1 has been deleted."
+    _w "Site ${red}\"$1\"${normal} has been deleted."
     return
 }
 
