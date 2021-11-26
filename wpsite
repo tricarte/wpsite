@@ -265,7 +265,7 @@ function sub_update(){
     fi
 
     if [[ ! $PROCEED ]]; then
-        read -p "wpstarter source repository will be updated! Proceed?  (y/n) (Default No): " -r
+        read -p "Composer packages in wpstarter repository will be updated! Proceed?  (y/n) (Default No): " -r
         if [[ ! $REPLY =~ ^[Yy]$ ]]
         then
             _w "Update aborted."
@@ -290,7 +290,7 @@ function sub_update(){
         _w "$WPSTARTERDIR updated."
         _w ""
         _w "You may want to create a new boilerplate backup to use with"
-        _w "\"wpsite quick\" using \"wpsite boilerplate\"."
+        _w "\${purple}"wpsite quick\"${normal} using \${purple}"wpsite boilerplate\"${normal}."
     fi
 
     return
