@@ -46,3 +46,4 @@ _pbt_complete()
   return 0
 }
 complete -F _pbt_complete wpsite
+complete -F _pbt_complete wps
