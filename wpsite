@@ -174,7 +174,7 @@ function sub_default(){
     _w "    ${purple}lang${normal}            Install a new language into an existing wpstarter installation."
     _w "    ${purple}quick${normal}           Quickly create a new WP test site without asking too much."
     _w "    ${purple}update${normal}          Apply \"composer update\" to the wpstarter repository."
-    _w "    ${purple}open${normal}            Open site in browser."
+    _w "    ${purple}admin${normal}           Open site's admin dashboard in browser."
     _w "    ${purple}boilerplate${normal}     Create boilerplate template backup for use with \"wpsite quick\" in \"$BACKUPSDIR\"."
     _w "    ${purple}clone-repo${normal}      Download wpstarter source repo from github."
     _w ""
@@ -231,7 +231,7 @@ function sub_boilerplate(){
     fi
     _w "Temporary site ${purple}\"boiler\"${normal} is being created..."
     wpsite create boiler devnull -n > /dev/null 2>&1 && \
-    _w "Backing ${purple}\"boiler\"${normal} for later use..."
+    _w "Backing up ${purple}\"boiler\"${normal} for later use..."
     wpsite backup boiler > /dev/null 2>&1 && \
     _w "Removing temporary site..."
     wpsite delete boiler  -y > /dev/null 2>&1
