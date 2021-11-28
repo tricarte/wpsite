@@ -229,13 +229,26 @@ function sub_boilerplate(){
     if [[ -d "$SITESDIR/boiler" ]]; then
         wpsite delete boiler
     fi
-    wpsite create boiler -n && \
-    wpsite backup boiler && \
-    wpsite delete boiler -y
+    _w "Temporary site ${purple}\"boiler\"${normal} is being created..."
+    wpsite create boiler devnull -n > /dev/null 2>&1 && \
+    _w "Backing ${purple}\"boiler\"${normal} for later use..."
+    wpsite backup boiler > /dev/null 2>&1 && \
+    _w "Removing temporary site..."
+    wpsite delete boiler  -y > /dev/null 2>&1
+
+    # Delete everything but the last backup.
+    _w "Removing older versions of the boilerplate from ${purple}\"$BACKUPSDIR/boiler\"${normal}..."
+    cd "$BACKUPSDIR/boiler" || exit
+    mapfile -t BACKUPSLIST < <(find -- * -maxdepth 0 -type d -printf "%f\n" -regextype 'posix-extended' -regex "^[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{6}$")
+    for (( i = 0; i < ( ${#BACKUPSLIST[@]} - 1 ); i++ )); do
+        rm -rf "${BACKUPSLIST[i]}"
+    done
+    _w "DONE."
 
     _w ""
-    _w "Boilerplate template created in $BACKUPSDIR."
-    _w "Now you can use ${purple}\"wpsite quick\"${normal} to create sites based on that template."
+    _w "Boilerplate template created in ${red}\"$BACKUPSDIR\"${normal}."
+    _w "Now you can use ${purple}\"wpsite quick\"${normal}"
+    _w "to create sites based on that template."
 
     return
 }
