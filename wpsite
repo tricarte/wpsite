@@ -14,10 +14,10 @@ set -eo pipefail # Exit when a command and any command in a pipe fails
 #############################################
 #         Edit below to your liking         #
 #############################################
-WPSTARTERREPO="https://github.com/tricarte/wpready3"
 
-# Clone of above repo, downloadable with "wpsite clone-repo"
-WPSTARTERDIR="$HOME/repos/wpready3"
+# MySQL/MariaDB credentials
+DBUSER="root"
+DBPASS="vagrant"
 
 # Where to host sites using valet-linux
 SITESDIR="$HOME/sites"
@@ -25,13 +25,14 @@ SITESDIR="$HOME/sites"
 # Where to store/retore backups
 BACKUPSDIR="$HOME/backups/sites"
 
-# How many backups to keep 
-# while using "wpsite backup your-site --purge"
+WPSTARTERREPO="https://github.com/tricarte/wpready3"
+
+# Clone of above repo, downloadable with "wpsite clone-repo"
+WPSTARTERDIR="$HOME/repos/wpready3"
+
+# How many backups to keep while using "wpsite backup your-site --purge"
 NUMBACKUPSTOKEEP=2
 
-# DB credentials
-DBUSER="root"
-DBPASS="vagrant"
 #############################################
 #             OK, Stop editing              #
 #############################################
