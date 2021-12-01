@@ -7,6 +7,7 @@ A simple bash script to create WordPress test sites locally.
 * LEMP
 * [ valet-linux ](https://cpriego.github.io/valet-linux/#installation)
 * git
+* [ wpready3 ](https://github.com/tricarte/wpready3) See installation.
 
 ## Installation
 
@@ -21,10 +22,13 @@ If 'wpsite' is too long to type!
 sudo ln -s "$HOME/bin/wpsite" "/usr/local/bin/wps"
 ```
 
-Finally source the included completion file from your bashrc file.
+Source the included completion file from your bashrc file.
 ```
 source "$HOME/repos/wpsite/.wpsite-completion.bash"
 ```
+
+Finally open the script in your favorite text editor and edit the MySQL/MariaDB
+credentials.
 
 ## Commands
 
