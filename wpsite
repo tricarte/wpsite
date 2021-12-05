@@ -304,7 +304,7 @@ function sub_update(){
         _w "$WPSTARTERDIR updated."
         _w ""
         _w "You may want to create a new boilerplate backup to use with"
-        _w "\${purple}"wpsite quick\"${normal} using \${purple}"wpsite boilerplate\"${normal}."
+        _w "${purple}\"wpsite quick\"${normal} using ${purple}\"wpsite boilerplate\"${normal}."
     fi
 
     return
