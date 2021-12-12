@@ -444,6 +444,9 @@ function sub_restore(){
             FINALDIR=$DOCROOT
     fi
 
+    # To determine the most recently created site for "wpsite last"
+    touch "$SITESDIR/$FINALDIR/wpstarter.json"
+
     # Link valet
     cd "$SITESDIR/$FINALDIR/public" || exit
     $VALET link "$FINALDIR" > /dev/null 2>&1
@@ -844,6 +847,37 @@ function sub_admin(){
     return
 }
 export -f sub_admin
+
+
+##############
+#  sub_last  #
+##############
+function sub_last(){
+    subhelp=$1
+    case $subhelp in
+        "-h" | "--help")
+            _w "Usage: $progname last"
+            _w ""
+            _w "       Open the most recently created site's dashboard in browser."
+            _w "       It will be searched in \"$SITESDIR\"."
+            _w ""
+            return
+            ;;
+    esac
+
+    # FIXME: Use find -printf thing instead of ls
+    SITE=$( find "$SITESDIR"/ \
+        -maxdepth 2 \
+        -type f \
+        -name wpstarter.json \
+        | TZ=utc xargs ls -ld --full-time | sort -rk 6 | head -n1 \
+        | tr -s ' ' | cut -d" " -f9 | xargs -i dirname {} | xargs -i basename {}
+    )
+
+    openBrowser "$SITE"
+    return
+}
+export -f sub_last
 
 ####################
 #  sub_clone-repo  #

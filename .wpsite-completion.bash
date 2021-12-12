@@ -21,7 +21,7 @@ _pbt_complete()
   prev=${COMP_WORDS[COMP_CWORD-1]}
 
   if [ "$COMP_CWORD" -eq 1 ]; then
-    COMPREPLY=( $(compgen -W "create backup delete restore update lang list quick admin boilerplate clone-repo" -- $cur) )
+    COMPREPLY=( $(compgen -W "create backup delete restore update lang list quick admin boilerplate clone-repo last" -- $cur) )
   elif [ "$COMP_CWORD" -eq 2 ]; then
     case "$prev" in
         # FIXME: This does not handle "wpsite delete site1 site2"
