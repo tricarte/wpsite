@@ -879,6 +879,35 @@ function sub_last(){
 }
 export -f sub_last
 
+############
+#  sub_fm  #
+############
+function sub_fm(){
+    subhelp=$1
+    case $subhelp in
+        "" | "-h" | "--help")
+            _w "Usage: $progname fm <site_name>"
+            _w ""
+            _w "       Open site root directory in file manager."
+            _w "       Sites will be searched in \"$SITESDIR\"."
+            _w ""
+            return
+            ;;
+    esac
+
+    FM=$(command -v ranger)
+    if [ ! $? ]; then
+        FM="xdg-open"
+    fi
+
+    DOCROOT=$1
+
+    if [[ -d "$SITESDIR/$DOCROOT" ]] ; then
+        $FM "$SITESDIR/$DOCROOT/" && return
+    fi
+}
+export -f sub_fm
+
 ####################
 #  sub_clone-repo  #
 ####################
