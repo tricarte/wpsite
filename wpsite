@@ -904,7 +904,11 @@ function sub_fm(){
 
     if [[ -d "$SITESDIR/$DOCROOT" ]] ; then
         $FM "$SITESDIR/$DOCROOT/" && return
+    else
+        _e "Site \"$DOCROOT\" does not exist."
     fi
+
+    return
 }
 export -f sub_fm
 
