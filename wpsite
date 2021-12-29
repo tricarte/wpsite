@@ -303,8 +303,10 @@ function sub_update(){
         git --git-dir="$WPSTARTERDIR/.git" --work-tree="$WPSTARTERDIR" commit -m"versions updated"
         _w "$WPSTARTERDIR updated."
         _w ""
-        _w "You may want to create a new boilerplate backup to use with"
-        _w "${purple}\"wpsite quick\"${normal} using ${purple}\"wpsite boilerplate\"${normal}."
+        _w "Now creating a boilerplate site based on the updated repository"
+        _w "to be later used with ${purple}\"wpsite quick\"${normal}."
+        _w ""
+        $progname boilerplate
     fi
 
     return
