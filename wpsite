@@ -171,6 +171,7 @@ function sub_default(){
     _w "    ${purple}backup${normal}          Backup an existing WP site."
     _w "    ${purple}delete${normal}          Delete an existing WP site."
     _w "    ${purple}restore${normal}         Restore an existing WP site from backup."
+    _w "    ${purple}rename${normal}          Rename an existing site."
     _w "    ${purple}list${normal}            List all wpstarter-enabled sites in \"$SITESDIR\"."
     _w "    ${purple}lang${normal}            Install a new language into an existing wpstarter installation."
     _w "    ${purple}quick${normal}           Quickly create a new WP test site without asking too much."
@@ -463,6 +464,70 @@ function sub_restore(){
     return
 }
 export -f sub_restore
+
+################
+#  sub_rename  #
+################
+function sub_rename(){
+    subhelp=$1
+    case $subhelp in
+        "" | "-h" | "--help")
+            _w "Usage: $progname rename <site_name> <new_site_name>"
+            _w ""
+            return
+            ;;
+    esac
+
+    DOCROOT=$1
+    NEWDOCROOT=$2
+
+    if [[ -z $DOCROOT ]] ; then
+        _e "Err: Specify an existing site to rename. It will be searched in $SITESDIR."
+        return 1
+    elif [[ ! -d "$SITESDIR/$DOCROOT" ]]; then
+        _e "Err: A site with the name \"$DOCROOT\" does not exist."
+        return 1
+    fi
+
+    if [[ -n $NEWDOCROOT ]] ; then
+        if [[ -d "$SITESDIR/$NEWDOCROOT" ]]; then
+            _e "Err: A site with the name \"$NEWDOCROOT\" is already available."
+            return 1
+        fi
+    else 
+        _e "Err: You didn't specify a new name for the site."
+        return 1
+    fi
+
+    if [[ ! -f "$SITESDIR/$DOCROOT/wpstarter.json" ]]; then
+        _e "Err: wpstarter.json could not be found in $DOCROOT."
+        _e "This may not be a wpstarter project. Aborting..."
+        return 1
+    fi
+
+    _w "Renaming site..."
+    _w "This will take some time."
+    _w ""
+
+    $progname backup "$DOCROOT" > /dev/null 2>&1
+    $progname restore "$DOCROOT" "$NEWDOCROOT" -n > /dev/null 2>&1
+    $progname delete "$DOCROOT" -y > /dev/null 2>&1
+
+    # Delete the created backup for this process
+    LATEST_BACKUP=$(find "$BACKUPSDIR"/"$DOCROOT"/* \
+        -maxdepth 0 \
+        -type d -printf '%f\n' \
+        -regextype 'posix-extended' \
+        -regex "^[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{6}$" | sort -nr | head -n1)
+
+    rm -rf "$BACKUPSDIR/$DOCROOT/$LATEST_BACKUP"
+    # TODO: Delete empty directories in backups.
+
+    _w "DONE."
+
+    return
+}
+export -f sub_rename
 
 ################
 #  sub_backup  #
