@@ -491,7 +491,7 @@ function sub_rename(){
 
     if [[ -n $NEWDOCROOT ]] ; then
         if [[ -d "$SITESDIR/$NEWDOCROOT" ]]; then
-            _e "Err: A site with the name \"$NEWDOCROOT\" is already available."
+            _e "Err: A site with the name \"$NEWDOCROOT\" already exists."
             return 1
         fi
     else 
@@ -520,8 +520,8 @@ function sub_rename(){
         -regextype 'posix-extended' \
         -regex "^[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{6}$" | sort -nr | head -n1)
 
-    rm -rf "$BACKUPSDIR/$DOCROOT/$LATEST_BACKUP"
-    # TODO: Delete empty directories in backups.
+    rm -rf "${BACKUPSDIR:?}/$DOCROOT/$LATEST_BACKUP"
+    find "$BACKUPSDIR" -empty -type d -delete
 
     _w "DONE."
 
