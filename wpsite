@@ -271,6 +271,8 @@ function sub_update(){
             ;;
     esac
 
+    start=$SECONDS
+
     # Check source repo exists.
     if [[ ! -d "$WPSTARTERDIR" ]]
     then
@@ -300,6 +302,8 @@ function sub_update(){
         _w "No updates are available."
         return
     else
+        end=$SECONDS
+        _w "Composer update took $((end-start)) seconds to finish."
         git --git-dir="$WPSTARTERDIR/.git" --work-tree="$WPSTARTERDIR" add composer.lock
         git --git-dir="$WPSTARTERDIR/.git" --work-tree="$WPSTARTERDIR" commit -m"versions updated"
         _w "$WPSTARTERDIR updated."
