@@ -232,7 +232,7 @@ function sub_boilerplate(){
         wpsite delete boiler
     fi
     _w "Temporary site ${purple}\"boiler\"${normal} is being created..."
-    wpsite create boiler devnull -n > /dev/null 2>&1 && \
+    wpsite create boiler -n > /dev/null 2>&1 && \
     _w "Backing up ${purple}\"boiler\"${normal} for later use..."
     wpsite backup boiler > /dev/null 2>&1 && \
     _w "Removing temporary site..."
