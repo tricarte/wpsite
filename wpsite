@@ -232,11 +232,14 @@ function sub_boilerplate(){
         wpsite delete boiler
     fi
     _w "Temporary site ${purple}\"boiler\"${normal} is being created..."
-    wpsite create boiler -n > /dev/null 2>&1 && \
+    wpsite create boiler -n
+    # wpsite create boiler -n > /dev/null 2>&1 && \
     _w "Backing up ${purple}\"boiler\"${normal} for later use..."
-    wpsite backup boiler > /dev/null 2>&1 && \
+    wpsite backup boiler
+    # wpsite backup boiler > /dev/null 2>&1 && \
     _w "Removing temporary site..."
-    wpsite delete boiler  -y > /dev/null 2>&1
+    wpsite delete boiler -y
+    # wpsite delete boiler  -y > /dev/null 2>&1
 
     # Delete everything but the last backup.
     _w "Removing older versions of the boilerplate from ${purple}\"$BACKUPSDIR/boiler\"${normal}..."
@@ -1011,6 +1014,86 @@ function sub_clone-repo(){
     return
 }
 export -f sub_clone-repo
+
+#######################
+#  sub_install-theme  #
+#######################
+function sub_install-theme(){
+    subhelp=$1
+    case $subhelp in
+        "-h" | "--help")
+            _w "Usage: $progname install-theme [site] [theme-slug]"
+            _w ""
+            _w "       Install theme to the specified site."
+            _w ""
+            return
+            ;;
+    esac
+
+    DOCROOT=$1
+    THEME_NAME=$2
+
+    if [[ -z $DOCROOT ]] ; then
+        _e "Err: Specify a site to install the theme."
+        _e "See $progname -h for help."
+        return 1
+    fi
+
+    if [[ ! -d "$SITESDIR/$DOCROOT" ]] ; then
+        _e "Err: \"$DOCROOT\" does not exist."
+        return 1
+    fi
+
+    if [[ -z $THEME_NAME ]] ; then
+        echo "Err: You didn't specify any theme name to install."
+        exit 1
+    fi
+
+    $WP theme install "$THEME_NAME" --activate --skip-plugins --path="$SITESDIR/$1/public/cms"
+
+    return
+}
+export -f sub_install-theme
+
+########################
+#  sub_install-plugin  #
+########################
+function sub_install-plugin(){
+    subhelp=$1
+    case $subhelp in
+        "-h" | "--help")
+            _w "Usage: $progname install-plugin [site] [plugin-slug]"
+            _w ""
+            _w "       Install plugin to the specified site and activate it."
+            _w ""
+            return
+            ;;
+    esac
+
+    DOCROOT=$1
+    PLUGIN_NAME=$2
+
+    if [[ -z $DOCROOT ]] ; then
+        _e "Err: Specify a site to install the plugin."
+        _e "See $progname -h for help."
+        return 1
+    fi
+
+    if [[ ! -d "$SITESDIR/$DOCROOT" ]] ; then
+        _e "Err: \"$DOCROOT\" does not exist."
+        return 1
+    fi
+
+    if [[ -z $PLUGIN_NAME ]] ; then
+        echo "Err: You didn't specify any plugin name to install."
+        exit 1
+    fi
+
+    $WP plugin install "$PLUGIN_NAME" --activate --skip-plugins --path="$SITESDIR/$1/public/cms"
+
+    return
+}
+export -f sub_install-plugin
 
 case $subcommand in
     "" | "-h" | "--help" | "help")
