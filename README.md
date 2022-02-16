@@ -45,6 +45,9 @@ credentials.
 | admin          | Open site's admin dashboard in browser. |
 | boilerplate    | Create boilerplate template backup for use with "wpsite quick" in "$HOME/backups/sites". |
 | clone-repo     | Download wpstarter source repo from github. |
+| fm             | Open site root directory in file manager. |
+| install-theme  | Install a plugin to a site and activate it. |
+| install-plugin | Install a theme to a site and activate it. |
 
 ## User credentials
 

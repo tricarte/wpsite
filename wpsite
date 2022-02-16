@@ -183,6 +183,7 @@ function sub_default(){
     _w "    ${purple}admin${normal}           Open site's admin dashboard in browser."
     _w "    ${purple}boilerplate${normal}     Create boilerplate template backup for use with \"wpsite quick\" in \"$BACKUPSDIR\"."
     _w "    ${purple}clone-repo${normal}      Download wpstarter source repo from github."
+    _w "    ${purple}fm${normal}              Open site root directory in file manager."
     _w "    ${purple}install-plugin${normal}  Install a plugin to a site and activate it."
     _w "    ${purple}install-theme${normal}   Install a theme to a site and activate it."
     _w ""
