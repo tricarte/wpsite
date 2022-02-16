@@ -7,7 +7,7 @@
 # set -u # Treat unset variables as errors
 # You have to use ${VAR:-} everywhere when using set -u
 # set -E # You must use this if you want "trap" apply to everything including subshells.
-set -eo pipefail # Exit when a command and any command in a pipe fails
+# set -eo pipefail # Exit when a command and any command in a pipe fails
 
 [[ -n ${SUDO_USER:-} ]] && { _e "sudo detected, exiting normally!"; exit; }
 
@@ -40,10 +40,12 @@ NUMBACKUPSTOKEEP=2
 ###################
 #  Prerequisites  #
 ###################
-VALET=$(command -v valet)
-if [ ! $? ]; then
-    _e "Err: valet-linux is not installed."
-    exit 1
+if [[ -n "$XDG_CURRENT_DESKTOP" ]]; then
+    VALET=$(command -v valet)
+    if [ ! $? ]; then
+        _e "Err: valet-linux is not installed."
+        exit 1
+    fi
 fi
 
 GIT=$(command -v git)
@@ -108,7 +110,9 @@ function openBrowser() {
 function deleteSite() {
     mysql -u $DBUSER -p$DBPASS -e "DROP DATABASE IF EXISTS \`$1\`"
     rm -rf "${SITESDIR:?}/${1:?}"
-    $VALET unlink "$DOCROOT" > /dev/null 2>&1
+    if which "$VALET" >/dev/null 2>&1 ; then
+        $VALET unlink "$DOCROOT" > /dev/null 2>&1
+    fi
     _w "Site ${red}\"$1\"${normal} has been deleted."
     return
 }
@@ -179,6 +183,8 @@ function sub_default(){
     _w "    ${purple}admin${normal}           Open site's admin dashboard in browser."
     _w "    ${purple}boilerplate${normal}     Create boilerplate template backup for use with \"wpsite quick\" in \"$BACKUPSDIR\"."
     _w "    ${purple}clone-repo${normal}      Download wpstarter source repo from github."
+    _w "    ${purple}install-plugin${normal}  Install a plugin to a site and activate it."
+    _w "    ${purple}install-theme${normal}   Install a theme to a site and activate it."
     _w ""
     _w "For help with each subcommand run:"
     _w "${purple}$progname <subcommand> -h|--help${normal}"
@@ -459,7 +465,9 @@ function sub_restore(){
 
     # Link valet
     cd "$SITESDIR/$FINALDIR/public" || exit
-    $VALET link "$FINALDIR" > /dev/null 2>&1
+    if which "$VALET" >/dev/null 2>&1 ; then
+        $VALET link "$FINALDIR" > /dev/null 2>&1
+    fi
     _w "$FINALDIR has been restored."
 
     if [[ $NOBROWSE ]]; then
@@ -764,7 +772,9 @@ function sub_create(){
     cd "$DOCROOT" || exit
     $COMPOSERBIN install # Most of the magic happens here thanks to wpstarter.
     cd public || exit
-    $VALET link "$DOCROOT" > /dev/null 2>&1
+    if which "$VALET" >/dev/null 2>&1 ; then
+        $VALET link "$DOCROOT" > /dev/null 2>&1
+    fi
     _w "Site has been created in $SITESDIR/$DOCROOT."
 
     if [[ $NOBROWSE ]]; then
@@ -1024,7 +1034,7 @@ function sub_install-theme(){
         "-h" | "--help")
             _w "Usage: $progname install-theme [site] [theme-slug]"
             _w ""
-            _w "       Install theme to the specified site."
+            _w "       Install theme to the specified site and activate it."
             _w ""
             return
             ;;
