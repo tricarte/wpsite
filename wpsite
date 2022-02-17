@@ -143,6 +143,10 @@ case "$1" in
             exit 1
         fi
         ;;
+    -h|--help)
+        SUBHELP=1
+        shift
+        ;;
     --*|-*) # unsupported flags
         _e "Error: Unsupported flag $1" >&2
         exit 1
@@ -868,18 +872,27 @@ export -f sub_lang
 #  sub_quick  #
 ###############
 function sub_quick(){
-    subhelp=$1
-    case $subhelp in
-        "-h" | "--help")
-            _w "Usage: $progname quick [-n|--no-browse]"
-            _w ""
-            _w "       Quickly create a random site by restoring the boilerplate backup."
-            _w "       You can create the boilerplate backup using \"wpsite boilerplate\""
-            _w "       if it does not exist."
-            _w ""
-            return
-            ;;
-    esac
+    # subhelp=$1
+    # case $subhelp in
+    #     "-h" | "--help")
+    #         _w "Usage: $progname quick [-n|--no-browse]"
+    #         _w ""
+    #         _w "       Quickly create a random site by restoring the boilerplate backup."
+    #         _w "       You can create the boilerplate backup using \"wpsite boilerplate\""
+    #         _w "       if it does not exist."
+    #         _w ""
+    #         return
+    #         ;;
+    # esac
+    if [[ $SUBHELP ]]; then
+        _w "Usage: $progname quick [-n|--no-browse]"
+        _w ""
+        _w "       Quickly create a random site by restoring the boilerplate backup."
+        _w "       You can create the boilerplate backup using \"wpsite boilerplate\""
+        _w "       if it does not exist."
+        _w ""
+        return
+    fi
 
     if [[ $NOBROWSE ]]; then
         wpsite restore boiler $RANDOM -n
