@@ -143,6 +143,24 @@ case "$1" in
             exit 1
         fi
         ;;
+    --with-plugin)
+        if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
+            INSTALL_PLUGIN=$2
+            shift 2
+        else
+            _e "Error: Argument for $1 is missing" >&2
+            exit 1
+        fi
+        ;;
+    --with-theme)
+        if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
+            INSTALL_THEME=$2
+            shift 2
+        else
+            _e "Error: Argument for $1 is missing" >&2
+            exit 1
+        fi
+        ;;
     -h|--help)
         SUBHELP=1
         shift
@@ -893,11 +911,35 @@ function sub_quick(){
         _w ""
         return
     fi
+    #
+    # SITENAME=$RANDOM
+    # if [[ $NOBROWSE ]]; then
+    #     wpsite restore boiler $SITENAME -n
+    # else
+    #     wpsite restore boiler $SITENAME
+    # fi
+    #
+    # if [[ -n "$INSTALL_PLUGIN" ]] ; then
+    #     $progname install-plugin "$SITENAME" "$INSTALL_PLUGIN"
+    # fi
+    #
+    # if [[ -n "$INSTALL_THEME" ]] ; then
+    #     $progname install-theme "$SITENAME" "$INSTALL_THEME"
+    # fi
 
-    if [[ $NOBROWSE ]]; then
-        wpsite restore boiler $RANDOM -n
-    else
-        wpsite restore boiler $RANDOM
+    SITENAME=$RANDOM
+    wpsite restore boiler $SITENAME -n
+
+    if [[ -n "$INSTALL_PLUGIN" ]] ; then
+        $progname install-plugin "$SITENAME" "$INSTALL_PLUGIN"
+    fi
+
+    if [[ -n "$INSTALL_THEME" ]] ; then
+        $progname install-theme "$SITENAME" "$INSTALL_THEME"
+    fi
+
+    if [[ ! $NOBROWSE ]]; then
+        $progname admin "$SITENAME"
     fi
 
     return
@@ -1046,7 +1088,7 @@ function sub_install-theme(){
     subhelp=$1
     case $subhelp in
         "-h" | "--help")
-            _w "Usage: $progname install-theme [site] [theme-slug]"
+            _w "Usage: $progname install-theme <site> <theme-slug>"
             _w ""
             _w "       Install theme to the specified site and activate it."
             _w ""
@@ -1086,7 +1128,7 @@ function sub_install-plugin(){
     subhelp=$1
     case $subhelp in
         "-h" | "--help")
-            _w "Usage: $progname install-plugin [site] [plugin-slug]"
+            _w "Usage: $progname install-plugin <site> <plugin-slug>"
             _w ""
             _w "       Install plugin to the specified site and activate it."
             _w ""
