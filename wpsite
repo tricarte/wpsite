@@ -37,9 +37,41 @@ NUMBACKUPSTOKEEP=2
 #             OK, Stop editing              #
 #############################################
 
+#######################
+#  Utility functions  #
+#######################
+
+red='\033[0;31m'
+green='\033[0;32m'
+purple='\033[0;35m'
+normal='\033[0m'
+
+# Utility functions
+# https://github.com/CodelyTV/dotly/blob/master/installer#L21
+_w() {
+  local -r text="${1:-}"
+  echo -e "$text"
+}
+_a() { _w " > $1"; }
+_e() { _a "${red}$1${normal}"; }
+_s() { _a "${green}$1${normal}"; }
+
+##############################
+#  End of Utility functions  #
+##############################
+
 ###################
 #  Prerequisites  #
 ###################
+
+# Check MySQL/MariaDB is running
+DBSTATUS=$(systemctl status mysql.service | grep Active)
+if [[  $DBSTATUS =~ 'inactive' ]]
+then
+    _e "Database server is not running or reachable."
+    exit 1
+fi
+
 if [[ -n "$XDG_CURRENT_DESKTOP" ]]; then
     VALET=$(command -v valet)
     if [ ! $? ]; then
@@ -76,21 +108,6 @@ fi
 ##########################
 
 WORKING_DIR_ORIGINAL="$(pwd)"
-
-red='\033[0;31m'
-green='\033[0;32m'
-purple='\033[0;35m'
-normal='\033[0m'
-
-# Utility functions
-# https://github.com/CodelyTV/dotly/blob/master/installer#L21
-_w() {
-  local -r text="${1:-}"
-  echo -e "$text"
-}
-_a() { _w " > $1"; }
-_e() { _a "${red}$1${normal}"; }
-_s() { _a "${green}$1${normal}"; }
 
 function createTmpDir() {
     tmpDir="/tmp/$(basename "$0").$RANDOM.$RANDOM.$RANDOM.$$"
