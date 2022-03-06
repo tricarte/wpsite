@@ -1265,6 +1265,29 @@ function sub_install-plugin(){
 }
 export -f sub_install-plugin
 
+#############
+#  sub_woo  #
+#############
+function sub_woo(){
+    subhelp=$1
+    case $subhelp in
+        "-h" | "--help")
+            _w "Usage: $progname woo"
+            _w ""
+            _w "       Create a WooCommerce site quickly."
+            _w ""
+            return
+            ;;
+    esac
+
+    DOCROOT=$RANDOM
+
+    $progname quick -n --with-plugin woocommerce --with-theme storefront
+
+    return
+}
+export -f sub_woo
+
 case $subcommand in
     "" | "-h" | "--help" | "help")
         sub_default
