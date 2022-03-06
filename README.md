@@ -39,6 +39,7 @@ credentials.
 | delete         | Delete an existing WP site. |
 | restore        | Restore an existing WP site from backup. |
 | list           | List all wpstarter-enabled sites in "$HOME/sites".|
+| last           | Open the most recently created site's admin dashboard.|
 | lang           | Install a new language into an existing wpstarter installation. |
 | quick          | Quickly create a new WP test site without asking too much.
 | update         | Apply "composer update" to the wpstarter repository. |
@@ -48,6 +49,11 @@ credentials.
 | fm             | Open site root directory in file manager. |
 | install-theme  | Install a plugin to a site and activate it. |
 | install-plugin | Install a theme to a site and activate it. |
+| woo            | Do a quick WooCommerce installation with StoreFront theme.|
+
+Some commands recognize the "last" keyword. For example `wpsite last` will
+bring up the most recently created site's admin dashboard. `wpsite delete last
+-y` will the delete the last site you created without confirmation.
 
 ## User credentials
 
