@@ -64,11 +64,20 @@ _s() { _a "${green}$1${normal}"; }
 #  Prerequisites  #
 ###################
 
+if [[ -n "$XDG_CURRENT_DESKTOP" ]]; then
+    if command -v notify-send > /dev/null 2>&1; then
+        NOTIFYBIN=$(command -v notify-send)
+    fi
+fi
+
 # Check MySQL/MariaDB is running
 DBSTATUS=$(systemctl status mysql.service | grep Active)
 if [[  $DBSTATUS =~ 'inactive' ]]
 then
     _e "Database server is not running or reachable."
+    if [[ -n "$NOTIFYBIN" ]]; then
+        $NOTIFYBIN -a WPSITE "Database server is not running or reachable."
+    fi
     exit 1
 fi
 
@@ -104,12 +113,6 @@ if command -v mysql > /dev/null 2>&1; then
 else
     _e "Err: mysql/mardiadb client is not installed."
     exit 1
-fi
-
-if [[ -n "$XDG_CURRENT_DESKTOP" ]]; then
-    if command -v notify-send > /dev/null 2>&1; then
-        NOTIFYBIN=$(command -v notify-send)
-    fi
 fi
 ##########################
 #  End of prerequisites  #
@@ -149,6 +152,18 @@ function deleteSite() {
         $NOTIFYBIN -a WPSITE "Site \"$1\" has been deleted."
     fi
     return
+}
+
+function findLastSite() {
+    SITE=$( find "$SITESDIR"/ \
+        -maxdepth 2 \
+        -type f \
+        -name wpstarter.json \
+        | TZ=utc xargs ls -ld --full-time | sort -rk 6 | head -n1 \
+        | tr -s ' ' | cut -d" " -f9 | xargs -i dirname {} | xargs -i basename {}
+    )
+
+    echo $SITE
 }
 
 # Global option parsing
@@ -553,12 +568,21 @@ function sub_rename(){
     DOCROOT=$1
     NEWDOCROOT=$2
 
+    if [[ $DOCROOT == "last" ]] ; then
+        DOCROOT="$(findLastSite)"
+    fi
+
     if [[ -z $DOCROOT ]] ; then
         _e "Err: Specify an existing site to rename. It will be searched in $SITESDIR."
         return 1
     elif [[ ! -d "$SITESDIR/$DOCROOT" ]]; then
         _e "Err: A site with the name \"$DOCROOT\" does not exist."
         return 1
+    fi
+
+    # "last" is a reserved keyword.
+    if [[ $NEWDOCROOT == "last" ]] ; then
+        NEWDOCROOT="last_site"
     fi
 
     if [[ -n $NEWDOCROOT ]] ; then
@@ -577,8 +601,8 @@ function sub_rename(){
         return 1
     fi
 
-    _w "Renaming site..."
-    _w "This will take some time."
+    _w "Renaming $DOCROOT to $NEWDOCROOT."
+    _w "This will take some time..."
     _w ""
 
     $progname backup "$DOCROOT" > /dev/null 2>&1
@@ -619,6 +643,10 @@ function sub_backup(){
 
     # Check if any argument is provided
     DOCROOT=$1
+
+    if [[ $DOCROOT == "last" ]] ; then
+        DOCROOT="$(findLastSite)"
+    fi
 
     # Exit if directory does not exist.
     if [[ ! -d "$SITESDIR/$DOCROOT" ]]
@@ -708,17 +736,10 @@ function sub_delete(){
         _e "Err: Specify one or more sites to delete."
         return 1
     fi
-    # echo ${SITES_TO_DELETE[*]}
-    # exit
+
     # If "last" provided as the site name to be deleted
     if [[ ${SITES_TO_DELETE[*]} =~ "last" ]]; then
-        LAST_SITE=$( find "$SITESDIR"/ \
-            -maxdepth 2 \
-            -type f \
-            -name wpstarter.json \
-            | TZ=utc xargs ls -ld --full-time | sort -rk 6 | head -n1 \
-            | tr -s ' ' | cut -d" " -f9 | xargs -i dirname {} | xargs -i basename {}
-        )
+        LAST_SITE="$(findLastSite)"
 
         if [[ -d "$SITESDIR/$LAST_SITE" ]] ; then
             if [[ $PROCEED ]]; then
@@ -812,6 +833,11 @@ function sub_create(){
     # wpsite create "dir1 dir2" -> dir1 and dir2 become separate params
     # https://stackoverflow.com/a/51677667
     DOCROOT="$1"
+
+    # "last" keyword is reserved
+    if [[ $DOCROOT == "last" ]] ; then
+        DOCROOT="last_site"
+    fi
 
     if [[ -z $DOCROOT ]] ; then
         _e "Err: Specify a directory name. The site will be created in \"$SITESDIR\"."
@@ -914,6 +940,10 @@ function sub_lang(){
 
     DOCROOT=$1
     WPLANG=$2
+
+    if [[ $DOCROOT == "last" ]] ; then
+        DOCROOT="$(findLastSite)"
+    fi
 
     # Exit if directory does not exist.
     if [[ ! -d "$SITESDIR/$DOCROOT" ]]
@@ -1022,6 +1052,10 @@ function sub_admin(){
 
     DOCROOT="$1"
 
+    if [[ $DOCROOT == "last" ]] ; then
+        DOCROOT="$(findLastSite)"
+    fi
+
     if [[ -z $DOCROOT ]] ; then
         _e "Err: Specify a directory name to open."
         return 1
@@ -1064,15 +1098,15 @@ function sub_last(){
     esac
 
     # FIXME: Use find -printf thing instead of ls
-    SITE=$( find "$SITESDIR"/ \
-        -maxdepth 2 \
-        -type f \
-        -name wpstarter.json \
-        | TZ=utc xargs ls -ld --full-time | sort -rk 6 | head -n1 \
-        | tr -s ' ' | cut -d" " -f9 | xargs -i dirname {} | xargs -i basename {}
-    )
+    # SITE=$( find "$SITESDIR"/ \
+    #     -maxdepth 2 \
+    #     -type f \
+    #     -name wpstarter.json \
+    #     | TZ=utc xargs ls -ld --full-time | sort -rk 6 | head -n1 \
+    #     | tr -s ' ' | cut -d" " -f9 | xargs -i dirname {} | xargs -i basename {}
+    # )
 
-    openBrowser "$SITE"
+    openBrowser "$(findLastSite)"
     return
 }
 export -f sub_last
@@ -1099,6 +1133,10 @@ function sub_fm(){
     fi
 
     DOCROOT=$1
+
+    if [[ $DOCROOT == "last" ]] ; then
+        DOCROOT="$(findLastSite)"
+    fi
 
     if [[ -d "$SITESDIR/$DOCROOT" ]] ; then
         $FM "$SITESDIR/$DOCROOT/" && return
@@ -1157,6 +1195,10 @@ function sub_install-theme(){
     DOCROOT=$1
     THEME_NAME=$2
 
+    if [[ $DOCROOT == "last" ]] ; then
+        DOCROOT="$(findLastSite)"
+    fi
+
     if [[ -z $DOCROOT ]] ; then
         _e "Err: Specify a site to install the theme."
         _e "See $progname -h for help."
@@ -1173,7 +1215,7 @@ function sub_install-theme(){
         exit 1
     fi
 
-    $WP theme install "$THEME_NAME" --activate --skip-plugins --path="$SITESDIR/$1/public/cms"
+    $WP theme install "$THEME_NAME" --activate --skip-plugins --path="$SITESDIR/$DOCROOT/public/cms"
 
     return
 }
@@ -1197,6 +1239,10 @@ function sub_install-plugin(){
     DOCROOT=$1
     PLUGIN_NAME=$2
 
+    if [[ $DOCROOT == "last" ]] ; then
+        DOCROOT="$(findLastSite)"
+    fi
+
     if [[ -z $DOCROOT ]] ; then
         _e "Err: Specify a site to install the plugin."
         _e "See $progname -h for help."
@@ -1213,7 +1259,7 @@ function sub_install-plugin(){
         exit 1
     fi
 
-    $WP plugin install "$PLUGIN_NAME" --activate --skip-plugins --path="$SITESDIR/$1/public/cms"
+    $WP plugin install "$PLUGIN_NAME" --activate --skip-plugins --path="$SITESDIR/$DOCROOT/public/cms"
 
     return
 }
