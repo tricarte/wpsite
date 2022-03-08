@@ -572,6 +572,19 @@ function sub_rename(){
         DOCROOT="$(findLastSite)"
     fi
 
+    # If number of arguments is 1 and current directory is a
+    # wpstarter installation, then use as $DOCROOT
+    if [[ $# == 1 ]] ; then
+        if [[ -f "$WORKING_DIR_ORIGINAL/wpstarter.json" ]]; then
+            DOCROOT=$(basename $WORKING_DIR_ORIGINAL)
+            NEWDOCROOT=$1
+        fi
+    elif [[ -z $DOCROOT ]]; then
+        _e "Err: Specify an existing site to rename. It will be searched in $SITESDIR."
+        _e "See $progname -h for help."
+        return 1
+    fi
+
     if [[ -z $DOCROOT ]] ; then
         _e "Err: Specify an existing site to rename. It will be searched in $SITESDIR."
         return 1
@@ -646,6 +659,18 @@ function sub_backup(){
 
     if [[ $DOCROOT == "last" ]] ; then
         DOCROOT="$(findLastSite)"
+    fi
+
+    # If number of arguments is 0 and current directory is a
+    # wpstarter installation, then use as $DOCROOT
+    if [[ $# == 0 ]] ; then
+        if [[ -f "$WORKING_DIR_ORIGINAL/wpstarter.json" ]]; then
+            DOCROOT=$(basename $WORKING_DIR_ORIGINAL)
+        fi
+    elif [[ -z $DOCROOT ]]; then
+        _e "Err: Specify a site to backup."
+        _e "See $progname -h for help."
+        return 1
     fi
 
     # Exit if directory does not exist.
@@ -839,8 +864,9 @@ function sub_create(){
         DOCROOT="last_site"
     fi
 
-    if [[ -z $DOCROOT ]] ; then
+    if [[ -z $DOCROOT ]]; then
         _e "Err: Specify a directory name. The site will be created in \"$SITESDIR\"."
+        _e "See $progname -h for help."
         return 1
     fi
 
@@ -943,6 +969,19 @@ function sub_lang(){
 
     if [[ $DOCROOT == "last" ]] ; then
         DOCROOT="$(findLastSite)"
+    fi
+
+    # If number of arguments is 1 and current directory is a
+    # wpstarter installation, then use as $DOCROOT
+    if [[ $# == 1 ]] ; then
+        if [[ -f "$WORKING_DIR_ORIGINAL/wpstarter.json" ]]; then
+            DOCROOT=$(basename $WORKING_DIR_ORIGINAL)
+            WPLANG=$1
+        fi
+    elif [[ -z $DOCROOT ]]; then
+        _e "Err: Specify a site to install the language."
+        _e "See $progname -h for help."
+        return 1
     fi
 
     # Exit if directory does not exist.
@@ -1056,8 +1095,15 @@ function sub_admin(){
         DOCROOT="$(findLastSite)"
     fi
 
-    if [[ -z $DOCROOT ]] ; then
+    # If number of arguments is 0 and current directory is a
+    # wpstarter installation, then use as $DOCROOT
+    if [[ $# == 0 ]] ; then
+        if [[ -f "$WORKING_DIR_ORIGINAL/wpstarter.json" ]]; then
+            DOCROOT=$(basename $WORKING_DIR_ORIGINAL)
+        fi
+    elif [[ -z $DOCROOT ]]; then
         _e "Err: Specify a directory name to open."
+        _e "See $progname -h for help."
         return 1
     fi
 
@@ -1138,6 +1184,18 @@ function sub_fm(){
         DOCROOT="$(findLastSite)"
     fi
 
+    # If number of arguments is 0 and current directory is a
+    # wpstarter installation, then use as $DOCROOT
+    if [[ $# == 0 ]] ; then
+        if [[ -f "$WORKING_DIR_ORIGINAL/wpstarter.json" ]]; then
+            DOCROOT=$(basename $WORKING_DIR_ORIGINAL)
+        fi
+    elif [[ -z $DOCROOT ]]; then
+        _e "Err: Specify a directory name to browse with the file manager."
+        _e "See $progname -h for help."
+        return 1
+    fi
+
     if [[ -d "$SITESDIR/$DOCROOT" ]] ; then
         $FM "$SITESDIR/$DOCROOT/" && return
     else
@@ -1199,7 +1257,14 @@ function sub_install-theme(){
         DOCROOT="$(findLastSite)"
     fi
 
-    if [[ -z $DOCROOT ]] ; then
+    # If number of arguments is 1 and current directory is a
+    # wpstarter installation, then use as $DOCROOT
+    if [[ $# == 1 ]] ; then
+        if [[ -f "$WORKING_DIR_ORIGINAL/wpstarter.json" ]]; then
+            DOCROOT=$(basename $WORKING_DIR_ORIGINAL)
+            THEME_NAME=$1
+        fi
+    elif [[ -z $DOCROOT ]]; then
         _e "Err: Specify a site to install the theme."
         _e "See $progname -h for help."
         return 1
@@ -1243,7 +1308,14 @@ function sub_install-plugin(){
         DOCROOT="$(findLastSite)"
     fi
 
-    if [[ -z $DOCROOT ]] ; then
+    # If number of arguments is 1 and current directory is a
+    # wpstarter installation, then use as $DOCROOT
+    if [[ $# == 1 ]] ; then
+        if [[ -f "$WORKING_DIR_ORIGINAL/wpstarter.json" ]]; then
+            DOCROOT=$(basename $WORKING_DIR_ORIGINAL)
+            PLUGIN_NAME=$1
+        fi
+    elif [[ -z $DOCROOT ]]; then
         _e "Err: Specify a site to install the plugin."
         _e "See $progname -h for help."
         return 1
