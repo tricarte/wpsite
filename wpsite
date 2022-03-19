@@ -1360,6 +1360,27 @@ function sub_woo(){
 }
 export -f sub_woo
 
+#################
+#  sub_release  #
+#################
+function sub_release(){
+    subhelp=$1
+    case $subhelp in
+        "-h" | "--help")
+            _w "Usage: $progname release <site_name>"
+            _w ""
+            _w "       Disable all developer related features of a wpstarter project."
+            _w ""
+            return
+            ;;
+    esac
+
+    # TODO: Implement me....
+
+    return
+}
+export -f sub_release
+
 case $subcommand in
     "" | "-h" | "--help" | "help")
         sub_default
