@@ -140,7 +140,9 @@ function openBrowser() {
 }
 
 function deleteSite() {
-    mysql -u $DBUSER -p$DBPASS -e "DROP DATABASE IF EXISTS \`$1\`"
+    eval $(grep DB_USER "$SITESDIR/$1/.env")
+    eval $(grep DB_PASSWORD "$SITESDIR/$1/.env")
+    mysql -u $DB_USER -p$DB_PASSWORD -e "DROP DATABASE IF EXISTS \`$1\`"
     rm -rf "${SITESDIR:?}/${1:?}"
     if which "$VALET" >/dev/null 2>&1 ; then
         $VALET unlink "$DOCROOT" > /dev/null 2>&1
