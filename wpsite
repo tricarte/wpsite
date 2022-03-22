@@ -143,7 +143,7 @@ function deleteSite() {
     eval $(grep DB_USER "$WPSTARTERDIR/custom-templates/.env.example")
     eval $(grep DB_PASSWORD "$WPSTARTERDIR/custom-templates/.env.example")
 
-    $MYSQLBIN -u $DB_USER -p $DB_PASSWORD -e "DROP DATABASE IF EXISTS \`$1\`"
+    $MYSQLBIN -u$DB_USER -p$DB_PASSWORD -e "DROP DATABASE IF EXISTS \`$1\`"
 
     # Drop user
     DELETE_USER=$($MYSQLBIN -Nsr -u$DB_USER -p$DB_PASSWORD -e "SELECT user from mysql.user where user like '$1%'")
