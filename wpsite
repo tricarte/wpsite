@@ -147,8 +147,10 @@ function deleteSite() {
 
     # Drop user
     DELETE_USER=$($MYSQLBIN -Nsr -u$DB_USER -p$DB_PASSWORD -e "SELECT user from mysql.user where user like '$1%'")
-    $MYSQLBIN -u$DB_USER -p$DB_PASSWORD -e "DROP USER '$DELETE_USER'@'localhost';"
-    $MYSQLBIN -u$DB_USER -p$DB_PASSWORD -e "FLUSH PRIVILEGES;"
+    if [[ -n $DELETE_USER ]]; then
+        $MYSQLBIN -u$DB_USER -p$DB_PASSWORD -e "DROP USER '$DELETE_USER'@'localhost';"
+        $MYSQLBIN -u$DB_USER -p$DB_PASSWORD -e "FLUSH PRIVILEGES;"
+    fi
     
     rm -rf "${SITESDIR:?}/${1:?}"
     if which "$VALET" >/dev/null 2>&1 ; then
