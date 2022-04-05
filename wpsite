@@ -1371,26 +1371,61 @@ function sub_woo(){
 }
 export -f sub_woo
 
-#################
-#  sub_release  #
-#################
-function sub_release(){
+##################
+#  sub_settings  #
+##################
+function sub_settings(){
     subhelp=$1
     case $subhelp in
         "-h" | "--help")
-            _w "Usage: $progname release <site_name>"
+            _w "Usage: $progname settings <site_name>"
             _w ""
-            _w "       Disable all developer related features of a wpstarter project."
+            _w "       Change necessary WP settings that are set generically at the site installation."
             _w ""
             return
             ;;
     esac
 
     # TODO: Implement me....
+    DOCROOT=$1
+
+    if [[ -z $DOCROOT ]]; then
+        _e "Err: Specify a directory name. The site will be created in \"$SITESDIR\"."
+        _e "See $progname -h for help."
+        return 1
+    fi
+
+    # Current site settings
+    _w "Getting current site and user settings..."
+    curBlogname=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" option get blogname)
+    curTagline=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" option get blogdescription)
+    curAdminFirstName=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" user meta get 1 first_name)
+    curAdminLastName=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" user meta get 1 last_name)
+
+    # TODO: nickname is required
+    curAdminNickname=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" user meta get 1 nickname)
+
+    # TODO: nicename is used as author slug
+    curAdminNicename=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" user get 1 --field=user_nicename)
+
+    curAdminEmail=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" user get 1 --field=user_email)
+
+    _w "Blogname: $curBlogname"
+    _w "Tagline: $curTagline"
+    _w "First Name: $curAdminFirstName"
+    _w "Last Name: $curAdminLastName"
+    _w "Nickname: $curAdminNickname"
+    _w "Nicename: $curAdminNicename"
+    _w "Email: $curAdminEmail"
+
+
+    # read -p "Site Title (blogname) (Leave empty for default): " -e BLOGNAME
+    # read -p "Tagline (blogdescription) (Leave empty for default): " -e BLOGNAME
+
 
     return
 }
-export -f sub_release
+export -f sub_settings
 
 case $subcommand in
     "" | "-h" | "--help" | "help")
