@@ -140,8 +140,8 @@ function openBrowser() {
 }
 
 function deleteSite() {
-    eval $(grep DB_USER "$WPSTARTERDIR/custom-templates/.env.example")
-    eval $(grep DB_PASSWORD "$WPSTARTERDIR/custom-templates/.env.example")
+    DB_USER=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" config get DB_USER)
+    DB_PASSWORD=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" config get DB_PASSWORD)
 
     $MYSQLBIN -u$DB_USER -p$DB_PASSWORD -e "DROP DATABASE IF EXISTS \`$1\`"
 
