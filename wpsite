@@ -1489,37 +1489,38 @@ function sub_settings(){
     # wp user update 1 --display_name="John Doe" --user_nicename="john-doe" --nickname="Editor"
 
     if [[ -n $BLOGNAME ]] && [[ $BLOGNAME != $curBlogname ]]; then
-        $WP --skip-plugins --path="$SITESDIR/$1/public/cms" option update blogname "$BLOGNAME"
+        $WP --skip-plugins --path="$SITESDIR/$1/public/cms" option update blogname "$BLOGNAME" --quiet
     fi
 
     if [[ -n $BLOGDESCRIPTION ]] && [[ $BLOGDESCRIPTION != $curTagline ]]; then
-        $WP --skip-plugins --path="$SITESDIR/$1/public/cms" option update blogdescription "$BLOGDESCRIPTION"
+        $WP --skip-plugins --path="$SITESDIR/$1/public/cms" option update blogdescription "$BLOGDESCRIPTION" --quiet
     fi
 
     if [[ -n $ADMINFIRSTNAME ]] && [[ $ADMINFIRSTNAME != $curAdminFirstName ]]; then
-        $WP --skip-plugins --path="$SITESDIR/$1/public/cms" user meta update 1 first_name "$ADMINFIRSTNAME"
+        $WP --skip-plugins --path="$SITESDIR/$1/public/cms" user meta update 1 first_name "$ADMINFIRSTNAME" --quiet
     fi
 
     if [[ -n $ADMINLASTNAME ]] && [[ $ADMINLASTNAME != $curAdminLastName ]]; then
-        $WP --skip-plugins --path="$SITESDIR/$1/public/cms" user meta update 1 first_name "$ADMINLASTNAME"
+        $WP --skip-plugins --path="$SITESDIR/$1/public/cms" user meta update 1 first_name "$ADMINLASTNAME" --quiet
     fi
 
     if [[ -n $ADMINNICKNAME ]] && [[ $ADMINNICKNAME != $curAdminNickname ]]; then
-        $WP --skip-plugins --path="$SITESDIR/$1/public/cms" user meta update 1 nickname "$ADMINNICKNAME"
+        $WP --skip-plugins --path="$SITESDIR/$1/public/cms" user meta update 1 nickname "$ADMINNICKNAME" --quiet
     fi
 
     if [[ -n $ADMINNICENAME ]] && [[ $ADMINNICENAME != $curAdminNicename ]]; then
-        $WP --skip-plugins --path="$SITESDIR/$1/public/cms" user update 1 --user_nicename="$ADMINNICENAME"
+        $WP --skip-plugins --path="$SITESDIR/$1/public/cms" user update 1 --user_nicename="$ADMINNICENAME" --quiet
     fi
 
     if [[ -n $ADMINDISPLAYNAME ]] && [[ $ADMINDISPLAYNAME != $curAdminDisplayName ]]; then
-        $WP --skip-plugins --path="$SITESDIR/$1/public/cms" user update 1 --display_name="$ADMINDISPLAYNAME"
+        $WP --skip-plugins --path="$SITESDIR/$1/public/cms" user update 1 --display_name="$ADMINDISPLAYNAME" --quiet
     fi
 
     if [[ -n $ADMINEMAIL ]] && [[ $ADMINEMAIL != $curAdminEmail ]]; then
-        $WP --skip-plugins --path="$SITESDIR/$1/public/cms" user update 1 --user_email="$ADMINEMAIL" --skip-email
+        $WP --skip-plugins --path="$SITESDIR/$1/public/cms" user update 1 --user_email="$ADMINEMAIL" --skip-email --quiet
     fi
 
+    $WP --skip-plugins --path="$SITESDIR/$1/public/cms" cache flush --quiet > /dev/null 2>&1
     _w ""
     _w "New settings applied."
 
