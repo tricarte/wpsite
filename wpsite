@@ -397,8 +397,8 @@ function sub_update(){
     else
         end=$SECONDS
         _w "Composer update took $((end-start)) seconds to finish."
-        git --git-dir="$WPSTARTERDIR/.git" --work-tree="$WPSTARTERDIR" add composer.lock
-        git --git-dir="$WPSTARTERDIR/.git" --work-tree="$WPSTARTERDIR" commit -m"versions updated"
+        $GIT --git-dir="$WPSTARTERDIR/.git" --work-tree="$WPSTARTERDIR" add composer.lock
+        $GIT --git-dir="$WPSTARTERDIR/.git" --work-tree="$WPSTARTERDIR" commit -m"versions updated"
         _w "$WPSTARTERDIR updated."
         _w ""
         _w "Now creating a boilerplate site based on the updated repository"
