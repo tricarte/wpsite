@@ -1570,7 +1570,7 @@ function sub_flush-env(){
     if [[ -f "$SITESDIR/$DOCROOT/.env.cached.php" ]]; then
         rm -f "$SITESDIR/$DOCROOT/.env.cached.php"
         $WP --skip-plugins --skip-packages --path="$SITESDIR/$DOCROOT/public/cms" > /dev/null 2>&1
-        if [[ ! -f "$SITESDIR/$DOCROOT/.env.cached.php"]]; then
+        if [[ ! -f "$SITESDIR/$DOCROOT/.env.cached.php" ]]; then
             _e ".env.cached.php file could not be created."
         fi
     fi
