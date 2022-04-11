@@ -259,6 +259,7 @@ function sub_default(){
     _w "    ${purple}restore${normal}         Restore an existing WP site from backup."
     _w "    ${purple}rename${normal}          Rename an existing site."
     _w "    ${purple}list${normal}            List all wpstarter-enabled sites in \"$SITESDIR\"."
+    _w "    ${purple}last${normal}            Open the most recently created site's admin dashboard."
     _w "    ${purple}lang${normal}            Install a new language into an existing wpstarter installation."
     _w "    ${purple}quick${normal}           Quickly create a new WP test site without asking too much."
     _w "    ${purple}update${normal}          Apply \"composer update\" to the wpstarter repository."
@@ -268,7 +269,9 @@ function sub_default(){
     _w "    ${purple}fm${normal}              Open site root directory in file manager."
     _w "    ${purple}install-plugin${normal}  Install a plugin to a site and activate it."
     _w "    ${purple}install-theme${normal}   Install a theme to a site and activate it."
+    _w "    ${purple}woo${normal}             Do a quick WooCommerce installation with StoreFront theme."
     _w "    ${purple}settings${normal}        Interactively change necessary WP settings that are set generically at the site installation."
+    _w "    ${purple}flush-env${normal}       Delete and rebuild .env.cached.php file of a site."
     _w ""
     _w "For help with each subcommand run:"
     _w "${purple}$progname <subcommand> -h|--help${normal}"
@@ -1541,6 +1544,40 @@ function sub_settings(){
     return
 }
 export -f sub_settings
+
+###############
+#  sub_flush-env  #
+###############
+function sub_flush-env(){
+    subhelp=$1
+    case $subhelp in
+        "-h" | "--help")
+            _w "Usage: $progname flush-env <site_name>"
+            _w ""
+            _w "       Delete and rebuild .env.cached.php file of a site."
+            _w ""
+            return
+            ;;
+    esac
+
+    DOCROOT="$1"
+
+    if [[ ! -d "$SITESDIR/$DOCROOT" ]]; then
+        _e "Err: \"$DOCROOT\" does not exist."
+        return 1
+    fi
+
+    if [[ -f "$SITESDIR/$DOCROOT/.env.cached.php" ]]; then
+        rm -f "$SITESDIR/$DOCROOT/.env.cached.php"
+        $WP --skip-plugins --skip-packages --path="$SITESDIR/$DOCROOT/public/cms" > /dev/null 2>&1
+        if [[ ! -f "$SITESDIR/$DOCROOT/.env.cached.php"]]; then
+            _e ".env.cached.php file could not be created."
+        fi
+    fi
+
+    return
+}
+export -f sub_flush-env
 
 case $subcommand in
     "" | "-h" | "--help" | "help")

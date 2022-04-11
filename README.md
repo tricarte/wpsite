@@ -47,9 +47,11 @@ credentials.
 | boilerplate    | Create boilerplate template backup for use with "wpsite quick" in "$HOME/backups/sites". |
 | clone-repo     | Download wpstarter source repo from github. |
 | fm             | Open site root directory in file manager. |
-| install-theme  | Install a plugin to a site and activate it. |
 | install-plugin | Install a theme to a site and activate it. |
+| install-theme  | Install a plugin to a site and activate it. |
 | woo            | Do a quick WooCommerce installation with StoreFront theme.|
+| settings       | Interactively change necessary WP settings that are set generically at the site installation.|
+| flush-env      | Delete and rebuild .env.cached.php file of a site.|
 
 Some commands recognize the "last" keyword. For example `wpsite last` will
 bring up the most recently created site's admin dashboard. `wpsite delete last
