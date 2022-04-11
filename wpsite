@@ -918,6 +918,13 @@ function sub_create(){
     cd "$SITESDIR" || exit
     $GIT clone "$WPSTARTERDIR" "$DOCROOT"
     cd "$DOCROOT" || exit
+    # Add post-merge hook to apply "composer wpstarter" after git pull
+    echo "
+#!/usr/bin/env bash
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"
+composer wpstarter
+" | tee ./.git/hooks/post-merge
+    chmod +x ./.git/hooks/post-merge
     $COMPOSERBIN install # Most of the magic happens here thanks to wpstarter.
     cd public || exit
     if which "$VALET" >/dev/null 2>&1 ; then
@@ -1235,7 +1242,14 @@ function sub_clone-repo(){
     esac
 
     if [[ ! -d "$WPSTARTERDIR" ]]; then
-        $GIT clone https://github.com/tricarte/wpready3 "$HOME/repos/wpready3" && \
+        $GIT clone https://github.com/tricarte/wpready3 "$WPSTARTERDIR" && \
+        # Add post-commit hook to run 'composer wpstarter'
+        echo "
+#!/usr/bin/env bash
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"
+composer wpstarter
+" | tee "$WPSTARTERDIR/.git/hooks/post-commit"
+        chmod +x "$WPSTARTERDIR/.git/hooks/post-commit"
         _w ""
         _w "\"${purple}$WPSTARTERREPO${normal}\" has been cloned to \"${purple}$WPSTARTERDIR${normal}\"."
         _w "Now you can use \"wpsite create\" to create a new site."
