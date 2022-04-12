@@ -515,7 +515,7 @@ function sub_restore(){
             cd "$SITESDIR/$NEWDOCROOT/public" || exit
             wp search-replace "$DOCROOT" "$NEWDOCROOT" > /dev/null 2>&1
             _w "Performing search-replace in WordPress DB... DONE."
-            wp user update usr"$NEWDOCROOT" --user_pass=pss"$NEWDOCROOT" > /dev/null 2>&1
+            wp --skip-mail user update usr"$NEWDOCROOT" --user_pass=pss"$NEWDOCROOT" > /dev/null 2>&1
             _w "Updating the admin user... DONE."
             rm -f "$SITESDIR/$NEWDOCROOT/public/content/db.php"
             wp plugin deactivate query-monitor > /dev/null 2>&1
