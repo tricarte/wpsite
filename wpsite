@@ -11,31 +11,36 @@
 
 [[ -n ${SUDO_USER:-} ]] && { _e "sudo detected, exiting normally!"; exit; }
 
-#############################################
-#         Edit below to your liking         #
-#############################################
+if [[ -f "$HOME/.wpsiterc" ]]; then
+    source "$HOME/.wpsiterc"
+fi
+
+#########################################################
+#  DO NOT EDIT these defaults, use ~/.wpsiterc instead  #
+#########################################################
 
 # MySQL/MariaDB credentials
-DBUSER="root"
-DBPASS="vagrant"
+if [[ -z $DBUSER ]]; then DBUSER="root"; fi 
+if [[ -z $DBPASS ]]; then DBPASS="vagrant"; fi 
 
 # Where to host sites 
-SITESDIR="$HOME/sites"
+if [[ -z $SITESDIR ]]; then SITESDIR="$HOME/sites"; fi 
 
 # Where to store/retore backups
-BACKUPSDIR="$HOME/backups/sites"
+if [[ -z $BACKUPSDIR ]]; then BACKUPSDIR="$HOME/backups/sites"; fi 
 
-WPSTARTERREPO="https://github.com/tricarte/wpready3"
+if [[ -z $WPSTARTERREPO ]]; then WPSTARTERREPO="https://github.com/tricarte/wpready3"; fi 
 
 # Clone of above repo, downloadable with "wpsite clone-repo"
-WPSTARTERDIR="$HOME/repos/wpready3"
+if [[ -z $WPSTARTERDIR ]]; then WPSTARTERDIR="$HOME/repos/wpready3"; fi 
 
 # How many backups to keep while using "wpsite backup your-site --purge"
-NUMBACKUPSTOKEEP=2
+if [[ -z $NUMBACKUPSTOKEEP ]]; then NUMBACKUPSTOKEEP=2; fi 
 
-#############################################
-#             OK, Stop editing              #
-#############################################
+#####################
+#  End of Defaults  #
+#####################
+
 
 #######################
 #  Utility functions  #
