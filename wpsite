@@ -1614,6 +1614,53 @@ function sub_flush-env(){
 }
 export -f sub_flush-env
 
+#######################
+#  sub_create-config  #
+#######################
+function sub_create-config(){
+    subhelp=$1
+    case $subhelp in
+        "-h" | "--help")
+            _w "Usage: $progname create-config"
+            _w ""
+            _w "       Create .wpsiterc config file in $HOME."
+            _w ""
+            return
+            ;;
+    esac
+
+    DOCROOT="$1"
+
+    if [[ ! -f "$HOME/.wpsiterc" ]]; then
+        echo "
+# Uncomment the line to make a change.
+
+# MySQL/MariaDB credentials
+# DBUSER=\"root\"
+# DBPASS=\"vagrant\"
+
+# Where to host sites 
+# SITESDIR=\"\$HOME/sites\"
+
+# Where to store/retore backups
+# BACKUPSDIR=\"\$HOME/backups/sites\"
+
+# You really don't have to change this unless you fork it
+# WPSTARTERREPO=\"https://github.com/tricarte/wpready3\"
+
+# Clone of above repo, downloadable with \"wpsite clone-repo\"
+# WPSTARTERDIR=\"\$HOME/repos/wpready3\"
+
+# How many backups to keep while using \"wpsite backup your-site --purge\"
+# NUMBACKUPSTOKEEP=2" > "$HOME/.wpsiterc" && _w ".wpsiterc file created in $HOME." \
+        && _w "Edit it now according to your preferences."
+    else
+        _e ".wpsiterc config file already exists in $HOME."
+    fi
+
+    return
+}
+export -f sub_flush-env
 case $subcommand in
     "" | "-h" | "--help" | "help")
         sub_default
