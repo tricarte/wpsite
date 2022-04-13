@@ -296,6 +296,7 @@ function sub_default(){
     _w "    ${purple}woo${normal}             Do a quick WooCommerce installation with StoreFront theme."
     _w "    ${purple}settings${normal}        Interactively change necessary WP settings that are set generically at the site installation."
     _w "    ${purple}flush-env${normal}       Delete and rebuild .env.cached.php file of a site."
+    _w "    ${purple}create-config${normal}   Create .wpsiterc config file in $HOME."
     _w ""
     _w "For help with each subcommand run:"
     _w "${purple}$progname <subcommand> -h|--help${normal}"
@@ -1660,7 +1661,8 @@ function sub_create-config(){
 
     return
 }
-export -f sub_flush-env
+export -f sub_create-config
+
 case $subcommand in
     "" | "-h" | "--help" | "help")
         sub_default
