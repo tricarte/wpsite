@@ -135,6 +135,15 @@ fi
 
 WORKING_DIR_ORIGINAL="$(pwd)"
 
+function checkDBCredentials() {
+    $MYSQLBIN -u $DBUSER -p$DB_PASSWORD -e"quit" > /dev/null 2>&1 
+    if [[ $? ]]; then
+        return 1
+    else
+        return
+    fi
+}
+
 function createTmpDir() {
     tmpDir="/tmp/$(basename "$0").$RANDOM.$RANDOM.$RANDOM.$$"
     (umask 077 && mkdir -p "${tmpDir}") || \
@@ -497,6 +506,12 @@ function sub_restore(){
     if [[ ! -f "$BACKUPSDIR/$DOCROOT/$LATEST_BACKUP/database.sql.gz" ]]
     then
         _e "Err: database.sql.gz does not exist."
+        return 1
+    fi
+
+    if [[ checkDBCredentials ]]; then
+        _e "Cannot connect to database using specified credentials."
+        _e "Run $progname for help."
         return 1
     fi
 
@@ -871,6 +886,12 @@ function sub_create(){
             return
             ;;
     esac
+
+    if [[ checkDBCredentials ]]; then
+        _e "Cannot connect to database using specified credentials."
+        _e "Run $progname for help."
+        return 1
+    fi
 
     if [[ -n "$REPO_PATH" ]] && [[ -d "$REPO_PATH" ]] ; then
         WPSTARTERDIR=$REPO_PATH
