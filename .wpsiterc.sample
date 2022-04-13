@@ -2,6 +2,8 @@
 # -  Put this file with name ".wpsiterc" to $HOME  -
 # --------------------------------------------------
 
+# Uncomment the line to make a change.
+
 # MySQL/MariaDB credentials
 # DBUSER="root"
 # DBPASS="vagrant"
