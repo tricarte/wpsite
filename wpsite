@@ -114,6 +114,16 @@ else
     _e "Err: mysql/mardiadb client is not installed."
     exit 1
 fi
+
+if [[ ! -w "$SITESDIR" ]]; then
+    _e "$SITESDIR is not writable."
+    exit 1
+fi
+
+if [[ ! -w "$BACKUPSDIR" ]]; then
+    _e "$BACKUPSDIR is not writable."
+    exit 1
+fi
 ##########################
 #  End of prerequisites  #
 ##########################
