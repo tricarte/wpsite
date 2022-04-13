@@ -309,16 +309,13 @@ export -f sub_default
 #  sub_list  #
 ##############
 function sub_list(){
-    subhelp=$1
-    case $subhelp in
-        "-h" | "--help")
-            _w "Usage: $progname list"
-            _w ""
-            _w "       List all wpstarter-enabled sites in $SITESDIR."
-            _w ""
-            return
-            ;;
-    esac
+    if [[ $SUBHELP ]]; then
+        _w "Usage: $progname list"
+        _w ""
+        _w "       List all wpstarter-enabled sites in $SITESDIR."
+        _w ""
+        return
+    fi
 
     FD=$(command -v fd)
     if [ ! $? ]; then
@@ -335,16 +332,13 @@ export -f sub_list
 #  sub_boilerplate  #
 #####################
 function sub_boilerplate(){
-    subhelp=$1
-    case $subhelp in
-        "-h" | "--help")
-            _w "Usage: $progname boilerplate"
-            _w ""
-            _w "       Create a boilerplate template backup for use with \"wpsite quick\" in \"$BACKUPSDIR\"."
-            _w ""
-            return
-            ;;
-    esac
+    if [[ $SUBHELP ]]; then
+        _w "Usage: $progname boilerplate"
+        _w ""
+        _w "       Create a boilerplate template backup for use with \"wpsite quick\" in \"$BACKUPSDIR\"."
+        _w ""
+        return
+    fi
 
     if [[ -d "$SITESDIR/boiler" ]]; then
         wpsite delete boiler
@@ -381,16 +375,13 @@ export -f sub_boilerplate
 #  sub_update  #
 ################
 function sub_update(){
-    subhelp=$1
-    case $subhelp in
-        "-h" | "--help")
-            _w "Usage: $progname update"
-            _w ""
-            _w "       Update composer packages in wpstarter source repository."
-            _w ""
-            return
-            ;;
-    esac
+    if [[ $SUBHELP ]]; then
+        _w "Usage: $progname update"
+        _w ""
+        _w "       Update composer packages in wpstarter source repository."
+        _w ""
+        return
+    fi
 
     start=$SECONDS
 
@@ -443,18 +434,15 @@ export -f sub_update
 #  sub_restore  #
 #################
 function sub_restore(){
-    subhelp=$1
-    case $subhelp in
-        "" | "-h" | "--help")
-            _w "Usage: $progname restore <site_name> [new_site_name] [-n|--no-browse]"
-            _w ""
-            _w "       The backup named <site_name> inside $BACKUPSDIR"
-            _w "       will be restored either to the same name"
-            _w "       or to [new_site_name] inside $SITESDIR."
-            _w ""
-            return
-            ;;
-    esac
+    if [[ $SUBHELP ]]; then
+        _w "Usage: $progname restore <site_name> [new_site_name] [-n|--no-browse]"
+        _w ""
+        _w "       The backup named <site_name> inside $BACKUPSDIR"
+        _w "       will be restored either to the same name"
+        _w "       or to [new_site_name] inside $SITESDIR."
+        _w ""
+        return
+    fi
 
     DOCROOT=$1
     NEWDOCROOT=$2
@@ -602,14 +590,11 @@ export -f sub_restore
 #  sub_rename  #
 ################
 function sub_rename(){
-    subhelp=$1
-    case $subhelp in
-        "" | "-h" | "--help")
-            _w "Usage: $progname rename <site_name> <new_site_name>"
-            _w ""
-            return
-            ;;
-    esac
+    if [[ $SUBHELP ]]; then
+        _w "Usage: $progname rename <site_name> <new_site_name>"
+        _w ""
+        return
+    fi
 
     DOCROOT=$1
     NEWDOCROOT=$2
@@ -688,17 +673,14 @@ export -f sub_rename
 #  sub_backup  #
 ################
 function sub_backup(){
-    subhelp=$1
-    case $subhelp in
-        "" | "-h" | "--help")
-            _w "Usage: $progname backup <site_name> [-p|--purge]"
-            _w ""
-            _w "       The directory <site_name> in $SITESDIR will be backed up to $BACKUPSDIR."
-            _w "       To delete older backups of <site_name> use --purge option."
-            _w ""
-            return
-            ;;
-    esac
+    if [[ $SUBHELP ]]; then
+        _w "Usage: $progname backup <site_name> [-p|--purge]"
+        _w ""
+        _w "       The directory <site_name> in $SITESDIR will be backed up to $BACKUPSDIR."
+        _w "       To delete older backups of <site_name> use --purge option."
+        _w ""
+        return
+    fi
 
     # Check if any argument is provided
     DOCROOT=$1
@@ -789,16 +771,13 @@ export -f sub_backup
 #  sub_delete  #
 ################
 function sub_delete(){
-    subhelp=$1
-    case $subhelp in
-        "" | "-h" | "--help")
-            _w "Usage: $progname delete <site_name1> <site_name2>"
-            _w ""
-            _w "       Sites will be deleted from $SITESDIR."
-            _w ""
-            return
-            ;;
-    esac
+    if [[ $SUBHELP ]]; then
+        _w "Usage: $progname delete <site_name1> <site_name2>"
+        _w ""
+        _w "       Sites will be deleted from $SITESDIR."
+        _w ""
+        return
+    fi
 
     SITES_TO_DELETE=("${@}")
 
@@ -873,20 +852,17 @@ export -f sub_delete
 #  sub_create  #
 ################
 function sub_create(){
-    subhelp=$1
-    case $subhelp in
-        "" | "-h" | "--help")
-            _w ""
-            _w "Usage: ${red}$progname create <site_name> [-n|--no-browse] [-r|--repo /path/to/wpstarter/repo]${normal}"
-            _w ""
-            _w "       The site will be created in $SITESDIR."
-            _w "       Use -r to specify different repo path with which you will base the created site on."
-            _w "       If not defined, default wpstarter repository will be" 
-            _w "       searched in \"$WPSTARTERDIR\"."
-            _w ""
-            return
-            ;;
-    esac
+    if [[ $SUBHELP ]]; then
+        _w ""
+        _w "Usage: ${red}$progname create <site_name> [-n|--no-browse] [-r|--repo /path/to/wpstarter/repo]${normal}"
+        _w ""
+        _w "       The site will be created in $SITESDIR."
+        _w "       Use -r to specify different repo path with which you will base the created site on."
+        _w "       If not defined, default wpstarter repository will be" 
+        _w "       searched in \"$WPSTARTERDIR\"."
+        _w ""
+        return
+    fi
 
     if [[ checkDBCredentials ]]; then
         _e "Cannot connect to database using specified credentials."
@@ -989,28 +965,25 @@ export -f sub_create
 #  sub_lang  #
 ##############
 function sub_lang(){
-    subhelp=$1
-    case $subhelp in
-        "" | "-h" | "--help")
-            _w "Usage: $progname lang <site_name> <language_code>"
-            _w ""
-            _w "       Install and activate language support for <site_name>."
-            _w ""
-            _w "       Available languages:"
-            _w ""
-            _w "       af ar ary as az azb bel bg_BG bn_BD bo bs_BA ca ceb ckb cs_CZ cy da_DK"
-            _w "       de_AT de_CH de_CH_informal de_DE de_DE_formal dsb dzo el en_AU en_CA en_GB"
-            _w "       en_NZ en_US en_ZA eo es_AR es_CL es_CO es_CR es_EC es_ES es_GT es_MX es_PE"
-            _w "       es_PR es_UY es_VE et eu fa_AF fa_IR fi fr_BE fr_CA fr_FR fur gd gl_ES gu"
-            _w "       haz he_IL hi_IN hr hsb hu_HU hy id_ID is_IS it_IT ja jv_ID kab ka_GE kk km"
-            _w "       kn ko_KR lo lt_LT lv mk_MK ml_IN mn mr ms_MY my_MM nb_NO ne_NP nl_BE nl_NL"
-            _w "       nl_NL_formal nn_NO oci pa_IN pl_PL ps pt_AO pt_BR pt_PT pt_PT_ao90 rhg"
-            _w "       ro_RO ru_RU sah si_LK skr sk_SK sl_SI snd sq sr_RS sv_SE sw szl tah ta_IN"
-            _w "       ta_LK te th tl tr_TR tt_RU ug_CN uk ur uz_UZ vi zh_CN zh_HK zh_TW"
-            _w ""
-            return
-            ;;
-    esac
+    if [[ $SUBHELP ]]; then
+        _w "Usage: $progname lang <site_name> <language_code>"
+        _w ""
+        _w "       Install and activate language support for <site_name>."
+        _w ""
+        _w "       Available languages:"
+        _w ""
+        _w "       af ar ary as az azb bel bg_BG bn_BD bo bs_BA ca ceb ckb cs_CZ cy da_DK"
+        _w "       de_AT de_CH de_CH_informal de_DE de_DE_formal dsb dzo el en_AU en_CA en_GB"
+        _w "       en_NZ en_US en_ZA eo es_AR es_CL es_CO es_CR es_EC es_ES es_GT es_MX es_PE"
+        _w "       es_PR es_UY es_VE et eu fa_AF fa_IR fi fr_BE fr_CA fr_FR fur gd gl_ES gu"
+        _w "       haz he_IL hi_IN hr hsb hu_HU hy id_ID is_IS it_IT ja jv_ID kab ka_GE kk km"
+        _w "       kn ko_KR lo lt_LT lv mk_MK ml_IN mn mr ms_MY my_MM nb_NO ne_NP nl_BE nl_NL"
+        _w "       nl_NL_formal nn_NO oci pa_IN pl_PL ps pt_AO pt_BR pt_PT pt_PT_ao90 rhg"
+        _w "       ro_RO ru_RU sah si_LK skr sk_SK sl_SI snd sq sr_RS sv_SE sw szl tah ta_IN"
+        _w "       ta_LK te th tl tr_TR tt_RU ug_CN uk ur uz_UZ vi zh_CN zh_HK zh_TW"
+        _w ""
+        return
+    fi
 
     LANG_ARR=(af ar ary as az azb bel bg_BG bn_BD bo bs_BA ca ceb ckb cs_CZ cy
         da_DK de_AT de_CH de_CH_informal de_DE de_DE_formal dsb dzo el en_AU en_CA
@@ -1082,18 +1055,6 @@ export -f sub_lang
 #  sub_quick  #
 ###############
 function sub_quick(){
-    # subhelp=$1
-    # case $subhelp in
-    #     "-h" | "--help")
-    #         _w "Usage: $progname quick [-n|--no-browse]"
-    #         _w ""
-    #         _w "       Quickly create a random site by restoring the boilerplate backup."
-    #         _w "       You can create the boilerplate backup using \"wpsite boilerplate\""
-    #         _w "       if it does not exist."
-    #         _w ""
-    #         return
-    #         ;;
-    # esac
     if [[ $SUBHELP ]]; then
         _w "Usage: $progname quick [-n|--no-browse]"
         _w ""
@@ -1135,17 +1096,14 @@ export -f sub_quick
 #  sub_admin  #
 ###############
 function sub_admin(){
-    subhelp=$1
-    case $subhelp in
-        "-h" | "--help")
-            _w "Usage: $progname admin <site_name>"
-            _w ""
-            _w "       Open specified site's dashboard in browser."
-            _w "       It will be searched in \"$SITESDIR\"."
-            _w ""
-            return
-            ;;
-    esac
+    if [[ $SUBHELP ]]; then
+        _w "Usage: $progname admin <site_name>"
+        _w ""
+        _w "       Open specified site's dashboard in browser."
+        _w "       It will be searched in \"$SITESDIR\"."
+        _w ""
+        return
+    fi
 
     DOCROOT="$1"
 
@@ -1189,17 +1147,14 @@ export -f sub_admin
 #  sub_last  #
 ##############
 function sub_last(){
-    subhelp=$1
-    case $subhelp in
-        "-h" | "--help")
-            _w "Usage: $progname last"
-            _w ""
-            _w "       Open the most recently created site's dashboard in browser."
-            _w "       It will be searched in \"$SITESDIR\"."
-            _w ""
-            return
-            ;;
-    esac
+    if [[ $SUBHELP ]]; then
+        _w "Usage: $progname last"
+        _w ""
+        _w "       Open the most recently created site's dashboard in browser."
+        _w "       It will be searched in \"$SITESDIR\"."
+        _w ""
+        return
+    fi
 
     # FIXME: Use find -printf thing instead of ls
     # SITE=$( find "$SITESDIR"/ \
@@ -1219,17 +1174,14 @@ export -f sub_last
 #  sub_fm  #
 ############
 function sub_fm(){
-    subhelp=$1
-    case $subhelp in
-        "" | "-h" | "--help")
-            _w "Usage: $progname fm <site_name>"
-            _w ""
-            _w "       Open site root directory in file manager."
-            _w "       Sites will be searched in \"$SITESDIR\"."
-            _w ""
-            return
-            ;;
-    esac
+    if [[ $SUBHELP ]]; then
+        _w "Usage: $progname fm <site_name>"
+        _w ""
+        _w "       Open site root directory in file manager."
+        _w "       Sites will be searched in \"$SITESDIR\"."
+        _w ""
+        return
+    fi
 
     FM=$(command -v ranger)
     if [ ! $? ]; then
@@ -1267,18 +1219,15 @@ export -f sub_fm
 ####################
 #  sub_clone-repo  #
 ####################
-function sub_clone-repo(){
-    subhelp=$1
-    case $subhelp in
-        "-h" | "--help")
-            _w "Usage: $progname clone-repo"
-            _w ""
-            _w "       Download wpstarter source repository."
-            _w "       It will be cloned to \"${purple}$WPSTARTERDIR${normal}\"."
-            _w ""
-            return
-            ;;
-    esac
+function sub_clone-repo() {
+    if [[ $SUBHELP ]]; then
+        _w "Usage: $progname clone-repo"
+        _w ""
+        _w "       Download wpstarter source repository."
+        _w "       It will be cloned to \"${purple}$WPSTARTERDIR${normal}\"."
+        _w ""
+        return
+    fi
 
     if [[ ! -d "$WPSTARTERDIR" ]]; then
         $GIT clone https://github.com/tricarte/wpready3 "$WPSTARTERDIR" && \
@@ -1304,16 +1253,13 @@ export -f sub_clone-repo
 #  sub_install-theme  #
 #######################
 function sub_install-theme(){
-    subhelp=$1
-    case $subhelp in
-        "-h" | "--help")
-            _w "Usage: $progname install-theme <site> <theme-slug>"
-            _w ""
-            _w "       Install theme to the specified site and activate it."
-            _w ""
-            return
-            ;;
-    esac
+    if [[ $SUBHELP ]]; then
+        _w "Usage: $progname install-theme <site> <theme-slug>"
+        _w ""
+        _w "       Install theme to the specified site and activate it."
+        _w ""
+        return
+    fi
 
     DOCROOT=$1
     THEME_NAME=$2
@@ -1355,16 +1301,13 @@ export -f sub_install-theme
 #  sub_install-plugin  #
 ########################
 function sub_install-plugin(){
-    subhelp=$1
-    case $subhelp in
-        "-h" | "--help")
-            _w "Usage: $progname install-plugin <site> <plugin-slug>"
-            _w ""
-            _w "       Install plugin to the specified site and activate it."
-            _w ""
-            return
-            ;;
-    esac
+    if [[ $SUBHELP ]]; then
+        _w "Usage: $progname install-plugin <site> <plugin-slug>"
+        _w ""
+        _w "       Install plugin to the specified site and activate it."
+        _w ""
+        return
+    fi
 
     DOCROOT=$1
     PLUGIN_NAME=$2
@@ -1406,16 +1349,13 @@ export -f sub_install-plugin
 #  sub_woo  #
 #############
 function sub_woo(){
-    subhelp=$1
-    case $subhelp in
-        "-h" | "--help")
-            _w "Usage: $progname woo"
-            _w ""
-            _w "       Create a WooCommerce site quickly."
-            _w ""
-            return
-            ;;
-    esac
+    if [[ $SUBHELP ]]; then
+        _w "Usage: $progname woo"
+        _w ""
+        _w "       Create a WooCommerce site quickly."
+        _w ""
+        return
+    fi
 
     DOCROOT=$RANDOM
 
@@ -1429,16 +1369,14 @@ export -f sub_woo
 #  sub_settings  #
 ##################
 function sub_settings(){
-    subhelp=$1
-    case $subhelp in
-        "-h" | "--help")
-            _w "Usage: $progname settings <site_name>"
-            _w ""
-            _w "       Interactively change necessary WP settings that are set generically at the site installation."
-            _w ""
-            return
-            ;;
-    esac
+    if [[ $SUBHELP ]]; then
+        _w "Usage: $progname settings <site_name>"
+        _w ""
+        _w "       Interactively change necessary WP settings"
+        _w "       that are generically set at the site installation."
+        _w ""
+        return
+    fi
 
     DOCROOT=$1
 
@@ -1585,16 +1523,13 @@ export -f sub_settings
 #  sub_flush-env  #
 ###############
 function sub_flush-env(){
-    subhelp=$1
-    case $subhelp in
-        "-h" | "--help")
+    if [[ $SUBHELP ]]; then
             _w "Usage: $progname flush-env <site_name>"
             _w ""
             _w "       Delete and rebuild .env.cached.php file of a site."
             _w ""
             return
-            ;;
-    esac
+    fi
 
     DOCROOT="$1"
 
@@ -1619,16 +1554,13 @@ export -f sub_flush-env
 #  sub_create-config  #
 #######################
 function sub_create-config(){
-    subhelp=$1
-    case $subhelp in
-        "-h" | "--help")
+    if [[ $SUBHELP ]]; then
             _w "Usage: $progname create-config"
             _w ""
             _w "       Create .wpsiterc config file in $HOME."
             _w ""
             return
-            ;;
-    esac
+    fi
 
     DOCROOT="$1"
 
