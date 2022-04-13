@@ -19,7 +19,7 @@
 DBUSER="root"
 DBPASS="vagrant"
 
-# Where to host sites using valet-linux
+# Where to host sites 
 SITESDIR="$HOME/sites"
 
 # Where to store/retore backups
