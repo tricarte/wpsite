@@ -1611,3 +1611,23 @@ case $subcommand in
         fi
         ;;
 esac
+
+# function sub_functionName(){
+#     if [[ $SUBHELP ]]; then
+#             _w "Usage: $progname function_name"
+#             _w ""
+#             _w "       Usage help."
+#             _w ""
+#             return
+#     fi
+#
+#     DOCROOT="$1"
+#
+#     if [[ ! -d "$SITESDIR/$DOCROOT" ]]; then
+#         _e "Err: \"$DOCROOT\" does not exist."
+#         return 1
+#     fi
+#
+#     return
+# }
+# export -f sub_functionName
