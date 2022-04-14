@@ -33,9 +33,6 @@ Source the included completion file from your bashrc file.
 source "$HOME/repos/wpsite/.wpsite-completion.bash"
 ```
 
-Finally open the script in your favorite text editor and edit the MySQL/MariaDB
-credentials.
-
 ## Commands
 
 | Command        | Description |
