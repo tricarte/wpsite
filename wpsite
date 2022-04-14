@@ -341,16 +341,16 @@ function sub_boilerplate(){
     fi
 
     if [[ -d "$SITESDIR/boiler" ]]; then
-        wpsite delete boiler
+        $progname delete boiler
     fi
     _w "Temporary site ${purple}\"boiler\"${normal} is being created..."
-    wpsite create boiler -n
+    $progname create boiler -n
     # wpsite create boiler -n > /dev/null 2>&1 && \
     _w "Backing up ${purple}\"boiler\"${normal} for later use..."
-    wpsite backup boiler
+    $progname backup boiler
     # wpsite backup boiler > /dev/null 2>&1 && \
     _w "Removing temporary site..."
-    wpsite delete boiler -y
+    $progname delete boiler -y
     # wpsite delete boiler  -y > /dev/null 2>&1
 
     # Delete everything but the last backup.
@@ -1069,7 +1069,7 @@ function sub_quick(){
     if [[ -n "$NOTIFYBIN" ]]; then
         $NOTIFYBIN -a WPSITE "Site $SITENAME is being created." "Please wait..."
     fi
-    wpsite restore boiler $SITENAME -n
+    $progname restore boiler $SITENAME -n
 
     if [[ -n "$INSTALL_PLUGIN" ]] ; then
         $progname install-plugin "$SITENAME" "$INSTALL_PLUGIN"
