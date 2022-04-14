@@ -17,6 +17,12 @@ git clone "https://github.com/tricarte/wpready3" "$HOME/repos/wpready3"
 chmod +x "$HOME/repos/wpsite/wpsite"
 sudo ln -s "$HOME/repos/wpsite/wpsite" "/usr/local/bin/wpsite"
 ```
+Create config
+```
+wpsite config
+```
+Now edit the file ".wpsiterc" in $HOME to set DB credentials.
+
 If 'wpsite' is too long to type!
 ```
 sudo ln -s "$HOME/bin/wpsite" "/usr/local/bin/wps"
