@@ -1582,6 +1582,8 @@ function sub_config(){
     if [[ ! -f "$HOME/.wpsiterc" ]]; then
         echo "
 # Uncomment the line to make a change.
+# These are the defaults. 
+# Most of the time you only have to change db credentials.
 
 # MySQL/MariaDB credentials
 # DBUSER=\"root\"
