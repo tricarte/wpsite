@@ -135,13 +135,32 @@ fi
 WORKING_DIR_ORIGINAL="$(pwd)"
 
 function checkDBCredentials() {
-    if $MYSQLBIN -u$DBUSER -p$DBPASS -e"quit" > /dev/null 2>&1; then
-        true
-        return
+    if [[ $1 == 'wpstarter' ]]; then
+        # Check DB credentials in wpstarter repo
+        if [[ -d "$WPSTARTERDIR" ]]; then
+            eval $(grep DB_USER "$WPSTARTERDIR/custom-templates/.env.example")
+            eval $(grep DB_PASSWORD "$WPSTARTERDIR/custom-templates/.env.example")
+            if $MYSQLBIN -u$DB_USER -p$DB_PASSWORD -e"quit" > /dev/null 2>&1; then
+                true
+                return
+            else
+                false
+                return
+            fi
+        else
+            false
+            return
+        fi
     else
-        false
-        return
+        if $MYSQLBIN -u$DBUSER -p$DBPASS -e"quit" > /dev/null 2>&1; then
+            true
+            return
+        else
+            false
+            return
+        fi
     fi
+
 }
 
 function createTmpDir() {
@@ -296,7 +315,7 @@ function sub_default(){
     _w "    ${purple}woo${normal}             Do a quick WooCommerce installation with StoreFront theme."
     _w "    ${purple}settings${normal}        Interactively change necessary WP settings that are set generically at the site installation."
     _w "    ${purple}flush-env${normal}       Delete and rebuild .env.cached.php file of a site."
-    _w "    ${purple}create-config${normal}   Create .wpsiterc config file in $HOME."
+    _w "    ${purple}config${normal}   Create .wpsiterc config file in $HOME."
     _w ""
     _w "For help with each subcommand run:"
     _w "${purple}$progname <subcommand> -h|--help${normal}"
@@ -501,12 +520,12 @@ function sub_restore(){
     createTmpDir
 
     if [[ -n $NEWDOCROOT ]]; then
-            mysql -u $DBUSER -p$DBPASS "$NEWDOCROOT" -e exit > /dev/null 2>&1 && \
+            $MYSQLBIN -u $DBUSER -p$DBPASS "$NEWDOCROOT" -e exit > /dev/null 2>&1 && \
                 _e "Err: A database with the same new name already exists." && \
                 return 1
-            mysql -u $DBUSER -p$DBPASS -e"CREATE DATABASE \`$NEWDOCROOT\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" && \
+            $MYSQLBIN -u $DBUSER -p$DBPASS -e"CREATE DATABASE \`$NEWDOCROOT\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" && \
                 _w "Creating the database $NEWDOCROOT... DONE."
-            gunzip < "$BACKUPSDIR/$DOCROOT/$LATEST_BACKUP/database.sql.gz" | mysql -u $DBUSER -p$DBPASS "$NEWDOCROOT" && \
+            gunzip < "$BACKUPSDIR/$DOCROOT/$LATEST_BACKUP/database.sql.gz" | $MYSQLBIN -u $DBUSER -p$DBPASS "$NEWDOCROOT" && \
                 _w "Importing the database backup... DONE."
             tar zxf "$BACKUPSDIR/$DOCROOT/$LATEST_BACKUP/files.tar.gz" --checkpoint=.1000 -C "$tmpDir" && \
                 _w "" && _w "Extracting files from backup... DONE."
@@ -516,7 +535,7 @@ function sub_restore(){
                 _e "Err: wpstarter.json could not be found in the backup."
                 _e "This may not be a wpstarter project. Aborting..."
                 rm -rf "$tmpDir/${DOCROOT:?}"
-                mysql -u $DBUSER -p$DBPASS -e "DROP DATABASE IF EXISTS $NEWDOCROOT"
+                $MYSQLBIN -u $DBUSER -p$DBPASS -e "DROP DATABASE IF EXISTS $NEWDOCROOT"
                 _w "Changes reverted. No backup is restored."
                 return 1
             fi
@@ -525,22 +544,22 @@ function sub_restore(){
             replace -s "$DOCROOT" "$NEWDOCROOT" -- "$SITESDIR/$NEWDOCROOT/.env"
             rm -f "$SITESDIR/$NEWDOCROOT/.env.cached.php"
             cd "$SITESDIR/$NEWDOCROOT/public" || exit
-            wp search-replace "$DOCROOT" "$NEWDOCROOT" > /dev/null 2>&1
+            $WP --skip-plugins search-replace "$DOCROOT" "$NEWDOCROOT" > /dev/null 2>&1
             _w "Performing search-replace in WordPress DB... DONE."
-            wp --skip-mail user update usr"$NEWDOCROOT" --user_pass=pss"$NEWDOCROOT" > /dev/null 2>&1
+            $WP --skip-plugins --skip-mail user update usr"$NEWDOCROOT" --user_pass=pss"$NEWDOCROOT" > /dev/null 2>&1
             _w "Updating the admin user... DONE."
             rm -f "$SITESDIR/$NEWDOCROOT/public/content/db.php"
-            wp plugin deactivate query-monitor > /dev/null 2>&1
-            wp plugin activate query-monitor > /dev/null 2>&1
+            $WP --skip-plugins plugin deactivate query-monitor > /dev/null 2>&1
+            $WP --skip-plugins plugin activate query-monitor > /dev/null 2>&1
 
             FINALDIR=$NEWDOCROOT
         else
-            mysql -u $DBUSER -p$DBPASS "$DOCROOT" -e exit > /dev/null 2>&1 && \
+            $MYSQLBIN -u $DBUSER -p$DBPASS "$DOCROOT" -e exit > /dev/null 2>&1 && \
                 _e "Err: A database with the same name already exists." && \
                 return 1
-            mysql -u $DBUSER -p$DBPASS -e"CREATE DATABASE \`$DOCROOT\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" && \
+            $MYSQLBIN -u $DBUSER -p$DBPASS -e"CREATE DATABASE \`$DOCROOT\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" && \
                 _w "Creating the dabase $DOCROOT... DONE."
-            gunzip < "$BACKUPSDIR/$DOCROOT/$LATEST_BACKUP/database.sql.gz" | mysql -u $DBUSER -p$DBPASS "$DOCROOT" && \
+            gunzip < "$BACKUPSDIR/$DOCROOT/$LATEST_BACKUP/database.sql.gz" | $MYSQLBIN -u $DBUSER -p$DBPASS "$DOCROOT" && \
                 _w "Importing the database backup... DONE."
             tar zxf "$BACKUPSDIR/$DOCROOT/$LATEST_BACKUP/files.tar.gz" --checkpoint=.1000 -C "$SITESDIR" && \
                 _w "" && _w "Extracting files from backup... DONE."
@@ -550,7 +569,7 @@ function sub_restore(){
                 _e "Err: wpstarter.json could not be found in the backup."
                 _e "This may not be a wpstarter project. Aborting..."
                 rm -rf "${SITESDIR:?}/${DOCROOT:?}"
-                mysql -u $DBUSER -p$DBPASS -e "DROP DATABASE IF EXISTS $DOCROOT"
+                $MYSQLBIN -u $DBUSER -p$DBPASS -e "DROP DATABASE IF EXISTS $DOCROOT"
                 _w "Changes reverted. No backup is restored."
                 return 1
             fi
@@ -739,7 +758,7 @@ function sub_backup(){
     mkdir -p "$BACKUPSDIR/$DOCROOT/$TSTAMP"
 
     _w "Exporting database..."
-    $WP db export \
+    $WP --skip-plugins db export \
         --path="$SITESDIR/$DOCROOT/public/cms" \
         - | gzip > "$BACKUPSDIR/$DOCROOT/$TSTAMP/database.sql.gz" && \
         _w "Exporting database DONE"
@@ -1033,8 +1052,8 @@ function sub_lang(){
             return 1
         else
             _w "Installing language $WPLANG..."
-            wp language core install "$WPLANG" > /dev/null 2>&1
-            wp site switch-language "$WPLANG" > /dev/null 2>&1
+            $WP --skip-plugins language core install "$WPLANG" > /dev/null 2>&1
+            $WP --skip-plugins site switch-language "$WPLANG" > /dev/null 2>&1
         fi
     else
         _e "You didn't specify a language code."
@@ -1546,12 +1565,12 @@ function sub_flush-env(){
 }
 export -f sub_flush-env
 
-#######################
-#  sub_create-config  #
-#######################
-function sub_create-config(){
+################
+#  sub_config  #
+################
+function sub_config(){
     if [[ $SUBHELP ]]; then
-            _w "Usage: $progname create-config"
+            _w "Usage: $progname config"
             _w ""
             _w "       Create .wpsiterc config file in $HOME."
             _w ""
@@ -1589,8 +1608,11 @@ function sub_create-config(){
 
     return
 }
-export -f sub_create-config
+export -f sub_config
 
+##############
+#  sub_test  #
+##############
 function sub_test(){
     if [[ $SUBHELP ]]; then
             _w "Usage: $progname test"
@@ -1601,12 +1623,18 @@ function sub_test(){
     fi
 
     if checkDBCredentials; then
-        _w "DB connection succeded."
+        _w "DB credentials in $HOME/.wpsiterc are correct."
     else
-        _e "Cannot connect to database using specified credentials."
-        _e "Check \".wpsiterc\" in $HOME"
-        _e "or issue the command \"$progname create-config\" if not exists."
-        return 1
+        _e "Cannot connect to database using specified credentials in $HOME/.wpsiterc."
+        _e "Check \".wpsiterc\" in $HOME."
+        _e "or issue the command \"$progname config\" if not exists."
+    fi
+
+    if checkDBCredentials wpstarter; then
+        _w "DB credentials in $WPSTARTERDIR/custom-templates/.env.example are correct"
+    else
+        _w ""
+        _e "Cannot connect to database using specified credentials in $WPSTARTERDIR/custom-templates/.env.example."
     fi
 
     return
