@@ -137,7 +137,7 @@ WORKING_DIR_ORIGINAL="$(pwd)"
 
 function checkDBCredentials() {
     $MYSQLBIN -u$DBUSER -p$DBPASS -e"quit" > /dev/null 2>&1 
-    if [[ ! $? ]]; then
+    if [[ $? == 0 ]]; then
         true
         return
     else
@@ -500,7 +500,7 @@ function sub_restore(){
         return 1
     fi
 
-    if [[ ! checkDBCredentials ]]; then
+    if ! checkDBCredentials; then
         _e "Cannot connect to database using specified credentials."
         _e "Run $progname for help."
         return 1
@@ -871,7 +871,7 @@ function sub_create(){
         return
     fi
 
-    if [[ ! checkDBCredentials ]]; then
+    if ! checkDBCredentials; then
         _e "Cannot connect to database using specified credentials."
         _e "Run $progname for help."
         exit 1
@@ -1602,6 +1602,28 @@ function sub_create-config(){
     return
 }
 export -f sub_create-config
+
+function sub_test(){
+    if [[ $SUBHELP ]]; then
+            _w "Usage: $progname test"
+            _w ""
+            _w "       Make a connection to DB to test user credentials stored in \"~/.wpsiterc\"."
+            _w ""
+            return
+    fi
+
+    if checkDBCredentials; then
+        _w "DB connection succeded."
+    else
+        _e "Cannot connect to database using specified credentials."
+        _e "Check \".wpsiterc\" in $HOME"
+        _e "or issue the command \"$progname create-config\" if not exists."
+        return 1
+    fi
+
+    return
+}
+export -f sub_test
 
 case $subcommand in
     "" | "-h" | "--help" | "help")
