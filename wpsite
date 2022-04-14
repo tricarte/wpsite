@@ -136,10 +136,12 @@ fi
 WORKING_DIR_ORIGINAL="$(pwd)"
 
 function checkDBCredentials() {
-    $MYSQLBIN -u $DBUSER -p$DB_PASSWORD -e"quit" > /dev/null 2>&1 
-    if [[ $? ]]; then
-        return 1
+    $MYSQLBIN -u$DBUSER -p$DBPASS -e"quit" > /dev/null 2>&1 
+    if [[ ! $? ]]; then
+        true
+        return
     else
+        false
         return
     fi
 }
@@ -498,7 +500,7 @@ function sub_restore(){
         return 1
     fi
 
-    if [[ checkDBCredentials ]]; then
+    if [[ ! checkDBCredentials ]]; then
         _e "Cannot connect to database using specified credentials."
         _e "Run $progname for help."
         return 1
@@ -612,7 +614,7 @@ function sub_rename(){
         fi
     elif [[ -z $DOCROOT ]]; then
         _e "Err: Specify an existing site to rename. It will be searched in $SITESDIR."
-        _e "See $progname -h for help."
+        _e "See \"$progname rename -h\" for help."
         return 1
     fi
 
@@ -676,7 +678,8 @@ function sub_backup(){
     if [[ $SUBHELP ]]; then
         _w "Usage: $progname backup <site_name> [-p|--purge]"
         _w ""
-        _w "       The directory <site_name> in $SITESDIR will be backed up to $BACKUPSDIR."
+        _w "       The directory <site_name> in $SITESDIR"
+        _w "       will be backed up to $BACKUPSDIR."
         _w "       To delete older backups of <site_name> use --purge option."
         _w ""
         return
@@ -685,19 +688,21 @@ function sub_backup(){
     # Check if any argument is provided
     DOCROOT=$1
 
-    if [[ $DOCROOT == "last" ]] ; then
+    if [[ $DOCROOT == "last" ]]; then
         DOCROOT="$(findLastSite)"
     fi
 
-    # If number of arguments is 0 and current directory is a
-    # wpstarter installation, then use as $DOCROOT
-    if [[ $# == 0 ]] ; then
+    # If number of arguments is 0 and current directory is
+    # a wpstarter installation, then use as $DOCROOT
+    if [[ $# == 0 ]]; then
         if [[ -f "$WORKING_DIR_ORIGINAL/wpstarter.json" ]]; then
             DOCROOT=$(basename $WORKING_DIR_ORIGINAL)
         fi
-    elif [[ -z $DOCROOT ]]; then
+    fi
+
+    if [[ -z $DOCROOT ]]; then
         _e "Err: Specify a site to backup."
-        _e "See $progname -h for help."
+        _e "See \"$progname backup -h\" for help."
         return 1
     fi
 
@@ -857,17 +862,19 @@ function sub_create(){
         _w "Usage: ${red}$progname create <site_name> [-n|--no-browse] [-r|--repo /path/to/wpstarter/repo]${normal}"
         _w ""
         _w "       The site will be created in $SITESDIR."
-        _w "       Use -r to specify different repo path with which you will base the created site on."
+        _w "       Use -r to specify different repo path"
+        _w "       with which you will base the created site on."
+        _w ""
         _w "       If not defined, default wpstarter repository will be" 
         _w "       searched in \"$WPSTARTERDIR\"."
         _w ""
         return
     fi
 
-    if [[ checkDBCredentials ]]; then
+    if [[ ! checkDBCredentials ]]; then
         _e "Cannot connect to database using specified credentials."
         _e "Run $progname for help."
-        return 1
+        exit 1
     fi
 
     if [[ -n "$REPO_PATH" ]] && [[ -d "$REPO_PATH" ]] ; then
@@ -893,8 +900,9 @@ function sub_create(){
     fi
 
     if [[ -z $DOCROOT ]]; then
-        _e "Err: Specify a directory name. The site will be created in \"$SITESDIR\"."
-        _e "See $progname -h for help."
+        _e "Err: Specify a directory name."
+        _e "The site will be created in \"$SITESDIR\"."
+        _e "See \"$progname create -h\" for help."
         return 1
     fi
 
@@ -1011,7 +1019,7 @@ function sub_lang(){
         fi
     elif [[ -z $DOCROOT ]]; then
         _e "Err: Specify a site to install the language."
-        _e "See $progname -h for help."
+        _e "See \"$progname lang -h\" for help."
         return 1
     fi
 
@@ -1119,7 +1127,7 @@ function sub_admin(){
         fi
     elif [[ -z $DOCROOT ]]; then
         _e "Err: Specify a directory name to open."
-        _e "See $progname -h for help."
+        _e "See $progname admin -h for help."
         return 1
     fi
 
@@ -1202,7 +1210,7 @@ function sub_fm(){
         fi
     elif [[ -z $DOCROOT ]]; then
         _e "Err: Specify a directory name to browse with the file manager."
-        _e "See $progname -h for help."
+        _e "See $progname fm -h for help."
         return 1
     fi
 
@@ -1277,7 +1285,7 @@ function sub_install-theme(){
         fi
     elif [[ -z $DOCROOT ]]; then
         _e "Err: Specify a site to install the theme."
-        _e "See $progname -h for help."
+        _e "See \"$progname install-theme -h\" for help."
         return 1
     fi
 
@@ -1325,7 +1333,7 @@ function sub_install-plugin(){
         fi
     elif [[ -z $DOCROOT ]]; then
         _e "Err: Specify a site to install the plugin."
-        _e "See $progname -h for help."
+        _e "See \"$progname install-plugin -h\" for help."
         return 1
     fi
 
@@ -1382,7 +1390,7 @@ function sub_settings(){
 
     if [[ -z $DOCROOT ]]; then
         _e "Err: Specify a directory name. The site will be searched in \"$SITESDIR\"."
-        _e "See $progname -h for help."
+        _e "See \"$progname settings -h\" for help."
         return 1
     fi
 
