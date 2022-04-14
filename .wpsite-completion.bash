@@ -26,7 +26,7 @@ _pbt_complete()
     case "$prev" in
         # FIXME: This does not handle "wpsite delete site1 site2"
         # site2 will not be completed.
-      "delete"|"backup"|"update"|"lang"|"admin"|"fm"|"rename"|"install-theme"|"install-plugin"|"flush-env")
+      "delete"|"backup"|"update"|"lang"|"admin"|"fm"|"rename"|"install-theme"|"install-plugin"|"flush-env"|"settings")
           FD=$(command -v fd)
           if [ ! $? ]; then
               COMPREPLY=($( compgen -W "$($FD wpstarter.json --max-depth 2 --type f --base-directory $SITESDIR --color never --exec dirname)" -- $cur ) )
