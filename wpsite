@@ -136,8 +136,7 @@ fi
 WORKING_DIR_ORIGINAL="$(pwd)"
 
 function checkDBCredentials() {
-    $MYSQLBIN -u$DBUSER -p$DBPASS -e"quit" > /dev/null 2>&1 
-    if [[ $? == 0 ]]; then
+    if $MYSQLBIN -u$DBUSER -p$DBPASS -e"quit" > /dev/null 2>&1; then
         true
         return
     else
@@ -871,12 +870,6 @@ function sub_create(){
         return
     fi
 
-    if ! checkDBCredentials; then
-        _e "Cannot connect to database using specified credentials."
-        _e "Run $progname for help."
-        exit 1
-    fi
-
     if [[ -n "$REPO_PATH" ]] && [[ -d "$REPO_PATH" ]] ; then
         WPSTARTERDIR=$REPO_PATH
     fi
@@ -904,6 +897,12 @@ function sub_create(){
         _e "The site will be created in \"$SITESDIR\"."
         _e "See \"$progname create -h\" for help."
         return 1
+    fi
+
+    if ! checkDBCredentials; then
+        _e "Cannot connect to database using specified credentials."
+        _e "Run $progname for help."
+        exit 1
     fi
 
     # Exit if directory already exists.
@@ -1625,18 +1624,20 @@ function sub_test(){
 }
 export -f sub_test
 
+##########################
+#  sub_command handling  #
+##########################
 case $subcommand in
     "" | "-h" | "--help" | "help")
         sub_default
         ;;
     *)
         shift
-        "sub_${subcommand}" "$@"
-        # FIXME: Below will not run with "set -eo" directive.
-        if [ $? = 127 ]; then
+        if [[ "$(type -t "sub_${subcommand}")" == 'function' ]]; then
+            "sub_${subcommand}" "$@"
+        else
             _e "Error: '$subcommand' is not a known subcommand." >&2
             _e "Run '$progname --help' for a list of known subcommands." >&2
-            _w ""
             exit 1
         fi
         ;;
