@@ -494,7 +494,7 @@ function sub_restore(){
 
     if ! checkDBCredentials; then
         _e "Cannot connect to database using specified credentials."
-        _e "Run $progname for help."
+        _e "Run $progname test for help."
         return 1
     fi
 
@@ -886,7 +886,7 @@ function sub_create(){
 
     if ! checkDBCredentials; then
         _e "Cannot connect to database using specified credentials."
-        _e "Run $progname for help."
+        _e "Run $progname test for help."
         exit 1
     fi
 
@@ -915,6 +915,17 @@ function sub_create(){
         mkdir -p "$SITESDIR"
     fi
 
+    # Check DB credentials in wpstarter repo
+    eval $(grep DB_USER "$WPSTARTERDIR/custom-templates/.env.example")
+    eval $(grep DB_PASSWORD "$WPSTARTERDIR/custom-templates/.env.example")
+    if ! $MYSQLBIN -u$DB_USER -p$DB_PASSWORD -e"quit" > /dev/null 2>&1; then
+        _e "Err: Cannot connect to DB."
+        _w "DB Credentials in $WPSTARTERDIR/custom-template/.env.example"        
+        _w "is not correct."
+        _e "Installation aborted."
+        exit 1
+    fi
+
     if [[ -n "$NOTIFYBIN" ]]; then
         $NOTIFYBIN -a WPSITE "$DOCROOT is being created..."
     fi
@@ -924,8 +935,7 @@ function sub_create(){
     $GIT clone "$WPSTARTERDIR" "$DOCROOT"
     cd "$DOCROOT" || exit
     # Add post-merge hook to apply "composer wpstarter" after git pull
-    echo "
-#!/usr/bin/env bash
+    echo "#!/usr/bin/env bash
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"
 composer wpstarter" > ./.git/hooks/post-merge
     chmod +x ./.git/hooks/post-merge
@@ -1211,23 +1221,25 @@ function sub_clone-repo() {
         _w "       Download wpstarter source repository."
         _w "       It will be cloned to \"${purple}$WPSTARTERDIR${normal}\"."
         _w ""
+        _w "       After cloning, ${red}DO NOT FORGET to change DB credentials${red} in"
+        _w "       ${purple}$WPSTARTERDIR/custom-templates/.env.example${purple}."
+        _w ""
         return
     fi
 
     if [[ ! -d "$WPSTARTERDIR" ]]; then
         $GIT clone https://github.com/tricarte/wpready3 "$WPSTARTERDIR" && \
         # Add post-commit hook to run 'composer wpstarter'
-        echo "
-#!/usr/bin/env bash
+        echo "#!/usr/bin/env bash
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"
-composer wpstarter
-" | tee "$WPSTARTERDIR/.git/hooks/post-commit"
+composer wpstarter" > "$WPSTARTERDIR/.git/hooks/post-commit"
         chmod +x "$WPSTARTERDIR/.git/hooks/post-commit"
         _w ""
         _w "\"${purple}$WPSTARTERREPO${normal}\" has been cloned to \"${purple}$WPSTARTERDIR${normal}\"."
+        _w "${red}DO NOT FORGET to change DB credentials${red} in ${purple}$WPSTARTERDIR/custom-templates/.env.example${purple}."
         _w "Now you can use \"wpsite create\" to create a new site."
-            else
-                _w "\"${purple}$WPSTARTERDIR${normal}\" already exists."
+    else
+        _w "\"${purple}$WPSTARTERDIR${normal}\" already exists."
     fi
 
     return
