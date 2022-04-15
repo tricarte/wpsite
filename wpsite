@@ -23,6 +23,10 @@ fi
 if [[ -z $DBUSER ]]; then DBUSER="root"; fi 
 if [[ -z $DBPASS ]]; then DBPASS="vagrant"; fi 
 
+# MySQL/MariaDB Host Settings
+if [[ -z $DBHOST ]]; then DBHOST="localhost"; fi 
+if [[ -z $DBPORT ]]; then DBPORT="3306"; fi 
+
 # Where to host sites 
 if [[ -z $SITESDIR ]]; then SITESDIR="$HOME/sites"; fi 
 
@@ -140,7 +144,7 @@ function checkDBCredentials() {
         if [[ -d "$WPSTARTERDIR" ]]; then
             eval $(grep DB_USER "$WPSTARTERDIR/custom-templates/.env.example")
             eval $(grep DB_PASSWORD "$WPSTARTERDIR/custom-templates/.env.example")
-            if $MYSQLBIN -u$DB_USER -p$DB_PASSWORD -e"quit" > /dev/null 2>&1; then
+            if $MYSQLBIN -P$DBPORT -h$DBHOST -u$DB_USER -p$DB_PASSWORD -e"quit" > /dev/null 2>&1; then
                 true
                 return
             else
@@ -152,7 +156,7 @@ function checkDBCredentials() {
             return
         fi
     else
-        if $MYSQLBIN -u$DBUSER -p$DBPASS -e"quit" > /dev/null 2>&1; then
+        if $MYSQLBIN -P$DBPORT -h$DBHOST -u$DBUSER -p$DBPASS -e"quit" > /dev/null 2>&1; then
             true
             return
         else
@@ -186,13 +190,13 @@ function deleteSite() {
     DB_USER=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" config get DB_USER)
     DB_PASSWORD=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" config get DB_PASSWORD)
 
-    $MYSQLBIN -u$DB_USER -p$DB_PASSWORD -e "DROP DATABASE IF EXISTS \`$1\`"
+    $MYSQLBIN -P$DBPORT -h$DBHOST -u$DB_USER -p$DB_PASSWORD -e "DROP DATABASE IF EXISTS \`$1\`"
 
     # Drop user
-    DELETE_USER=$($MYSQLBIN -Nsr -u$DB_USER -p$DB_PASSWORD -e "SELECT user from mysql.user where user like '$1%'")
+    DELETE_USER=$($MYSQLBIN -P$DBPORT -h$DBHOST -Nsr -u$DB_USER -p$DB_PASSWORD -e "SELECT user from mysql.user where user like '$1%'")
     if [[ -n $DELETE_USER ]]; then
-        $MYSQLBIN -u$DB_USER -p$DB_PASSWORD -e "DROP USER '$DELETE_USER'@'localhost';"
-        $MYSQLBIN -u$DB_USER -p$DB_PASSWORD -e "FLUSH PRIVILEGES;"
+        $MYSQLBIN -P$DBPORT -h$DBHOST -u$DB_USER -p$DB_PASSWORD -e "DROP USER '$DELETE_USER'@'localhost';"
+        $MYSQLBIN -P$DBPORT -h$DBHOST -u$DB_USER -p$DB_PASSWORD -e "FLUSH PRIVILEGES;"
     fi
     
     rm -rf "${SITESDIR:?}/${1:?}"
@@ -520,12 +524,12 @@ function sub_restore(){
     createTmpDir
 
     if [[ -n $NEWDOCROOT ]]; then
-            $MYSQLBIN -u $DBUSER -p$DBPASS "$NEWDOCROOT" -e exit > /dev/null 2>&1 && \
+            $MYSQLBIN -P$DBPORT -h$DBHOST -u $DBUSER -p$DBPASS "$NEWDOCROOT" -e exit > /dev/null 2>&1 && \
                 _e "Err: A database with the same new name already exists." && \
                 return 1
-            $MYSQLBIN -u $DBUSER -p$DBPASS -e"CREATE DATABASE \`$NEWDOCROOT\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" && \
+            $MYSQLBIN -P$DBPORT -h$DBHOST -u $DBUSER -p$DBPASS -e"CREATE DATABASE \`$NEWDOCROOT\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" && \
                 _w "Creating the database $NEWDOCROOT... DONE."
-            gunzip < "$BACKUPSDIR/$DOCROOT/$LATEST_BACKUP/database.sql.gz" | $MYSQLBIN -u $DBUSER -p$DBPASS "$NEWDOCROOT" && \
+            gunzip < "$BACKUPSDIR/$DOCROOT/$LATEST_BACKUP/database.sql.gz" | $MYSQLBIN -P$DBPORT -h$DBHOST -u $DBUSER -p$DBPASS "$NEWDOCROOT" && \
                 _w "Importing the database backup... DONE."
             tar zxf "$BACKUPSDIR/$DOCROOT/$LATEST_BACKUP/files.tar.gz" --checkpoint=.1000 -C "$tmpDir" && \
                 _w "" && _w "Extracting files from backup... DONE."
@@ -535,7 +539,7 @@ function sub_restore(){
                 _e "Err: wpstarter.json could not be found in the backup."
                 _e "This may not be a wpstarter project. Aborting..."
                 rm -rf "$tmpDir/${DOCROOT:?}"
-                $MYSQLBIN -u $DBUSER -p$DBPASS -e "DROP DATABASE IF EXISTS $NEWDOCROOT"
+                $MYSQLBIN -P$DBPORT -h$DBHOST -u $DBUSER -p$DBPASS -e "DROP DATABASE IF EXISTS $NEWDOCROOT"
                 _w "Changes reverted. No backup is restored."
                 return 1
             fi
@@ -554,12 +558,12 @@ function sub_restore(){
 
             FINALDIR=$NEWDOCROOT
         else
-            $MYSQLBIN -u $DBUSER -p$DBPASS "$DOCROOT" -e exit > /dev/null 2>&1 && \
+            $MYSQLBIN -P$DBPORT -h$DBHOST -u $DBUSER -p$DBPASS "$DOCROOT" -e exit > /dev/null 2>&1 && \
                 _e "Err: A database with the same name already exists." && \
                 return 1
-            $MYSQLBIN -u $DBUSER -p$DBPASS -e"CREATE DATABASE \`$DOCROOT\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" && \
+            $MYSQLBIN -P$DBPORT -h$DBHOST -u $DBUSER -p$DBPASS -e"CREATE DATABASE \`$DOCROOT\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" && \
                 _w "Creating the dabase $DOCROOT... DONE."
-            gunzip < "$BACKUPSDIR/$DOCROOT/$LATEST_BACKUP/database.sql.gz" | $MYSQLBIN -u $DBUSER -p$DBPASS "$DOCROOT" && \
+            gunzip < "$BACKUPSDIR/$DOCROOT/$LATEST_BACKUP/database.sql.gz" | $MYSQLBIN -P$DBPORT -h$DBHOST -u $DBUSER -p$DBPASS "$DOCROOT" && \
                 _w "Importing the database backup... DONE."
             tar zxf "$BACKUPSDIR/$DOCROOT/$LATEST_BACKUP/files.tar.gz" --checkpoint=.1000 -C "$SITESDIR" && \
                 _w "" && _w "Extracting files from backup... DONE."
@@ -569,7 +573,7 @@ function sub_restore(){
                 _e "Err: wpstarter.json could not be found in the backup."
                 _e "This may not be a wpstarter project. Aborting..."
                 rm -rf "${SITESDIR:?}/${DOCROOT:?}"
-                $MYSQLBIN -u $DBUSER -p$DBPASS -e "DROP DATABASE IF EXISTS $DOCROOT"
+                $MYSQLBIN -P$DBPORT -h$DBHOST -u $DBUSER -p$DBPASS -e "DROP DATABASE IF EXISTS $DOCROOT"
                 _w "Changes reverted. No backup is restored."
                 return 1
             fi
@@ -922,7 +926,7 @@ function sub_create(){
     fi
 
     # Exit if DB already exists.
-    $MYSQLBIN -u $DBUSER -p$DBPASS "$DOCROOT" -e exit > /dev/null 2>&1 && \
+    $MYSQLBIN -P$DBPORT -h$DBHOST -u $DBUSER -p$DBPASS "$DOCROOT" -e exit > /dev/null 2>&1 && \
     _e "Err: A database with the same name already exists." && \
     return 1
     # We can't rely on below, because it's possible that we don't have the necessary permissions.
@@ -937,7 +941,7 @@ function sub_create(){
     # Check DB credentials in wpstarter repo
     eval $(grep DB_USER "$WPSTARTERDIR/custom-templates/.env.example")
     eval $(grep DB_PASSWORD "$WPSTARTERDIR/custom-templates/.env.example")
-    if ! $MYSQLBIN -u$DB_USER -p$DB_PASSWORD -e"quit" > /dev/null 2>&1; then
+    if ! $MYSQLBIN -P$DBPORT -h$DBHOST -u$DB_USER -p$DB_PASSWORD -e"quit" > /dev/null 2>&1; then
         _e "Err: Cannot connect to DB."
         _w "DB Credentials in $WPSTARTERDIR/custom-template/.env.example"        
         _w "is not correct."
@@ -1587,6 +1591,10 @@ function sub_config(){
 # MySQL/MariaDB credentials
 # DBUSER=\"root\"
 # DBPASS=\"vagrant\"
+
+# MySQL/MariaDB Host Settings
+# DBHOST=\"localhost\"
+# DBPORT=\"3306\"
 
 # Where to host sites 
 # SITESDIR=\"\$HOME/sites\"
