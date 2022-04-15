@@ -1661,6 +1661,7 @@ case $subcommand in
         shift
         if [[ "$(type -t "sub_${subcommand}")" == 'function' ]]; then
             "sub_${subcommand}" "$@"
+            exit $?
         else
             _e "Error: '$subcommand' is not a known subcommand." >&2
             _e "Run '$progname --help' for a list of known subcommands." >&2
