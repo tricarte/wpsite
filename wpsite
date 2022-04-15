@@ -213,6 +213,7 @@ function deleteSite() {
 }
 
 function findLastSite() {
+    # FIXME: Use find -printf thing instead of ls
     SITE=$( find "$SITESDIR"/ \
         -maxdepth 2 \
         -type f \
@@ -340,11 +341,17 @@ function sub_list(){
         return
     fi
 
-    FD=$(command -v fd)
-    if [ ! $? ]; then
-        $FD wpstarter.json --max-depth 2 --type f --base-directory "$SITESDIR" --color never --exec dirname
+    if command -v fd > /dev/null 2>&1; then
+        FD=$(command -v fd)
+        sitesList=$($FD wpstarter.json --max-depth 2 --type f --base-directory "$SITESDIR" --color never --exec dirname)
     else
-        find "$SITESDIR/" -maxdepth 2 -type f -name wpstarter.json -exec dirname {} \; | xargs -i basename {} -0
+        sitesList=$(find "$SITESDIR/" -maxdepth 2 -type f -name wpstarter.json -exec dirname {} \; | xargs -i basename {} -0)
+    fi
+
+    if [[ -n $sitesList ]]; then
+        echo "$sitesList"
+    else
+        _w "There are no wpstarter based WordPress installations in $SITESDIR."
     fi
 
     return
@@ -1174,16 +1181,14 @@ function sub_last(){
         return
     fi
 
-    # FIXME: Use find -printf thing instead of ls
-    # SITE=$( find "$SITESDIR"/ \
-    #     -maxdepth 2 \
-    #     -type f \
-    #     -name wpstarter.json \
-    #     | TZ=utc xargs ls -ld --full-time | sort -rk 6 | head -n1 \
-    #     | tr -s ' ' | cut -d" " -f9 | xargs -i dirname {} | xargs -i basename {}
-    # )
+    lastSite="$(findLastSite)"
 
-    openBrowser "$(findLastSite)"
+    if [[ -n $lastSite ]]; then
+        openBrowser "$lastSite"
+    else
+        _w "There are no wpstarter based WordPress installations in $SITESDIR."
+    fi
+
     return
 }
 export -f sub_last
