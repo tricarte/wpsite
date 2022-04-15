@@ -56,6 +56,7 @@ source "$HOME/repos/wpsite/.wpsite-completion.bash"
 | settings       | Interactively change necessary WP settings that are set generically at the site installation.|
 | flush-env      | Delete and rebuild .env.cached.php file of a site.|
 | config         | Create .wpsiterc file in $HOME.|
+| test           | Make a connection to DB to test user credentials stored in "$HOME/.wpsiterc".|
 
 Some commands recognize the "last" keyword. For example `wpsite last` will
 bring up the most recently created site's admin dashboard. `wpsite delete last
