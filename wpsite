@@ -320,7 +320,8 @@ function sub_default(){
     _w "    ${purple}woo${normal}             Do a quick WooCommerce installation with StoreFront theme."
     _w "    ${purple}settings${normal}        Interactively change necessary WP settings that are set generically at the site installation."
     _w "    ${purple}flush-env${normal}       Delete and rebuild .env.cached.php file of a site."
-    _w "    ${purple}config${normal}   Create .wpsiterc config file in $HOME."
+    _w "    ${purple}config${normal}          Create .wpsiterc config file in $HOME."
+    _w "    ${purple}testdb${normal}          Make a connection to DB to test user credentials stored in \"~/.wpsiterc\"."
     _w ""
     _w "For help with each subcommand run:"
     _w "${purple}$progname <subcommand> -h|--help${normal}"
@@ -1624,12 +1625,12 @@ function sub_config(){
 }
 export -f sub_config
 
-##############
-#  sub_test  #
-##############
-function sub_test(){
+################
+#  sub_testdb  #
+################
+function sub_testdb(){
     if [[ $SUBHELP ]]; then
-            _w "Usage: $progname test"
+            _w "Usage: $progname testdb"
             _w ""
             _w "       Make a connection to DB to test user credentials stored in \"~/.wpsiterc\"."
             _w ""
@@ -1653,7 +1654,7 @@ function sub_test(){
 
     return
 }
-export -f sub_test
+export -f sub_testdb
 
 ##########################
 #  sub_command handling  #
