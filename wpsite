@@ -382,16 +382,16 @@ function sub_boilerplate(){
     fi
 
     if [[ -d "$SITESDIR/boiler" ]]; then
-        $progname delete boiler
+        sub_delete boiler
     fi
     _w "Temporary site ${purple}\"boiler\"${normal} is being created..."
-    $progname create boiler -n
+    sub_create boiler -n
     # wpsite create boiler -n > /dev/null 2>&1 && \
     _w "Backing up ${purple}\"boiler\"${normal} for later use..."
-    $progname backup boiler
+    sub_backup boiler
     # wpsite backup boiler > /dev/null 2>&1 && \
     _w "Removing temporary site..."
-    $progname delete boiler -y
+    sub_delete boiler -y
     # wpsite delete boiler  -y > /dev/null 2>&1
 
     # Delete everything but the last backup.
@@ -462,7 +462,7 @@ function sub_update(){
         _w "Now creating a boilerplate site based on the updated repository"
         _w "to be later used with ${purple}\"wpsite quick\"${normal}."
         _w ""
-        $progname boilerplate
+        sub_boilerplate
     fi
 
     return
@@ -680,9 +680,9 @@ function sub_rename(){
     _w "This will take some time..."
     _w ""
 
-    $progname backup "$DOCROOT" > /dev/null 2>&1
-    $progname restore "$DOCROOT" "$NEWDOCROOT" -n > /dev/null 2>&1
-    $progname delete "$DOCROOT" -y > /dev/null 2>&1
+    sub_backup "$DOCROOT" > /dev/null 2>&1
+    sub_restore "$DOCROOT" "$NEWDOCROOT" -n > /dev/null 2>&1
+    sub_delete "$DOCROOT" -y > /dev/null 2>&1
 
     # Delete the created backup for this process
     LATEST_BACKUP=$(find "$BACKUPSDIR"/"$DOCROOT"/* \
@@ -823,9 +823,9 @@ function sub_delete(){
 
         if [[ -d "$SITESDIR/$LAST_SITE" ]] ; then
             if [[ $PROCEED ]]; then
-                $progname delete "$LAST_SITE" -y
+                sub_delete "$LAST_SITE" -y
             else
-                $progname delete "$LAST_SITE"
+                sub_delete "$LAST_SITE"
             fi
         fi
 
@@ -1114,18 +1114,18 @@ function sub_quick(){
     if [[ -n "$NOTIFYBIN" ]]; then
         $NOTIFYBIN -a WPSITE "Site $SITENAME is being created." "Please wait..."
     fi
-    $progname restore boiler $SITENAME -n
+    sub_restore boiler $SITENAME -n
 
     if [[ -n "$INSTALL_PLUGIN" ]]; then
-        $progname install-plugin "$SITENAME" "$INSTALL_PLUGIN"
+        sub_install-plugin "$SITENAME"
     fi
 
     if [[ -n "$INSTALL_THEME" ]]; then
-        $progname install-theme "$SITENAME" "$INSTALL_THEME"
+        sub_install-theme "$SITENAME"
     fi
 
     if [[ ! $NOBROWSE ]]; then
-        $progname admin "$SITENAME"
+        sub_admin "$SITENAME"
         return
     fi
 
@@ -1402,7 +1402,7 @@ function sub_woo(){
 
     DOCROOT=$RANDOM
 
-    $progname quick -n --with-plugin woocommerce --with-theme storefront
+    sub_quick -n --with-plugin woocommerce --with-theme storefront
 
     return
 }
