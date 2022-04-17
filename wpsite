@@ -1692,11 +1692,16 @@ function sub_install() {
 	    if [[ -f "$PWD/wpstarter.json" ]]; then
             SITESDIR=$(dirname $PWD)
             DOCROOT=$(basename $PWD)
+            if [[ ! -f "$SITESDIR/$DOCROOT/.env" ]]; then
+                $COMPOSERBIN --working-dir="$SITESDIR/$DOCROOT" install
+            fi
         else
             _e "This directory is not a wpstarter based project."
             exit 1
         fi
     fi
+
+    # TODO: check sites is already installed
 
 	# wpstarter copies custom-templates/.env.example to the root at installation.
 	# So don't git add the .env.example file at the project root.
@@ -1835,11 +1840,11 @@ function sub_install() {
 
         $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins option update rest-api-toolbox-settings-core \
         --format=json '{"require-authentication|\/wp\/v2\/posts":"1","require-authentication|'\
-    '\/wp\/v2\/pages":"1","require-authentication|\/wp\/v2\/users":"1",'\
-    '"require-authentication|\/wp\/v2\/media":"1","require-authentication|\/wp\/v2\/categories":"1",'\
-    '"require-authentication|\/wp\/v2\/tags":"1","require-authentication|\/wp\/v2\/comments":"1",'\
-    '"require-authentication|\/wp\/v2\/taxonomies":"1","require-authentication|\/wp\/v2\/types":"1",'\
-    '"require-authentication|\/wp\/v2\/statuses":"1","require-authentication|\/wp\/v2\/settings":"1"}'
+'\/wp\/v2\/pages":"1","require-authentication|\/wp\/v2\/users":"1",'\
+'"require-authentication|\/wp\/v2\/media":"1","require-authentication|\/wp\/v2\/categories":"1",'\
+'"require-authentication|\/wp\/v2\/tags":"1","require-authentication|\/wp\/v2\/comments":"1",'\
+'"require-authentication|\/wp\/v2\/taxonomies":"1","require-authentication|\/wp\/v2\/types":"1",'\
+'"require-authentication|\/wp\/v2\/statuses":"1","require-authentication|\/wp\/v2\/settings":"1"}'
 
         # This admin notice always appear.
         # $WP --skip-plugins option update duplicate_post_show_notice 0
