@@ -988,7 +988,7 @@ composer wpstarter" > "$SITESDIR/$DOCROOT/.git/hooks/post-merge"
     chmod +x "$SITESDIR/$DOCROOT/.git/hooks/post-merge"
 
     $COMPOSERBIN --working-dir="$SITESDIR/$DOCROOT" install
-    $progname install "$DOCROOT" # Most of the installation magic happens here
+    sub_install "$DOCROOT" # Most of the installation magic happens here
 
     if which "$VALET" >/dev/null 2>&1; then
         ( cd "$SITESDIR/$DOCROOT/public" && $VALET link "$DOCROOT" > /dev/null 2>&1)
