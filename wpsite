@@ -225,192 +225,6 @@ function findLastSite() {
     echo $SITE
 }
 
-# Used by sub_create
-function installWP() {
-	DOCROOT="$1"
-
-	# wpstarter copies custom-templates/.env.example to the root at installation.
-	# So don't git add the .env.example file at the project root.
-	if [[ ! -f "$SITESDIR/$DOCROOT/.env" ]]; then
-		mv "$SITESDIR/$DOCROOT/custom-templates/.env.example" "$SITESDIR/$DOCROOT/.env"
-		# SITENAME=${PWD##*/}
-		SITENAME=$DOCROOT
-		if grep directory-basename "$SITESDIR/$DOCROOT/.env" > /dev/null 2>&1; then
-            replace -s directory-basename "$DOCROOT" -- "$SITESDIR/$DOCROOT/.env"
-        fi
-	fi
-
-	# TODO: php-fpm must be reloaded
-	# TODO: change currently active php-fpm php.ini file
-	# TODO: This will ask for sudo password.
-	if [[ $PRODUCTION ]]; then
-		echo "
-		[HOST=$DOCROOT]
-		open_basedir = $SITESDIR/$DOCROOT:/tmp
-		" | sudo tee -a /etc/php/7.4/fpm/php.ini
-	fi
-
-	if [[ $PRODUCTION ]]; then
-		ADMIN_USER="$DOCROOT-$RANDOM"
-		ADMIN_PASS=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 13)
-
-		# Create separate db user and password, change .env file.
-		eval $(grep DB_USER "$SITESDIR/$DOCROOT/.env")
-		eval $(grep DB_PASSWORD "$SITESDIR/$DOCROOT/.env")
-
-		NEW_DB_USER="$DOCROOT-$RANDOM"
-		NEW_DB_PASSWORD=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 13)
-		$MYSQLBIN -u $DB_USER -p$DB_PASSWORD -e"CREATE USER '$NEW_DB_USER'@'localhost' IDENTIFIED BY '$NEW_DB_PASSWORD';"
-		$MYSQLBIN -u $DB_USER -p$DB_PASSWORD -e"GRANT ALL PRIVILEGES ON \`$DOCROOT\`.* TO '$NEW_DB_USER'@'localhost';"
-		# TODO: Do we need to apply FLUSH PRIVILEGES;
-
-		# Now change .env with new values
-		replace -s DB_USER=$DB_USER "DB_USER=$NEW_DB_USER" -- "$SITESDIR/$DOCROOT/.env"
-		replace -s DB_PASSWORD=$DB_PASSWORD "DB_PASSWORD=$NEW_DB_PASSWORD" -- "$SITESDIR/$DOCROOT/.env"
-	else
-		ADMIN_USER="usr${DOCROOT}"
-		ADMIN_PASS="pss${DOCROOT}"
-	fi
-
-	if [[ $PRODUCTION ]]; then
-		replace -s wp-home "https://${DOCROOT}" -- "$SITESDIR/$DOCROOT/.env"
-		URL="$DOCROOT"
-	else
-		replace -s wp-home "http://${DOCROOT}.test" -- "$SITESDIR/$DOCROOT/.env"
-		URL="$DOCROOT.test"
-	fi
-
-	$WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins db create
-
-	$WP --path="$SITESDIR/$DOCROOT/public/cms" core install \
-		--url="$URL" \
-		--title="${DOCROOT}"  \
-		--admin_user="$ADMIN_USER" \
-		--admin_password="$ADMIN_PASS"  \
-		--admin_email=info@example.com  \
-		--skip-email --skip-plugins
-
-	# If this is production, change fs permissions accordingly.
-	# Make content directory group owned by www-data
-	if [[ $PRODUCTION ]]; then
-		if [[ -d "$SITESDIR/$DOCROOT/public/content" ]]; then
-			# chmod -R o+w "/home/$(whoami)/sites/$SITENAME/public/content"
-            # if grep www-data /etc/group | grep $(whoami) > 2>&1; then
-            if id -nG | grep www-data > /dev/null 2>&1; then
-                chown -R $(whoami):www-data "$SITESDIR/$DOCROOT/public/content"
-            fi
-		fi
-	fi
-
-	$WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins user update 1 --display_name="John Doe" --user_nicename="john-doe" --nickname="Editor"
-
-	if [[ ! $BARE ]]; then
-        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins option update permalink_structure "/%category%/%postname%/"
-
-        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins term update category 1 --slug=general --name=General
-
-        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins post create --post_title="Front Page" --post_type=page --post_status=publish --post_author=1
-        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins post create --post_title="Blog Page" --post_type=page --post_status=publish --post_author=1
-
-        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins option update page_on_front 2
-        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins option update page_for_posts 5
-        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins option update show_on_front "page"
-        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins option update timezone_string "Europe/Istanbul"
-        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins option update blogdescription "WP Test Site" # Tagline
-        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins option update ping_sites ""
-        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins option update rss_use_excerpt 1
-
-        # Disable comments
-        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins option update default_pingback_flag 0
-        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins option update default_ping_status 0
-        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins option update default_comment_status 0
-        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins option update comment_registration 1
-        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins option update close_comments_for_old_posts 1
-
-        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins plugin activate \
-            safe-svg \
-            custom-post-type-permalinks \
-            duplicate-post \
-            pre-publish-checklist \
-            widget-shortcode \
-            passwords-evolved \
-            admin-menu-search \
-            rest-api-toolbox \
-            icon-block \
-            rollback-update-failure \
-            reveal-ids-for-wp-admin-25 \
-            clarity-ad-blocker \
-            apcu-manager \
-            surge \
-            fluent-smtp \
-            log-http-requests \
-            gutenberg
-
-        if [[ $PRODUCTION ]]; then
-            $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins plugin activate patchstack
-        fi
-
-        if [[ ! $PRODUCTION ]]; then
-            $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins plugin activate \
-                query-monitor \
-                custom-post-type-ui \
-                bulk-delete \
-                better-search-replace \
-                wayfinder \
-                block-xray-attributes \
-                wpready-playground \
-                show-hooks \
-                wp-mailhog-smtp \
-                rewrite-rules-inspector
-        fi
-
-        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins option update rest-api-toolbox-settings-core \
-        --format=json '{"require-authentication|\/wp\/v2\/posts":"1","require-authentication|'\
-    '\/wp\/v2\/pages":"1","require-authentication|\/wp\/v2\/users":"1",'\
-    '"require-authentication|\/wp\/v2\/media":"1","require-authentication|\/wp\/v2\/categories":"1",'\
-    '"require-authentication|\/wp\/v2\/tags":"1","require-authentication|\/wp\/v2\/comments":"1",'\
-    '"require-authentication|\/wp\/v2\/taxonomies":"1","require-authentication|\/wp\/v2\/types":"1",'\
-    '"require-authentication|\/wp\/v2\/statuses":"1","require-authentication|\/wp\/v2\/settings":"1"}'
-
-        # This admin notice always appear.
-        # $WP --skip-plugins option update duplicate_post_show_notice 0
-
-        # $WP --skip-plugins user meta update 1 dismissed_wp_pointers "piklist_demos,custom-post-type-permalinks-settings"
-        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins user meta update 1 dismissed_wp_pointers "custom-post-type-permalinks-settings"
-
-        CPTP_VERSION=$($WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins plugin get custom-post-type-permalinks --format=table --field=version)
-        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins option update cptp_permalink_checked "$CPTP_VERSION" --autoload=yes
-
-        # APCU Manager options
-        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins option update apcm_adminbar 0
-        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins option update apcm_earlyloading 1
-        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins option update apcm_analytics 0
-        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins option update apcm_gc 0
-
-        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins rewrite flush
-
-        # Install sample images
-        if [[ ! $PRODUCTION ]]; then
-            $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins media import $SITESDIR/$DOCROOT/sample-images/* --user="usr${DOCROOT}"
-        fi
-
-        # Create link to adminer that can be accessible from http://site/adminer
-        if [[ ! $PRODUCTION ]]; then
-            if [[ -d "$SITESDIR/$DOCROOT/vendor/dg/adminer-custom" ]]; then
-                ln -rs "$SITESDIR/$DOCROOT/vendor/dg/adminer-custom/" "$SITESDIR/$DOCROOT/public/adminer"
-            fi
-        fi
-    fi
-
-	_w "WordPress installation finished."
-
-    _w "WP Admin Username: $ADMIN_USER"
-    _w "WP Admin Password: $ADMIN_PASS"
-}
-######################
-#  end of installWP  #
-######################
-
 ###########################
 #  Global Option Parsing  #
 ###########################
@@ -1174,7 +988,7 @@ composer wpstarter" > "$SITESDIR/$DOCROOT/.git/hooks/post-merge"
     chmod +x "$SITESDIR/$DOCROOT/.git/hooks/post-merge"
 
     $COMPOSERBIN --working-dir="$SITESDIR/$DOCROOT" install
-    installWP "$DOCROOT" # Most of the installation magic happens here
+    $progname install "$DOCROOT" # Most of the installation magic happens here
 
     if which "$VALET" >/dev/null 2>&1; then
         ( cd "$SITESDIR/$DOCROOT/public" && $VALET link "$DOCROOT" > /dev/null 2>&1)
@@ -1858,6 +1672,211 @@ function sub_testdb(){
     return
 }
 export -f sub_testdb
+
+# Used by sub_create
+#################
+#  sub_install  #
+#################
+function sub_install() {
+	DOCROOT="$1"
+
+    # Use pwd if a directory (site) is not given.
+    # This is only possible when you install a tricarte/wpready3 site
+    # through one of its composer scripts defined in composer.json like this:
+    # "scripts": {
+    #     "installwp": [
+    #         "wpsite install"
+    #     ]
+    # }
+	if [[ -z $DOCROOT ]]; then
+	    if [[ -f "$PWD/wpstarter.json" ]]; then
+            SITESDIR=$(dirname $PWD)
+            DOCROOT=$(basename $PWD)
+        else
+            _e "This directory is not a wpstarter based project."
+            exit 1
+        fi
+    fi
+
+	# wpstarter copies custom-templates/.env.example to the root at installation.
+	# So don't git add the .env.example file at the project root.
+	if [[ ! -f "$SITESDIR/$DOCROOT/.env" ]]; then
+		mv "$SITESDIR/$DOCROOT/custom-templates/.env.example" "$SITESDIR/$DOCROOT/.env"
+		# SITENAME=${PWD##*/}
+		SITENAME=$DOCROOT
+		if grep directory-basename "$SITESDIR/$DOCROOT/.env" > /dev/null 2>&1; then
+            replace -s directory-basename "$DOCROOT" -- "$SITESDIR/$DOCROOT/.env"
+        fi
+	fi
+
+	# TODO: php-fpm must be reloaded
+	# TODO: change currently active php-fpm php.ini file
+	# TODO: This will ask for sudo password.
+	if [[ $PRODUCTION ]]; then
+		echo "
+		[HOST=$DOCROOT]
+		open_basedir = $SITESDIR/$DOCROOT:/tmp
+		" | sudo tee -a /etc/php/7.4/fpm/php.ini
+	fi
+
+	if [[ $PRODUCTION ]]; then
+		ADMIN_USER="$DOCROOT-$RANDOM"
+		ADMIN_PASS=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 13)
+
+		# Create separate db user and password, change .env file.
+		eval $(grep DB_USER "$SITESDIR/$DOCROOT/.env")
+		eval $(grep DB_PASSWORD "$SITESDIR/$DOCROOT/.env")
+
+		NEW_DB_USER="$DOCROOT-$RANDOM"
+		NEW_DB_PASSWORD=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 13)
+		$MYSQLBIN -u $DB_USER -p$DB_PASSWORD -e"CREATE USER '$NEW_DB_USER'@'localhost' IDENTIFIED BY '$NEW_DB_PASSWORD';"
+		$MYSQLBIN -u $DB_USER -p$DB_PASSWORD -e"GRANT ALL PRIVILEGES ON \`$DOCROOT\`.* TO '$NEW_DB_USER'@'localhost';"
+		# TODO: Do we need to apply FLUSH PRIVILEGES;
+
+		# Now change .env with new values
+		replace -s DB_USER=$DB_USER "DB_USER=$NEW_DB_USER" -- "$SITESDIR/$DOCROOT/.env"
+		replace -s DB_PASSWORD=$DB_PASSWORD "DB_PASSWORD=$NEW_DB_PASSWORD" -- "$SITESDIR/$DOCROOT/.env"
+	else
+		ADMIN_USER="usr${DOCROOT}"
+		ADMIN_PASS="pss${DOCROOT}"
+	fi
+
+	if [[ $PRODUCTION ]]; then
+		replace -s wp-home "https://${DOCROOT}" -- "$SITESDIR/$DOCROOT/.env"
+		URL="$DOCROOT"
+	else
+		replace -s wp-home "http://${DOCROOT}.test" -- "$SITESDIR/$DOCROOT/.env"
+		URL="$DOCROOT.test"
+	fi
+
+	$WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins db create
+
+	$WP --path="$SITESDIR/$DOCROOT/public/cms" core install \
+		--url="$URL" \
+		--title="${DOCROOT}"  \
+		--admin_user="$ADMIN_USER" \
+		--admin_password="$ADMIN_PASS"  \
+		--admin_email=info@example.com  \
+		--skip-email --skip-plugins
+
+	# If this is production, change fs permissions accordingly.
+	# Make content directory group owned by www-data
+	if [[ $PRODUCTION ]]; then
+		if [[ -d "$SITESDIR/$DOCROOT/public/content" ]]; then
+			# chmod -R o+w "/home/$(whoami)/sites/$SITENAME/public/content"
+            # if grep www-data /etc/group | grep $(whoami) > 2>&1; then
+            if id -nG | grep www-data > /dev/null 2>&1; then
+                chown -R $(whoami):www-data "$SITESDIR/$DOCROOT/public/content"
+            fi
+		fi
+	fi
+
+	$WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins user update 1 --display_name="John Doe" --user_nicename="john-doe" --nickname="Editor"
+
+	if [[ ! $BARE ]]; then
+        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins option update permalink_structure "/%category%/%postname%/"
+
+        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins term update category 1 --slug=general --name=General
+
+        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins post create --post_title="Front Page" --post_type=page --post_status=publish --post_author=1
+        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins post create --post_title="Blog Page" --post_type=page --post_status=publish --post_author=1
+
+        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins option update page_on_front 2
+        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins option update page_for_posts 5
+        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins option update show_on_front "page"
+        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins option update timezone_string "Europe/Istanbul"
+        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins option update blogdescription "WP Test Site" # Tagline
+        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins option update ping_sites ""
+        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins option update rss_use_excerpt 1
+
+        # Disable comments
+        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins option update default_pingback_flag 0
+        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins option update default_ping_status 0
+        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins option update default_comment_status 0
+        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins option update comment_registration 1
+        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins option update close_comments_for_old_posts 1
+
+        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins plugin activate \
+            safe-svg \
+            custom-post-type-permalinks \
+            duplicate-post \
+            pre-publish-checklist \
+            widget-shortcode \
+            passwords-evolved \
+            admin-menu-search \
+            rest-api-toolbox \
+            icon-block \
+            rollback-update-failure \
+            reveal-ids-for-wp-admin-25 \
+            clarity-ad-blocker \
+            apcu-manager \
+            surge \
+            fluent-smtp \
+            log-http-requests \
+            gutenberg
+
+        if [[ $PRODUCTION ]]; then
+            $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins plugin activate patchstack
+        fi
+
+        if [[ ! $PRODUCTION ]]; then
+            $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins plugin activate \
+                query-monitor \
+                custom-post-type-ui \
+                bulk-delete \
+                better-search-replace \
+                wayfinder \
+                block-xray-attributes \
+                wpready-playground \
+                show-hooks \
+                wp-mailhog-smtp \
+                rewrite-rules-inspector
+        fi
+
+        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins option update rest-api-toolbox-settings-core \
+        --format=json '{"require-authentication|\/wp\/v2\/posts":"1","require-authentication|'\
+    '\/wp\/v2\/pages":"1","require-authentication|\/wp\/v2\/users":"1",'\
+    '"require-authentication|\/wp\/v2\/media":"1","require-authentication|\/wp\/v2\/categories":"1",'\
+    '"require-authentication|\/wp\/v2\/tags":"1","require-authentication|\/wp\/v2\/comments":"1",'\
+    '"require-authentication|\/wp\/v2\/taxonomies":"1","require-authentication|\/wp\/v2\/types":"1",'\
+    '"require-authentication|\/wp\/v2\/statuses":"1","require-authentication|\/wp\/v2\/settings":"1"}'
+
+        # This admin notice always appear.
+        # $WP --skip-plugins option update duplicate_post_show_notice 0
+
+        # $WP --skip-plugins user meta update 1 dismissed_wp_pointers "piklist_demos,custom-post-type-permalinks-settings"
+        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins user meta update 1 dismissed_wp_pointers "custom-post-type-permalinks-settings"
+
+        CPTP_VERSION=$($WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins plugin get custom-post-type-permalinks --format=table --field=version)
+        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins option update cptp_permalink_checked "$CPTP_VERSION" --autoload=yes
+
+        # APCU Manager options
+        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins option update apcm_adminbar 0
+        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins option update apcm_earlyloading 1
+        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins option update apcm_analytics 0
+        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins option update apcm_gc 0
+
+        $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins rewrite flush
+
+        # Install sample images
+        if [[ ! $PRODUCTION ]]; then
+            $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins media import $SITESDIR/$DOCROOT/sample-images/* --user="usr${DOCROOT}"
+        fi
+
+        # Create link to adminer that can be accessible from http://site/adminer
+        if [[ ! $PRODUCTION ]]; then
+            if [[ -d "$SITESDIR/$DOCROOT/vendor/dg/adminer-custom" ]]; then
+                ln -rs "$SITESDIR/$DOCROOT/vendor/dg/adminer-custom/" "$SITESDIR/$DOCROOT/public/adminer"
+            fi
+        fi
+    fi
+
+	_w "WordPress installation finished."
+
+    _w "WP Admin Username: $ADMIN_USER"
+    _w "WP Admin Password: $ADMIN_PASS"
+}
+export -f sub_install
 
 ##########################
 #  sub_command handling  #
