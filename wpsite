@@ -1701,6 +1701,11 @@ function sub_install() {
         fi
     fi
 
+    if $WP --skip-plugins --path="$SITESDIR/$DOCROOT/public/cms" core is-installed; then
+        _w "WordPress for this site is already installed."
+        exit
+    fi
+
     # TODO: check sites is already installed
 
 	# wpstarter copies custom-templates/.env.example to the root at installation.
