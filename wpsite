@@ -394,16 +394,16 @@ function sub_boilerplate(){
     fi
 
     if [[ -d "$SITESDIR/boiler" ]]; then
-        sub_delete boiler
+        $progname delete boiler
     fi
     _w "Temporary site ${purple}\"boiler\"${normal} is being created..."
-    sub_create boiler -n
+    $progname create boiler -n
     # wpsite create boiler -n > /dev/null 2>&1 && \
     _w "Backing up ${purple}\"boiler\"${normal} for later use..."
-    sub_backup boiler
+    $progname backup boiler
     # wpsite backup boiler > /dev/null 2>&1 && \
     _w "Removing temporary site..."
-    sub_delete boiler -y
+    $progname delete boiler -y
     # wpsite delete boiler  -y > /dev/null 2>&1
 
     # Delete everything but the last backup.
@@ -474,7 +474,7 @@ function sub_update(){
         _w "Now creating a boilerplate site based on the updated repository"
         _w "to be later used with ${purple}\"wpsite quick\"${normal}."
         _w ""
-        sub_boilerplate
+        $progname boilerplate
     fi
 
     return
@@ -692,9 +692,9 @@ function sub_rename(){
     _w "This will take some time..."
     _w ""
 
-    sub_backup "$DOCROOT" > /dev/null 2>&1
-    sub_restore "$DOCROOT" "$NEWDOCROOT" -n > /dev/null 2>&1
-    sub_delete "$DOCROOT" -y > /dev/null 2>&1
+    $progname backup "$DOCROOT" > /dev/null 2>&1
+    $progname restore "$DOCROOT" "$NEWDOCROOT" -n > /dev/null 2>&1
+    $progname delete "$DOCROOT" -y > /dev/null 2>&1
 
     # Delete the created backup for this process
     LATEST_BACKUP=$(find "$BACKUPSDIR"/"$DOCROOT"/* \
@@ -835,9 +835,9 @@ function sub_delete(){
 
         if [[ -d "$SITESDIR/$LAST_SITE" ]] ; then
             if [[ $PROCEED ]]; then
-                sub_delete "$LAST_SITE" -y
+                $progname delete "$LAST_SITE" -y
             else
-                sub_delete "$LAST_SITE"
+                $progname delete "$LAST_SITE"
             fi
         fi
 
@@ -1010,7 +1010,7 @@ composer wpstarter" > "$SITESDIR/$DOCROOT/.git/hooks/post-merge"
     chmod +x "$SITESDIR/$DOCROOT/.git/hooks/post-merge"
 
     $COMPOSERBIN --working-dir="$SITESDIR/$DOCROOT" install || exit
-    sub_install "$DOCROOT" # Most of the installation magic happens here
+    $progname install "$DOCROOT" # Most of the installation magic happens here
 
     if which "$VALET" >/dev/null 2>&1; then
         ( cd "$SITESDIR/$DOCROOT/public" && $VALET link "$DOCROOT" > /dev/null 2>&1)
@@ -1136,18 +1136,18 @@ function sub_quick(){
     if [[ -n "$NOTIFYBIN" ]]; then
         $NOTIFYBIN -a WPSITE "Site $SITENAME is being created." "Please wait..."
     fi
-    sub_restore boiler $SITENAME -n
+    $progname restore boiler $SITENAME -n
 
     if [[ -n "$INSTALL_PLUGIN" ]]; then
-        sub_install-plugin "$SITENAME"
+        $progname install-plugin "$SITENAME"
     fi
 
     if [[ -n "$INSTALL_THEME" ]]; then
-        sub_install-theme "$SITENAME"
+        $progname isntall-theme "$SITENAME"
     fi
 
     if [[ ! $NOBROWSE ]]; then
-        sub_admin "$SITENAME"
+        $progname admin "$SITENAME"
         return
     fi
 
@@ -1424,7 +1424,7 @@ function sub_woo(){
 
     DOCROOT=$RANDOM
 
-    sub_quick -n --with-plugin woocommerce --with-theme storefront
+    $progname quick -n --with-plugin woocommerce --with-theme storefront
 
     return
 }
