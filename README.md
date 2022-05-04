@@ -5,7 +5,7 @@ A simple bash script to create WordPress test sites locally.
 ## Requirements
 
 * LEMP
-* [ valet-linux ](https://cpriego.github.io/valet-linux/#installation)
+* [ valet-linux ](https://cpriego.github.io/valet-linux/#installation)(optional)
 * git
 * [ wpready3 ](https://github.com/tricarte/wpready3) See installation.
 
