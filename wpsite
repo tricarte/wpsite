@@ -461,7 +461,8 @@ function sub_update(){
     _w "Updating composer packages..."
     $COMPOSERBIN --working-dir="$WPSTARTERDIR" update -q || exit
 
-    if grep -q "identical" <<< "$(diff -sq "$WPSTARTERDIR/composer.lock" "$tmpDir/composer.lock")"; then
+    # if grep -q "identical" <<< "$(diff -sq "$WPSTARTERDIR/composer.lock" "$tmpDir/composer.lock")"; then
+    if cmp -s "$WPSTARTERDIR/composer.lock" "$tmpDir/composer.lock"; then
         _w "No updates are available."
         return
     else
