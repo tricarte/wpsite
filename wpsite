@@ -7,7 +7,7 @@
 # set -u # Treat unset variables as errors
 # You have to use ${VAR:-} everywhere when using set -u
 # set -E # You must use this if you want "trap" apply to everything including subshells.
-# set -eo pipefail # Exit when a command and any command in a pipe fails
+set -eo pipefail # Exit when a command and any command in a pipe fails
 
 [[ -n ${SUDO_USER:-} ]] && { _e "sudo detected, exiting normally!"; exit; }
 
@@ -80,8 +80,8 @@ if [[ -n "$XDG_CURRENT_DESKTOP" ]]; then
 fi
 
 # Check MySQL/MariaDB is running
-DBSTATUS=$(systemctl status mysql.service | grep Active)
-if [[  $DBSTATUS =~ 'inactive' ]]; then
+DBSTATUS=$(systemctl is-active mysql.service)
+if [[  $DBSTATUS == 'inactive' ]]; then
     _e "Database server is not running or reachable."
     if [[ -n "$NOTIFYBIN" ]]; then
         $NOTIFYBIN -a WPSITE "Database server is not running or reachable."
@@ -132,6 +132,7 @@ if [[ ! -w "$BACKUPSDIR" ]]; then
     _e "$BACKUPSDIR is not writable."
     exit 1
 fi
+
 ##########################
 #  End of prerequisites  #
 ##########################
@@ -181,7 +182,9 @@ function openBrowser() {
     fi
 
     if [[ -n "$XDG_CURRENT_DESKTOP" ]]; then
-        $WP admin --skip-plugins --path="$SITESDIR/$1/public/cms" > /dev/null 2>&1
+        # URL=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" config get WP_HOME)
+        URL=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" eval "echo get_dashboard_url();")
+        $(command -v xdg-open) $URL
     fi
     return
 }
@@ -222,7 +225,7 @@ function findLastSite() {
         | tr -s ' ' | cut -d" " -f9 | xargs -i dirname {} | xargs -i basename {}
     )
 
-    echo $SITE
+    echo "$SITE"
 }
 
 ###########################
@@ -273,6 +276,15 @@ case "$1" in
     --with-theme)
         if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
             INSTALL_THEME=$2
+            shift 2
+        else
+            _e "Error: Argument for $1 is missing" >&2
+            exit 1
+        fi
+        ;;
+    --path)
+        if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
+            SITESDIR_CUSTOM=$2
             shift 2
         else
             _e "Error: Argument for $1 is missing" >&2
@@ -447,7 +459,7 @@ function sub_update(){
     # result=$(diff -sq "$WPSTARTERDIR/composer.lock" /tmp/composer.lock )
 
     _w "Updating composer packages..."
-    $COMPOSERBIN --working-dir="$WPSTARTERDIR" update -q
+    $COMPOSERBIN --working-dir="$WPSTARTERDIR" update -q || exit
 
     if grep -q "identical" <<< "$(diff -sq "$WPSTARTERDIR/composer.lock" "$tmpDir/composer.lock")"; then
         _w "No updates are available."
@@ -638,7 +650,7 @@ function sub_rename(){
     # wpstarter installation, then use as $DOCROOT
     if [[ $# == 1 ]]; then
         if [[ -f "$WORKING_DIR_ORIGINAL/wpstarter.json" ]]; then
-            DOCROOT=$(basename $WORKING_DIR_ORIGINAL)
+            DOCROOT="$(basename $WORKING_DIR_ORIGINAL)"
             NEWDOCROOT=$1
         fi
     elif [[ -z $DOCROOT ]]; then
@@ -725,7 +737,7 @@ function sub_backup(){
     # a wpstarter installation, then use as $DOCROOT
     if [[ $# == 0 ]]; then
         if [[ -f "$WORKING_DIR_ORIGINAL/wpstarter.json" ]]; then
-            DOCROOT=$(basename $WORKING_DIR_ORIGINAL)
+            DOCROOT="$(basename $WORKING_DIR_ORIGINAL)"
         fi
     fi
 
@@ -921,6 +933,16 @@ function sub_create(){
     # https://stackoverflow.com/a/51677667
     DOCROOT="$1"
 
+    # Setup custom installation path defined with --path, instead of $SITESDIR
+    if [[ -n $SITESDIR_CUSTOM ]]; then
+        if [[ -d "$SITESDIR_CUSTOM" ]] && [[ -w "$SITESDIR_CUSTOM" ]]; then
+            SITESDIR="$(dirname "$SITESDIR_CUSTOM")"/"$(basename "$SITESDIR_CUSTOM")"
+        else
+            _e "Neither $SITESDIR_CUSTOM exists nor writable."
+            exit 1
+        fi
+    fi
+
     # "last" keyword is reserved
     if [[ $DOCROOT == "last" ]]; then
         DOCROOT="last_site"
@@ -961,8 +983,8 @@ function sub_create(){
     # fi
 
     # Check DB credentials in wpstarter repo
-    eval $(grep DB_USER "$WPSTARTERDIR/custom-templates/.env.example")
-    eval $(grep DB_PASSWORD "$WPSTARTERDIR/custom-templates/.env.example")
+    eval "$(grep DB_USER "$WPSTARTERDIR/custom-templates/.env.example")"
+    eval "$(grep DB_PASSWORD "$WPSTARTERDIR/custom-templates/.env.example")"
     if ! $MYSQLBIN -P$DBPORT -h$DBHOST -u$DB_USER -p$DB_PASSWORD -e"quit" > /dev/null 2>&1; then
         _e "Err: Cannot connect to DB."
         _w "DB Credentials in $WPSTARTERDIR/custom-template/.env.example"        
@@ -987,7 +1009,7 @@ export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/g
 composer wpstarter" > "$SITESDIR/$DOCROOT/.git/hooks/post-merge"
     chmod +x "$SITESDIR/$DOCROOT/.git/hooks/post-merge"
 
-    $COMPOSERBIN --working-dir="$SITESDIR/$DOCROOT" install
+    $COMPOSERBIN --working-dir="$SITESDIR/$DOCROOT" install || exit
     sub_install "$DOCROOT" # Most of the installation magic happens here
 
     if which "$VALET" >/dev/null 2>&1; then
@@ -1055,7 +1077,7 @@ function sub_lang(){
     # wpstarter installation, then use as $DOCROOT
     if [[ $# == 1 ]]; then
         if [[ -f "$WORKING_DIR_ORIGINAL/wpstarter.json" ]]; then
-            DOCROOT=$(basename $WORKING_DIR_ORIGINAL)
+            DOCROOT="$(basename $WORKING_DIR_ORIGINAL)"
             WPLANG=$1
         fi
     elif [[ -z $DOCROOT ]]; then
@@ -1160,7 +1182,7 @@ function sub_admin(){
     # wpstarter installation, then use as $DOCROOT
     if [[ $# == 0 ]]; then
         if [[ -f "$WORKING_DIR_ORIGINAL/wpstarter.json" ]]; then
-            DOCROOT=$(basename $WORKING_DIR_ORIGINAL)
+            DOCROOT="$(basename $WORKING_DIR_ORIGINAL)"
         fi
     elif [[ -z $DOCROOT ]]; then
         _e "Err: Specify a directory name to open."
@@ -1239,7 +1261,7 @@ function sub_fm(){
     # wpstarter installation, then use as $DOCROOT
     if [[ $# == 0 ]]; then
         if [[ -f "$WORKING_DIR_ORIGINAL/wpstarter.json" ]]; then
-            DOCROOT=$(basename $WORKING_DIR_ORIGINAL)
+            DOCROOT="$(basename $WORKING_DIR_ORIGINAL)"
         fi
     elif [[ -z $DOCROOT ]]; then
         _e "Err: Specify a directory name to browse with the file manager."
@@ -1274,7 +1296,7 @@ function sub_clone-repo() {
     fi
 
     if [[ ! -d "$WPSTARTERDIR" ]]; then
-        $GIT clone https://github.com/tricarte/wpready3 "$WPSTARTERDIR" && \
+        $GIT clone https://github.com/tricarte/wpready3 "$WPSTARTERDIR"
         # Add post-commit hook to run 'composer wpstarter'
         echo "#!/usr/bin/env bash
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"
@@ -1315,7 +1337,7 @@ function sub_install-theme(){
     # wpstarter installation, then use as $DOCROOT
     if [[ $# == 1 ]]; then
         if [[ -f "$WORKING_DIR_ORIGINAL/wpstarter.json" ]]; then
-            DOCROOT=$(basename $WORKING_DIR_ORIGINAL)
+            DOCROOT="$(basename $WORKING_DIR_ORIGINAL)"
             THEME_NAME=$1
         fi
     elif [[ -z $DOCROOT ]]; then
@@ -1363,7 +1385,7 @@ function sub_install-plugin(){
     # wpstarter installation, then use as $DOCROOT
     if [[ $# == 1 ]]; then
         if [[ -f "$WORKING_DIR_ORIGINAL/wpstarter.json" ]]; then
-            DOCROOT=$(basename $WORKING_DIR_ORIGINAL)
+            DOCROOT="$(basename $WORKING_DIR_ORIGINAL)"
             PLUGIN_NAME=$1
         fi
     elif [[ -z $DOCROOT ]]; then
@@ -1472,30 +1494,30 @@ function sub_settings(){
 
     _w ""
 
-    read -p "Site Title (blogname) (Leave empty to use the current value): " -e BLOGNAME
-    read -p "Tagline (blogdescription) (Leave empty to use the current value): " -e BLOGDESCRIPTION
+    read -rp "Site Title (blogname) (Leave empty to use the current value): " -e BLOGNAME
+    read -rp "Tagline (blogdescription) (Leave empty to use the current value): " -e BLOGDESCRIPTION
 
     _w ""
     _w "Admin User"
-    read -p "First Name (Leave empty to use the current value): " -e ADMINFIRSTNAME
-    read -p "Last Name (Leave empty to use the current value): " -e ADMINLASTNAME
+    read -rp "First Name (Leave empty to use the current value): " -e ADMINFIRSTNAME
+    read -rp "Last Name (Leave empty to use the current value): " -e ADMINLASTNAME
 
     _w ""
     _w "Nickname gives an option to set display name to something other than login name or real name."
     _w "You don't have to specify one."
-    read -p "Nick Name (Leave empty to use the current value): " -e ADMINNICKNAME
+    read -rp "Nick Name (Leave empty to use the current value): " -e ADMINNICKNAME
 
     _w ""
     _w "Nicename will be used as author slug in author archive URLs."
     _w "It's a good idea to set it to something other than login name."
     _w "Current nice name: ${red}$curAdminNicename${normal}"
-    read -p "Nicename (Leave empty to use the current value): " -e ADMINNICENAME
+    read -rp "Nicename (Leave empty to use the current value): " -e ADMINNICENAME
 
     _w ""
     _w "Display name is used in author archive pages as title such as \"Author: DISPLAY_NAME\"."
-    read -p "Display Name (Leave empty to use the current value): " -e ADMINDISPLAYNAME
+    read -rp "Display Name (Leave empty to use the current value): " -e ADMINDISPLAYNAME
 
-    read -p "Email (Leave empty to use the current value): " -e ADMINEMAIL
+    read -rp "Email (Leave empty to use the current value): " -e ADMINEMAIL
     
     _w ""
     _w "##############################"
@@ -1521,35 +1543,35 @@ function sub_settings(){
 
     # wp user update 1 --display_name="John Doe" --user_nicename="john-doe" --nickname="Editor"
 
-    if [[ -n $BLOGNAME ]] && [[ $BLOGNAME != $curBlogname ]]; then
+    if [[ -n $BLOGNAME ]] && [[ $BLOGNAME != "$curBlogname" ]]; then
         $WP --skip-plugins --path="$SITESDIR/$1/public/cms" option update blogname "$BLOGNAME" --quiet
     fi
 
-    if [[ -n $BLOGDESCRIPTION ]] && [[ $BLOGDESCRIPTION != $curTagline ]]; then
+    if [[ -n $BLOGDESCRIPTION ]] && [[ $BLOGDESCRIPTION != "$curTagline" ]]; then
         $WP --skip-plugins --path="$SITESDIR/$1/public/cms" option update blogdescription "$BLOGDESCRIPTION" --quiet
     fi
 
-    if [[ -n $ADMINFIRSTNAME ]] && [[ $ADMINFIRSTNAME != $curAdminFirstName ]]; then
+    if [[ -n $ADMINFIRSTNAME ]] && [[ $ADMINFIRSTNAME != "$curAdminFirstName" ]]; then
         $WP --skip-plugins --path="$SITESDIR/$1/public/cms" user meta update 1 first_name "$ADMINFIRSTNAME" --quiet
     fi
 
-    if [[ -n $ADMINLASTNAME ]] && [[ $ADMINLASTNAME != $curAdminLastName ]]; then
+    if [[ -n $ADMINLASTNAME ]] && [[ $ADMINLASTNAME != "$curAdminLastName" ]]; then
         $WP --skip-plugins --path="$SITESDIR/$1/public/cms" user meta update 1 first_name "$ADMINLASTNAME" --quiet
     fi
 
-    if [[ -n $ADMINNICKNAME ]] && [[ $ADMINNICKNAME != $curAdminNickname ]]; then
+    if [[ -n $ADMINNICKNAME ]] && [[ $ADMINNICKNAME != "$curAdminNickname" ]]; then
         $WP --skip-plugins --path="$SITESDIR/$1/public/cms" user meta update 1 nickname "$ADMINNICKNAME" --quiet
     fi
 
-    if [[ -n $ADMINNICENAME ]] && [[ $ADMINNICENAME != $curAdminNicename ]]; then
+    if [[ -n $ADMINNICENAME ]] && [[ $ADMINNICENAME != "$curAdminNicename" ]]; then
         $WP --skip-plugins --path="$SITESDIR/$1/public/cms" user update 1 --user_nicename="$ADMINNICENAME" --quiet
     fi
 
-    if [[ -n $ADMINDISPLAYNAME ]] && [[ $ADMINDISPLAYNAME != $curAdminDisplayName ]]; then
+    if [[ -n $ADMINDISPLAYNAME ]] && [[ $ADMINDISPLAYNAME != "$curAdminDisplayName" ]]; then
         $WP --skip-plugins --path="$SITESDIR/$1/public/cms" user update 1 --display_name="$ADMINDISPLAYNAME" --quiet
     fi
 
-    if [[ -n $ADMINEMAIL ]] && [[ $ADMINEMAIL != $curAdminEmail ]]; then
+    if [[ -n $ADMINEMAIL ]] && [[ $ADMINEMAIL != "$curAdminEmail" ]]; then
         $WP --skip-plugins --path="$SITESDIR/$1/public/cms" user update 1 --user_email="$ADMINEMAIL" --skip-email --quiet
     fi
 
@@ -1561,9 +1583,9 @@ function sub_settings(){
 }
 export -f sub_settings
 
-###############
+###################
 #  sub_flush-env  #
-###############
+###################
 function sub_flush-env(){
     if [[ $SUBHELP ]]; then
             _w "Usage: $progname flush-env <site_name>"
@@ -1690,10 +1712,10 @@ function sub_install() {
     # }
 	if [[ -z $DOCROOT ]]; then
 	    if [[ -f "$PWD/wpstarter.json" ]]; then
-            SITESDIR=$(dirname $PWD)
-            DOCROOT=$(basename $PWD)
+            SITESDIR=$(dirname "$PWD")
+            DOCROOT=$(basename "$PWD")
             if [[ ! -f "$SITESDIR/$DOCROOT/.env" ]]; then
-                $COMPOSERBIN --working-dir="$SITESDIR/$DOCROOT" install
+                $COMPOSERBIN --working-dir="$SITESDIR/$DOCROOT" install || exit
             fi
         else
             _e "This directory is not a wpstarter based project."
@@ -1701,17 +1723,10 @@ function sub_install() {
         fi
     fi
 
-    if $WP --skip-plugins --path="$SITESDIR/$DOCROOT/public/cms" core is-installed; then
-        _w "WordPress for this site is already installed."
-        exit
-    fi
-
-    # TODO: check sites is already installed
-
 	# wpstarter copies custom-templates/.env.example to the root at installation.
 	# So don't git add the .env.example file at the project root.
 	if [[ ! -f "$SITESDIR/$DOCROOT/.env" ]]; then
-		mv "$SITESDIR/$DOCROOT/custom-templates/.env.example" "$SITESDIR/$DOCROOT/.env"
+		mv "$SITESDIR/$DOCROOT/custom-templates/.env.example" "$SITESDIR/$DOCROOT/.env" || exit
 		# SITENAME=${PWD##*/}
 		SITENAME=$DOCROOT
 		if grep directory-basename "$SITESDIR/$DOCROOT/.env" > /dev/null 2>&1; then
@@ -1719,29 +1734,19 @@ function sub_install() {
         fi
 	fi
 
-	# TODO: php-fpm must be reloaded
-	# TODO: change currently active php-fpm php.ini file
-	# TODO: This will ask for sudo password.
-	if [[ $PRODUCTION ]]; then
-		echo "
-		[HOST=$DOCROOT]
-		open_basedir = $SITESDIR/$DOCROOT:/tmp
-		" | sudo tee -a /etc/php/7.4/fpm/php.ini
-	fi
-
 	if [[ $PRODUCTION ]]; then
 		ADMIN_USER="$DOCROOT-$RANDOM"
 		ADMIN_PASS=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 13)
 
 		# Create separate db user and password, change .env file.
-		eval $(grep DB_USER "$SITESDIR/$DOCROOT/.env")
-		eval $(grep DB_PASSWORD "$SITESDIR/$DOCROOT/.env")
+		eval "$(grep DB_USER "$SITESDIR/$DOCROOT/.env")"
+		eval "$(grep DB_PASSWORD "$SITESDIR/$DOCROOT/.env")"
 
 		NEW_DB_USER="$DOCROOT-$RANDOM"
 		NEW_DB_PASSWORD=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 13)
 		$MYSQLBIN -u $DB_USER -p$DB_PASSWORD -e"CREATE USER '$NEW_DB_USER'@'localhost' IDENTIFIED BY '$NEW_DB_PASSWORD';"
 		$MYSQLBIN -u $DB_USER -p$DB_PASSWORD -e"GRANT ALL PRIVILEGES ON \`$DOCROOT\`.* TO '$NEW_DB_USER'@'localhost';"
-		# TODO: Do we need to apply FLUSH PRIVILEGES;
+		$MYSQLBIN -u $DB_USER -p$DB_PASSWORD -e"FLUSH PRIVILEGES;"
 
 		# Now change .env with new values
 		replace -s DB_USER=$DB_USER "DB_USER=$NEW_DB_USER" -- "$SITESDIR/$DOCROOT/.env"
@@ -1758,6 +1763,15 @@ function sub_install() {
 		replace -s wp-home "http://${DOCROOT}.test" -- "$SITESDIR/$DOCROOT/.env"
 		URL="$DOCROOT.test"
 	fi
+
+    # FIXME
+    # is-installed uses the database name setting in .env to connect to db
+    # but at this point this database is not created so it gives error
+    # so it can't connect to db to perform the wp command
+    # if  $WP --skip-plugins --path="$SITESDIR/$DOCROOT/public/cms" core is-installed; then
+    #     _w "WordPress is already installed."
+    #     exit
+    # fi
 
 	$WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins db create
 
@@ -1776,7 +1790,7 @@ function sub_install() {
 			# chmod -R o+w "/home/$(whoami)/sites/$SITENAME/public/content"
             # if grep www-data /etc/group | grep $(whoami) > 2>&1; then
             if id -nG | grep www-data > /dev/null 2>&1; then
-                chown -R $(whoami):www-data "$SITESDIR/$DOCROOT/public/content"
+                chown -R "$(whoami)":www-data "$SITESDIR/$DOCROOT/public/content"
             fi
 		fi
 	fi
@@ -1870,7 +1884,7 @@ function sub_install() {
 
         # Install sample images
         if [[ ! $PRODUCTION ]]; then
-            $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins media import $SITESDIR/$DOCROOT/sample-images/* --user="usr${DOCROOT}"
+            $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins media import "$SITESDIR/$DOCROOT"/sample-images/* --user="usr${DOCROOT}"
         fi
 
         # Create link to adminer that can be accessible from http://site/adminer
@@ -1881,10 +1895,12 @@ function sub_install() {
         fi
     fi
 
+	_w ""
 	_w "WordPress installation finished."
-
+    _w ""
     _w "WP Admin Username: $ADMIN_USER"
     _w "WP Admin Password: $ADMIN_PASS"
+    _w ""
 }
 export -f sub_install
 
