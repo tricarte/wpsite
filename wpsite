@@ -1457,19 +1457,47 @@ function sub_settings(){
         return 1
     fi
 
+    if [[ ! -f "$SITESDIR/$DOCROOT/.env" ]] && [[ ! -f "$SITESDIR/$DOCROOT/wpstarter.json" ]]; then
+        _e "Err: This is not a wpstarter based WordPress installation."
+        return 1
+    fi
+
+    # Another option is to use 'wp db prefix' but this will be faster.
+    tablePrefix=$(grep DB_TABLE_PREFIX "$SITESDIR/$DOCROOT/.env" | cut -d"=" -f2)
+
+    if [[ -z $tablePrefix ]]; then
+        tablePrefix=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" db prefix)
+        if [[ -z $tablePrefix ]]; then
+            _e "Cannot determine WP table prefix."
+            return 1
+        fi
+    fi
+
     # Current site settings
     _w "Getting current site and user settings..."
     _w ""
-    curBlogname=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" option get blogname)
-    curTagline=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" option get blogdescription)
+    blogSettings=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" db query 'select option_value from '$tablePrefix'options where option_name IN ("blogname", "blogdescription")' --skip-column-names)
+    # curBlogname=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" option get blogname)
+    # curTagline=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" option get blogdescription)
+    curBlogname=$(echo "$blogSettings" | head -n1)
+    curTagline=$(echo "$blogSettings" | tail -n1)
 
-    # This is login name
-    curAdminUsername=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" user get 1 --field=user_login)
+    userSettings=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" user get 1 --fields=user_login,user_nicename,display_name,user_email --format=csv)
+    curAdminUsername=$(echo "$userSettings" | grep user_login | cut -d',' -f2)
+    curAdminNicename=$(echo "$userSettings" | grep user_nicename | cut -d',' -f2)
+    curAdminDisplayName=$(echo "$userSettings" | grep display_name | cut -d',' -f2)
+    curAdminEmail=$(echo "$userSettings" | grep user_email | cut -d',' -f2)
+    # login name
+    # curAdminUsername=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" user get 1 --field=user_login)
+    # nicename is used as author slug
+    # curAdminNicename=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" user get 1 --field=user_nicename)
+    # This is used in author archive pages as "Author: $display_name" page title
+    # curAdminDisplayName=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" user get 1 --field=display_name)
+    # curAdminEmail=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" user get 1 --field=user_email)
 
     # Get user meta values
     userMeta=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" user meta list 1 --format=csv)
 
-    # This are user meta
     # curAdminFirstName=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" user meta get 1 first_name)
     curAdminFirstName=$(echo "$userMeta" | grep first_name | cut -d',' -f3)
     # curAdminLastName=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" user meta get 1 last_name)
@@ -1478,14 +1506,6 @@ function sub_settings(){
     # nickname is required
     # curAdminNickname=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" user meta get 1 nickname)
     curAdminNickname=$(echo "$userMeta" | grep nickname | cut -d',' -f3)
-
-    # nicename is used as author slug
-    curAdminNicename=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" user get 1 --field=user_nicename)
-
-    # This is used in author archive pages as "Author: $display_name" page title
-    curAdminDisplayName=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" user get 1 --field=display_name)
-
-    curAdminEmail=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" user get 1 --field=user_email)
 
     _w "${red}Site Title${normal}:            $curBlogname"
     _w "${red}Tagline${normal}:               $curTagline"
@@ -1547,6 +1567,8 @@ function sub_settings(){
         _w "New settings discarded."
         return 1
     fi
+
+    _w "Applying new settings..."
 
     # wp user update 1 --display_name="John Doe" --user_nicename="john-doe" --nickname="Editor"
 
