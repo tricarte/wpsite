@@ -1466,12 +1466,18 @@ function sub_settings(){
     # This is login name
     curAdminUsername=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" user get 1 --field=user_login)
 
+    # Get user meta values
+    userMeta=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" user meta list 1 --format=csv)
+
     # This are user meta
-    curAdminFirstName=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" user meta get 1 first_name)
-    curAdminLastName=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" user meta get 1 last_name)
+    # curAdminFirstName=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" user meta get 1 first_name)
+    curAdminFirstName=$(echo "$userMeta" | grep first_name | cut -d',' -f3)
+    # curAdminLastName=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" user meta get 1 last_name)
+    curAdminLastName=$(echo "$userMeta" | grep last_name | cut -d',' -f3)
 
     # nickname is required
-    curAdminNickname=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" user meta get 1 nickname)
+    # curAdminNickname=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" user meta get 1 nickname)
+    curAdminNickname=$(echo "$userMeta" | grep nickname | cut -d',' -f3)
 
     # nicename is used as author slug
     curAdminNicename=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" user get 1 --field=user_nicename)
@@ -1557,7 +1563,7 @@ function sub_settings(){
     fi
 
     if [[ -n $ADMINLASTNAME ]] && [[ $ADMINLASTNAME != "$curAdminLastName" ]]; then
-        $WP --skip-plugins --path="$SITESDIR/$1/public/cms" user meta update 1 first_name "$ADMINLASTNAME" --quiet
+        $WP --skip-plugins --path="$SITESDIR/$1/public/cms" user meta update 1 last_name "$ADMINLASTNAME" --quiet
     fi
 
     if [[ -n $ADMINNICKNAME ]] && [[ $ADMINNICKNAME != "$curAdminNickname" ]]; then
