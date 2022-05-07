@@ -184,7 +184,7 @@ function openBrowser() {
     if [[ -n "$XDG_CURRENT_DESKTOP" ]]; then
         # URL=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" config get WP_HOME)
         URL=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" eval "echo get_dashboard_url();")
-        $(command -v xdg-open) $URL
+        $(command -v xdg-open) "$URL"
     fi
     return
 }
@@ -216,13 +216,12 @@ function deleteSite() {
 }
 
 function findLastSite() {
-    # FIXME: Use find -printf thing instead of ls
     SITE=$( find "$SITESDIR"/ \
         -maxdepth 2 \
         -type f \
         -name wpstarter.json \
-        | TZ=utc xargs ls -ld --full-time | sort -rk 6 | head -n1 \
-        | tr -s ' ' | cut -d" " -f9 | xargs -i dirname {} | xargs -i basename {}
+        -printf "%CY-%Cm-%Cd %CT %h\n" \
+        | sort -r | head -n1 | xargs -i basename {}
     )
 
     echo "$SITE"
