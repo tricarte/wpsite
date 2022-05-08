@@ -250,7 +250,7 @@ case "$1" in
         PRODUCTION=1
         shift
         ;;
-    --bare)
+    -b|--bare)
         BARE=1
         shift
         ;;
@@ -900,14 +900,15 @@ function sub_create(){
     if [[ $SUBHELP ]]; then
         _w ""
         _w "Usage: ${red}$progname create <site_name> [-n|--no-browse] --bare --production [-r|--repo /path/to/wpstarter/repo]${normal}"
+        _w "                                          --path /where/to/create/the/site"
         _w ""
-        _w "       The site will be created in $SITESDIR."
+        _w "       The site will be created in $SITESDIR. If --path is specified it will be used instead."
         _w "       Use -r to specify different wpstarter repo path"
         _w "       with which you will base the created site on."
         _w ""
         _w "       Use --production to disable some development related plugins and options."
         _w ""
-        _w "       Use --bare to not apply any further customizations to the installation."
+        _w "       Use --bare to not apply any further customizations to the default WP installation."
         _w "       Plugins will still be installed but not activated."
         _w ""
         _w "       If not defined, default wpstarter repository will be" 
