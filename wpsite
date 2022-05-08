@@ -365,7 +365,7 @@ function sub_list(){
 
     if command -v fd > /dev/null 2>&1; then
         FD=$(command -v fd)
-        sitesList=$($FD wpstarter.json --max-depth 2 --type f --base-directory "$SITESDIR" --color never --exec dirname)
+        sitesList=$($FD wpstarter.json --max-depth 2 --type f -a --base-directory "$SITESDIR" --color never --exec dirname | xargs -i basename {})
     else
         sitesList=$(find "$SITESDIR/" -maxdepth 2 -type f -name wpstarter.json -exec dirname {} \; | xargs -i basename {} -0)
     fi
