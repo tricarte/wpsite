@@ -143,9 +143,9 @@ function checkDBCredentials() {
     if [[ $1 == 'wpstarter' ]]; then
         # Check DB credentials in wpstarter repo
         if [[ -d "$WPSTARTERDIR" ]]; then
-            eval $(grep DB_USER "$WPSTARTERDIR/custom-templates/.env.example")
-            eval $(grep DB_PASSWORD "$WPSTARTERDIR/custom-templates/.env.example")
-            if $MYSQLBIN -P$DBPORT -h$DBHOST -u$DB_USER -p$DB_PASSWORD -e"quit" > /dev/null 2>&1; then
+            eval "$(grep DB_USER "$WPSTARTERDIR/custom-templates/.env.example")"
+            eval "$(grep DB_PASSWORD "$WPSTARTERDIR/custom-templates/.env.example")"
+            if $MYSQLBIN -P"$DBPORT" -h"$DBHOST" -u"$DB_USER" -p"$DB_PASSWORD" -e"quit" > /dev/null 2>&1; then
                 true
                 return
             else
@@ -650,7 +650,7 @@ function sub_rename(){
     # wpstarter installation, then use as $DOCROOT
     if [[ $# == 1 ]]; then
         if [[ -f "$WORKING_DIR_ORIGINAL/wpstarter.json" ]]; then
-            DOCROOT="$(basename $WORKING_DIR_ORIGINAL)"
+            DOCROOT=$(basename "$WORKING_DIR_ORIGINAL")
             NEWDOCROOT=$1
         fi
     elif [[ -z $DOCROOT ]]; then
@@ -737,7 +737,7 @@ function sub_backup(){
     # a wpstarter installation, then use as $DOCROOT
     if [[ $# == 0 ]]; then
         if [[ -f "$WORKING_DIR_ORIGINAL/wpstarter.json" ]]; then
-            DOCROOT="$(basename $WORKING_DIR_ORIGINAL)"
+            DOCROOT=$(basename "$WORKING_DIR_ORIGINAL")
         fi
     fi
 
@@ -1011,7 +1011,7 @@ function sub_create(){
     $GIT clone "$WPSTARTERDIR" "$SITESDIR/$DOCROOT"
     # Add post-merge hook to apply "composer wpstarter" after git pull
     echo "#!/usr/bin/env bash
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"
+export PATH=\"/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin\"
 composer wpstarter" > "$SITESDIR/$DOCROOT/.git/hooks/post-merge"
     chmod +x "$SITESDIR/$DOCROOT/.git/hooks/post-merge"
 
@@ -1083,7 +1083,7 @@ function sub_lang(){
     # wpstarter installation, then use as $DOCROOT
     if [[ $# == 1 ]]; then
         if [[ -f "$WORKING_DIR_ORIGINAL/wpstarter.json" ]]; then
-            DOCROOT="$(basename $WORKING_DIR_ORIGINAL)"
+            DOCROOT=$(basename "$WORKING_DIR_ORIGINAL")
             WPLANG=$1
         fi
     elif [[ -z $DOCROOT ]]; then
@@ -1188,7 +1188,7 @@ function sub_admin(){
     # wpstarter installation, then use as $DOCROOT
     if [[ $# == 0 ]]; then
         if [[ -f "$WORKING_DIR_ORIGINAL/wpstarter.json" ]]; then
-            DOCROOT="$(basename $WORKING_DIR_ORIGINAL)"
+            DOCROOT=$(basename "$WORKING_DIR_ORIGINAL")
         fi
     elif [[ -z $DOCROOT ]]; then
         _e "Err: Specify a directory name to open."
@@ -1267,7 +1267,7 @@ function sub_fm(){
     # wpstarter installation, then use as $DOCROOT
     if [[ $# == 0 ]]; then
         if [[ -f "$WORKING_DIR_ORIGINAL/wpstarter.json" ]]; then
-            DOCROOT="$(basename $WORKING_DIR_ORIGINAL)"
+            DOCROOT=$(basename "$WORKING_DIR_ORIGINAL")
         fi
     elif [[ -z $DOCROOT ]]; then
         _e "Err: Specify a directory name to browse with the file manager."
@@ -1305,7 +1305,7 @@ function sub_clone-repo() {
         $GIT clone https://github.com/tricarte/wpready3 "$WPSTARTERDIR"
         # Add post-commit hook to run 'composer wpstarter'
         echo "#!/usr/bin/env bash
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"
+export PATH=\"/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin\"
 composer wpstarter" > "$WPSTARTERDIR/.git/hooks/post-commit"
         chmod +x "$WPSTARTERDIR/.git/hooks/post-commit"
         _w ""
@@ -1343,7 +1343,7 @@ function sub_install-theme(){
     # wpstarter installation, then use as $DOCROOT
     if [[ $# == 1 ]]; then
         if [[ -f "$WORKING_DIR_ORIGINAL/wpstarter.json" ]]; then
-            DOCROOT="$(basename $WORKING_DIR_ORIGINAL)"
+            DOCROOT=$(basename "$WORKING_DIR_ORIGINAL")
             THEME_NAME=$1
         fi
     elif [[ -z $DOCROOT ]]; then
@@ -1391,7 +1391,7 @@ function sub_install-plugin(){
     # wpstarter installation, then use as $DOCROOT
     if [[ $# == 1 ]]; then
         if [[ -f "$WORKING_DIR_ORIGINAL/wpstarter.json" ]]; then
-            DOCROOT="$(basename $WORKING_DIR_ORIGINAL)"
+            DOCROOT=$(basename "$WORKING_DIR_ORIGINAL")
             PLUGIN_NAME=$1
         fi
     elif [[ -z $DOCROOT ]]; then
@@ -1481,7 +1481,7 @@ function sub_settings(){
     # Current site settings
     _w "Getting current site and user settings..."
     _w ""
-    blogSettings=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" db query 'select option_value from '$tablePrefix'options where option_name IN ("blogname", "blogdescription")' --skip-column-names)
+    blogSettings=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" db query 'select option_value from '"$tablePrefix"'options where option_name IN ("blogname", "blogdescription")' --skip-column-names)
     # curBlogname=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" option get blogname)
     # curTagline=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" option get blogdescription)
     curBlogname=$(echo "$blogSettings" | head -n1)
