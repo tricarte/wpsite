@@ -13,6 +13,7 @@
 [[ -n ${SUDO_USER:-} ]] && { _e "sudo detected, exiting normally!"; exit; }
 
 if [[ -f "$HOME/.wpsiterc" ]]; then
+    # shellcheck source=/dev/null
     source "$HOME/.wpsiterc"
 fi
 
@@ -1605,7 +1606,8 @@ function sub_settings(){
     _w "${red}Tagline${normal}:               $curTagline"
     _w ""
     _w "Admin User"
-    _w "${red}Username (Login name)${normal}: $curAdminUsername"
+    _w "${red}Username (Login name - Cannot be changed)${normal}: $curAdminUsername"
+    _w ""
     _w "${red}First Name${normal}:            $curAdminFirstName"
     _w "${red}Last Name${normal}:             $curAdminLastName"
     _w "${red}Nickname${normal}:              $curAdminNickname"
@@ -1645,19 +1647,29 @@ function sub_settings(){
     _w "#  These are the new values  #"
     _w "##############################"
     _w ""
-    _w "${red}Site Title${normal}:            ${BLOGNAME}"
-    _w "${red}Tagline${normal}:               ${BLOGDESCRIPTION}"
-    _w ""
-    _w "Admin User"
-    _w "${red}First Name${normal}:            ${ADMINFIRSTNAME}"
-    _w "${red}Last Name${normal}:             ${ADMINLASTNAME}"
-    _w "${red}Nickname${normal}:              ${ADMINNICKNAME}"
-    _w "${red}Nicename${normal}:              ${ADMINNICENAME}"
-    _w "${red}Display Name${normal}:          ${ADMINDISPLAYNAME}"
-    _w "${red}Email${normal}:                 ${ADMINEMAIL}"
+    if [[ -n $BLOGNAME ]]; then          _w "${red}Site Title${normal}:              ${BLOGNAME}"; fi
+    if [[ -n $BLOGDESCRIPTION ]]; then   _w "${red}Tagline${normal}:                 ${BLOGDESCRIPTION}"; fi
+    if [[ -n $ADMINFIRSTNAME ]]; then    _w "${red}First Name${normal}:              ${ADMINFIRSTNAME}"; fi
+    if [[ -n $ADMINLASTNAME ]]; then     _w "${red}Last Name${normal}:               ${ADMINLASTNAME}"; fi
+    if [[ -n $ADMINNICKNAME ]]; then     _w "${red}Nickname${normal}:                ${ADMINNICKNAME}"; fi
+    if [[ -n $ADMINNICENAME ]]; then     _w "${red}Nicename${normal}:                ${ADMINNICENAME}"; fi
+    if [[ -n $ADMINDISPLAYNAME ]]; then  _w "${red}Display Name${normal}:            ${ADMINDISPLAYNAME}"; fi
+    if [[ -n $ADMINEMAIL ]]; then        _w "${red}Email${normal}:                   ${ADMINEMAIL}"; fi
+    
+    # _w "${red}Tagline${normal}:               ${BLOGDESCRIPTION}"
+    # _w ""
+    # _w "Admin User"
+    # _w "${red}First Name${normal}:            ${ADMINFIRSTNAME}"
+    # _w "${red}Last Name${normal}:             ${ADMINLASTNAME}"
+    # _w "${red}Nickname${normal}:              ${ADMINNICKNAME}"
+    # _w "${red}Nicename${normal}:              ${ADMINNICENAME}"
+    # _w "${red}Display Name${normal}:          ${ADMINDISPLAYNAME}"
+    # _w "${red}Email${normal}:                 ${ADMINEMAIL}"
 
-    read -p "Apply new settings?  (y/n) (Default No): " -r
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    _w ""
+    # read -p "Apply new settings?  (y/n) (Default No): " -r
+    read -rp "Apply new settings?  (y/n) (Default No): " -e ANSWER
+    if [[ ! $ANSWER =~ ^[Yy]$ ]]; then
         _w "New settings discarded."
         return 1
     fi
@@ -1699,7 +1711,7 @@ function sub_settings(){
     fi
 
     $WP --skip-plugins --path="$SITESDIR/$DOCROOT/public/cms" cache flush --quiet > /dev/null 2>&1
-    _w ""
+
     _w "New settings applied."
 
     return
