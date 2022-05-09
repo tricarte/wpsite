@@ -7,7 +7,8 @@
 # set -u # Treat unset variables as errors
 # You have to use ${VAR:-} everywhere when using set -u
 # set -E # You must use this if you want "trap" apply to everything including subshells.
-set -eo pipefail # Exit when a command and any command in a pipe fails
+# set -eo pipefail # Exit when a command and any command in a pipe fails
+# set -e # Exit when a command and any command in a pipe fails
 
 [[ -n ${SUDO_USER:-} ]] && { _e "sudo detected, exiting normally!"; exit; }
 
@@ -233,8 +234,9 @@ function isWPStarter() {
     while [[ $current != "/" ]];
     do
         if [[ -f $current/wpstarter.json ]]; then
-            docroot=$(basename "$current")
-            echo "$docroot"
+            # docroot=$(basename "$current")
+            # echo "$docroot"
+            echo "$current"
             break
         else
             current=$(dirname "$current")
@@ -666,8 +668,11 @@ function sub_rename(){
     if [[ $# == 1 ]]; then
         fileExists=$(isWPStarter)
         if [[ -n $fileExists ]]; then
-            DOCROOT=$fileExists
+            DOCROOT=$(basename "$fileExists")
             NEWDOCROOT=$1
+            if [[ $fileExists != "$SITESDIR"* ]]; then
+                SITESDIR=$(dirname "$fileExists")
+            fi
         fi
         # if [[ -f "$WORKING_DIR_ORIGINAL/wpstarter.json" ]]; then
         #     DOCROOT=$(basename "$WORKING_DIR_ORIGINAL")
@@ -758,7 +763,10 @@ function sub_backup(){
     if [[ $# == 0 ]]; then
         fileExists=$(isWPStarter)
         if [[ -n $fileExists ]]; then
-            DOCROOT=$fileExists
+            DOCROOT=$(basename "$fileExists")
+            if [[ $fileExists != "$SITESDIR"* ]]; then
+                SITESDIR=$(dirname "$fileExists")
+            fi
         fi
         # if [[ -f "$WORKING_DIR_ORIGINAL/wpstarter.json" ]]; then
         #     DOCROOT=$(basename "$WORKING_DIR_ORIGINAL")
@@ -1108,8 +1116,11 @@ function sub_lang(){
     if [[ $# == 1 ]]; then
         fileExists=$(isWPStarter)
         if [[ -n $fileExists ]]; then
-            DOCROOT=$fileExists
+            DOCROOT=$(basename "$fileExists")
             WPLANG=$1
+            if [[ $fileExists != "$SITESDIR"* ]]; then
+                SITESDIR=$(dirname "$fileExists")
+            fi
         fi
         # if [[ -f "$WORKING_DIR_ORIGINAL/wpstarter.json" ]]; then
         #     DOCROOT=$(basename "$WORKING_DIR_ORIGINAL")
@@ -1218,7 +1229,10 @@ function sub_admin(){
     if [[ $# == 0 ]]; then
         fileExists=$(isWPStarter)
         if [[ -n $fileExists ]]; then
-            DOCROOT=$fileExists
+            DOCROOT=$(basename "$fileExists")
+            if [[ $fileExists != "$SITESDIR"* ]]; then
+                SITESDIR=$(dirname "$fileExists")
+            fi
         fi
         # if [[ -f "$WORKING_DIR_ORIGINAL/wpstarter.json" ]]; then
         #     DOCROOT=$(basename "$WORKING_DIR_ORIGINAL")
@@ -1301,7 +1315,10 @@ function sub_fm(){
     if [[ $# == 0 ]]; then
         fileExists=$(isWPStarter)
         if [[ -n $fileExists ]]; then
-            DOCROOT=$fileExists
+            DOCROOT=$(basename "$fileExists")
+            if [[ $fileExists != "$SITESDIR"* ]]; then
+                SITESDIR=$(dirname "$fileExists")
+            fi
         fi
         # if [[ -f "$WORKING_DIR_ORIGINAL/wpstarter.json" ]]; then
         #     DOCROOT=$(basename "$WORKING_DIR_ORIGINAL")
@@ -1381,8 +1398,11 @@ function sub_install-theme(){
     if [[ $# == 1 ]]; then
         fileExists=$(isWPStarter)
         if [[ -n $fileExists ]]; then
-            DOCROOT=$fileExists
+            DOCROOT=$(basename "$fileExists")
             THEME_NAME=$1
+            if [[ $fileExists != "$SITESDIR"* ]]; then
+                SITESDIR=$(dirname "$fileExists")
+            fi
         fi
         # if [[ -f "$WORKING_DIR_ORIGINAL/wpstarter.json" ]]; then
         #     DOCROOT=$(basename "$WORKING_DIR_ORIGINAL")
@@ -1434,8 +1454,11 @@ function sub_install-plugin(){
     if [[ $# == 1 ]]; then
         fileExists=$(isWPStarter)
         if [[ -n $fileExists ]]; then
-            DOCROOT=$fileExists
+            DOCROOT=$(basename "$fileExists")
             PLUGIN_NAME=$1
+            if [[ $fileExists != "$SITESDIR"* ]]; then
+                SITESDIR=$(dirname "$fileExists")
+            fi
         fi
         # if [[ -f "$WORKING_DIR_ORIGINAL/wpstarter.json" ]]; then
         #     DOCROOT=$(basename "$WORKING_DIR_ORIGINAL")
@@ -1503,7 +1526,10 @@ function sub_settings(){
     if [[ $# == 0 ]]; then
         fileExists=$(isWPStarter)
         if [[ -n $fileExists ]]; then
-            DOCROOT=$fileExists
+            DOCROOT=$(basename "$fileExists")
+            if [[ $fileExists != "$SITESDIR"* ]]; then
+                SITESDIR=$(dirname "$fileExists")
+            fi
         fi
         # if [[ -f "$WORKING_DIR_ORIGINAL/wpstarter.json" ]]; then
         #     DOCROOT=$(basename "$WORKING_DIR_ORIGINAL")
