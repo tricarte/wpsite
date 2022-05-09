@@ -1569,8 +1569,10 @@ function sub_settings(){
     fi
 
     # Current site settings
-    _w "Getting current site and user settings..."
-    _w ""
+    if [ -t 0 ]; then
+        _w "Getting current site and user settings..."
+        _w ""
+    fi
     blogSettings=$($WP --skip-plugins --path="$SITESDIR/$DOCROOT/public/cms" db query 'select option_value from '"$tablePrefix"'options where option_name IN ("blogname", "blogdescription")' --skip-column-names)
     # curBlogname=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" option get blogname)
     # curTagline=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" option get blogdescription)
@@ -1602,59 +1604,79 @@ function sub_settings(){
     # curAdminNickname=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" user meta get 1 nickname)
     curAdminNickname=$(echo "$userMeta" | grep nickname | cut -d',' -f3)
 
-    _w "${red}Site Title${normal}:            $curBlogname"
-    _w "${red}Tagline${normal}:               $curTagline"
-    _w ""
-    _w "Admin User"
-    _w "${red}Username (Login name - Cannot be changed)${normal}: $curAdminUsername"
-    _w ""
-    _w "${red}First Name${normal}:            $curAdminFirstName"
-    _w "${red}Last Name${normal}:             $curAdminLastName"
-    _w "${red}Nickname${normal}:              $curAdminNickname"
-    _w "${red}Nicename${normal}:              $curAdminNicename"
-    _w "${red}Display Name${normal}:          $curAdminDisplayName"
-    _w "${red}Email${normal}:                 $curAdminEmail"
+    if [ -t 0 ]; then
+        _w "${red}Site Title${normal}:            $curBlogname"
+        _w "${red}Tagline${normal}:               $curTagline"
+        _w ""
+        _w "Admin User"
+        _w "${red}Username (Login name - Cannot be changed)${normal}: $curAdminUsername"
+        _w ""
+        _w "${red}First Name${normal}:            $curAdminFirstName"
+        _w "${red}Last Name${normal}:             $curAdminLastName"
+        _w "${red}Nickname${normal}:              $curAdminNickname"
+        _w "${red}Nicename${normal}:              $curAdminNicename"
+        _w "${red}Display Name${normal}:          $curAdminDisplayName"
+        _w "${red}Email${normal}:                 $curAdminEmail"
 
-    _w ""
+        _w ""
+    fi
 
     read -rp "Site Title (blogname) (Leave empty to use the current value): " -e BLOGNAME
     read -rp "Tagline (blogdescription) (Leave empty to use the current value): " -e BLOGDESCRIPTION
 
-    _w ""
-    _w "Admin User"
+    if [ -t 0 ]; then
+        _w ""
+        _w "Admin User"
+    fi
     read -rp "First Name (Leave empty to use the current value): " -e ADMINFIRSTNAME
     read -rp "Last Name (Leave empty to use the current value): " -e ADMINLASTNAME
 
-    _w ""
-    _w "Nickname gives an option to set display name to something other than login name or real name."
-    _w "You don't have to specify one."
+    if [ -t 0 ]; then
+        _w ""
+        _w "Nickname gives an option to set display name to something other than login name or real name."
+        _w "You don't have to specify one."
+    fi
     read -rp "Nick Name (Leave empty to use the current value): " -e ADMINNICKNAME
 
-    _w ""
-    _w "Nicename will be used as author slug in author archive URLs."
-    _w "It's a good idea to set it to something other than login name."
-    _w "Current nice name: ${red}$curAdminNicename${normal}"
+    if [ -t 0 ]; then
+        _w ""
+        _w "Nicename will be used as author slug in author archive URLs."
+        _w "It's a good idea to set it to something other than login name."
+        _w "Current nice name: ${red}$curAdminNicename${normal}"
+    fi
     read -rp "Nicename (Leave empty to use the current value): " -e ADMINNICENAME
 
-    _w ""
-    _w "Display name is used in author archive pages as title such as \"Author: DISPLAY_NAME\"."
+    if [ -t 0 ]; then
+        _w ""
+        _w "Display name is used in author archive pages as title such as \"Author: DISPLAY_NAME\"."
+    fi
     read -rp "Display Name (Leave empty to use the current value): " -e ADMINDISPLAYNAME
 
     read -rp "Email (Leave empty to use the current value): " -e ADMINEMAIL
     
-    _w ""
-    _w "##############################"
-    _w "#  These are the new values  #"
-    _w "##############################"
-    _w ""
-    if [[ -n $BLOGNAME ]]; then          _w "${red}Site Title${normal}:              ${BLOGNAME}"; fi
-    if [[ -n $BLOGDESCRIPTION ]]; then   _w "${red}Tagline${normal}:                 ${BLOGDESCRIPTION}"; fi
-    if [[ -n $ADMINFIRSTNAME ]]; then    _w "${red}First Name${normal}:              ${ADMINFIRSTNAME}"; fi
-    if [[ -n $ADMINLASTNAME ]]; then     _w "${red}Last Name${normal}:               ${ADMINLASTNAME}"; fi
-    if [[ -n $ADMINNICKNAME ]]; then     _w "${red}Nickname${normal}:                ${ADMINNICKNAME}"; fi
-    if [[ -n $ADMINNICENAME ]]; then     _w "${red}Nicename${normal}:                ${ADMINNICENAME}"; fi
-    if [[ -n $ADMINDISPLAYNAME ]]; then  _w "${red}Display Name${normal}:            ${ADMINDISPLAYNAME}"; fi
-    if [[ -n $ADMINEMAIL ]]; then        _w "${red}Email${normal}:                   ${ADMINEMAIL}"; fi
+    VALUES=""
+
+    if [[ -n $BLOGNAME ]]; then          VALUES+="${red}Site Title${normal}:              ${BLOGNAME}\n"; fi
+    if [[ -n $BLOGDESCRIPTION ]]; then   VALUES+="${red}Tagline${normal}:                 ${BLOGDESCRIPTION}\n"; fi
+    if [[ -n $ADMINFIRSTNAME ]]; then    VALUES+="${red}First Name${normal}:              ${ADMINFIRSTNAME}\n"; fi
+    if [[ -n $ADMINLASTNAME ]]; then     VALUES+="${red}Last Name${normal}:               ${ADMINLASTNAME}\n"; fi
+    if [[ -n $ADMINNICKNAME ]]; then     VALUES+="${red}Nickname${normal}:                ${ADMINNICKNAME}\n"; fi
+    if [[ -n $ADMINNICENAME ]]; then     VALUES+="${red}Nicename${normal}:                ${ADMINNICENAME}\n"; fi
+    if [[ -n $ADMINDISPLAYNAME ]]; then  VALUES+="${red}Display Name${normal}:            ${ADMINDISPLAYNAME}\n"; fi
+    if [[ -n $ADMINEMAIL ]]; then        VALUES+="${red}Email${normal}:                   ${ADMINEMAIL}\n"; fi
+
+    if [[ -z $VALUES ]]; then
+        _w "No settings changed."
+        _w "Exiting without any changes."
+        exit
+    fi
+
+    if [ -t 0 ]; then
+        _w "####################"
+        _w "#  Entered values  #"
+        _w "####################"
+        echo -e "$VALUES"
+    fi
     
     # _w "${red}Tagline${normal}:               ${BLOGDESCRIPTION}"
     # _w ""
@@ -1666,12 +1688,14 @@ function sub_settings(){
     # _w "${red}Display Name${normal}:          ${ADMINDISPLAYNAME}"
     # _w "${red}Email${normal}:                 ${ADMINEMAIL}"
 
-    _w ""
+    # _w ""
     # read -p "Apply new settings?  (y/n) (Default No): " -r
-    read -rp "Apply new settings?  (y/n) (Default No): " -e ANSWER
-    if [[ ! $ANSWER =~ ^[Yy]$ ]]; then
-        _w "New settings discarded."
-        return 1
+    if [ -t 0 ]; then
+        read -rp "Apply new settings?  (y/n) (Default No): " -e ANSWER
+        if [[ ! $ANSWER =~ ^[Yy]$ ]]; then
+            _w "New settings discarded."
+            return 1
+        fi
     fi
 
     _w "Applying new settings..."
