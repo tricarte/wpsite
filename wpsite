@@ -47,7 +47,6 @@ if [[ -z $NUMBACKUPSTOKEEP ]]; then NUMBACKUPSTOKEEP=2; fi
 #  End of Defaults  #
 #####################
 
-
 #######################
 #  Utility functions  #
 #######################
@@ -83,10 +82,10 @@ fi
 
 # Check MySQL/MariaDB is running
 DBSTATUS=$(systemctl is-active mysql.service)
-if [[  $DBSTATUS == 'inactive' ]]; then
-    _e "Database server is not running or reachable."
+if [[  $DBSTATUS != 'active' ]]; then
+    _e "Database server is not running."
     if [[ -n "$NOTIFYBIN" ]]; then
-        $NOTIFYBIN -a WPSITE "Database server is not running or reachable."
+        $NOTIFYBIN -a WPSITE "Database server is not running."
     fi
     exit 1
 fi
