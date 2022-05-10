@@ -235,8 +235,6 @@ function isWPStarter() {
     while [[ $current != "/" ]];
     do
         if [[ -f $current/wpstarter.json ]]; then
-            # docroot=$(basename "$current")
-            # echo "$docroot"
             echo "$current"
             break
         else
@@ -414,14 +412,12 @@ function sub_boilerplate(){
         $progname delete boiler
     fi
     _w "Temporary site ${purple}\"boiler\"${normal} is being created..."
+    # TODO: dev/null thing
     $progname create boiler -n
-    # wpsite create boiler -n > /dev/null 2>&1 && \
     _w "Backing up ${purple}\"boiler\"${normal} for later use..."
     $progname backup boiler
-    # wpsite backup boiler > /dev/null 2>&1 && \
     _w "Removing temporary site..."
     $progname delete boiler -y
-    # wpsite delete boiler  -y > /dev/null 2>&1
 
     # Delete everything but the last backup.
     _w "Removing older versions of the boilerplate from ${purple}\"$BACKUPSDIR/boiler\"${normal}..."
@@ -473,12 +469,10 @@ function sub_update(){
     createTmpDir
 
     cp "$WPSTARTERDIR/composer.lock" "$tmpDir/composer.lock"
-    # result=$(diff -sq "$WPSTARTERDIR/composer.lock" /tmp/composer.lock )
 
     _w "Updating composer packages..."
     $COMPOSERBIN --working-dir="$WPSTARTERDIR" update -q || exit
 
-    # if grep -q "identical" <<< "$(diff -sq "$WPSTARTERDIR/composer.lock" "$tmpDir/composer.lock")"; then
     if cmp -s "$WPSTARTERDIR/composer.lock" "$tmpDir/composer.lock"; then
         _w "No updates are available."
         return
@@ -544,7 +538,6 @@ function sub_restore(){
     fi
 
     # Find the latest backup directory
-    # LATEST_BACKUP=$( ls -t "$BACKUPSDIR/$DOCROOT" -1 | head -n1 )
     LATEST_BACKUP=$(find "$BACKUPSDIR"/"$DOCROOT"/* \
         -maxdepth 0 \
         -type d -printf '%f\n' \
@@ -675,10 +668,6 @@ function sub_rename(){
                 SITESDIR=$(dirname "$fileExists")
             fi
         fi
-        # if [[ -f "$WORKING_DIR_ORIGINAL/wpstarter.json" ]]; then
-        #     DOCROOT=$(basename "$WORKING_DIR_ORIGINAL")
-        #     NEWDOCROOT=$1
-        # fi
     elif [[ -z $DOCROOT ]]; then
         _e "Err: Specify an existing site to rename. It will be searched in $SITESDIR."
         _e "See \"$progname rename -h\" for help."
@@ -769,9 +758,6 @@ function sub_backup(){
                 SITESDIR=$(dirname "$fileExists")
             fi
         fi
-        # if [[ -f "$WORKING_DIR_ORIGINAL/wpstarter.json" ]]; then
-        #     DOCROOT=$(basename "$WORKING_DIR_ORIGINAL")
-        # fi
     fi
 
     if [[ -z $DOCROOT ]]; then
@@ -796,9 +782,6 @@ function sub_backup(){
         # Delete older backups if there are more than $NUMBACKUPSTOKEEP.
         cd "$BACKUPSDIR/$DOCROOT" || exit
         mapfile -t BACKUPSLIST < <(find -- * -maxdepth 0 -type d -printf "%f\n" -regextype 'posix-extended' -regex "^[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{6}$")
-        # mapfile -t BACKUPSLIST < <(find -- * -maxdepth 0 -type d ! -newer $TSTAMP)
-        # BACKUPSLIST=( $(find "$BACKUPSDIR/$DOCROOT" -maxdepth 0 -type d -printf "%f\n" -regextype 'posix-extended' -regex "^[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{6}$") )
-        # ! -newer $TSTAMP ! -name $TSTAMP
 
         if [[ ${#BACKUPSLIST[@]} -gt $NUMBACKUPSTOKEEP ]]; then
             read -p "Older backups will be deleted! Proceed?  (y/n) (Default No): " -r
@@ -1123,10 +1106,6 @@ function sub_lang(){
                 SITESDIR=$(dirname "$fileExists")
             fi
         fi
-        # if [[ -f "$WORKING_DIR_ORIGINAL/wpstarter.json" ]]; then
-        #     DOCROOT=$(basename "$WORKING_DIR_ORIGINAL")
-        #     WPLANG=$1
-        # fi
     elif [[ -z $DOCROOT ]]; then
         _e "Err: Specify a site to install the language."
         _e "See \"$progname lang -h\" for help."
@@ -1235,9 +1214,6 @@ function sub_admin(){
                 SITESDIR=$(dirname "$fileExists")
             fi
         fi
-        # if [[ -f "$WORKING_DIR_ORIGINAL/wpstarter.json" ]]; then
-        #     DOCROOT=$(basename "$WORKING_DIR_ORIGINAL")
-        # fi
     elif [[ -z $DOCROOT ]]; then
         _e "Err: Specify a directory name to open."
         _e "See $progname admin -h for help."
@@ -1321,9 +1297,6 @@ function sub_fm(){
                 SITESDIR=$(dirname "$fileExists")
             fi
         fi
-        # if [[ -f "$WORKING_DIR_ORIGINAL/wpstarter.json" ]]; then
-        #     DOCROOT=$(basename "$WORKING_DIR_ORIGINAL")
-        # fi
     elif [[ -z $DOCROOT ]]; then
         _e "Err: Specify a directory name to browse with the file manager."
         _e "See $progname fm -h for help."
@@ -1405,10 +1378,6 @@ function sub_install-theme(){
                 SITESDIR=$(dirname "$fileExists")
             fi
         fi
-        # if [[ -f "$WORKING_DIR_ORIGINAL/wpstarter.json" ]]; then
-        #     DOCROOT=$(basename "$WORKING_DIR_ORIGINAL")
-        #     THEME_NAME=$1
-        # fi
     elif [[ -z $DOCROOT ]]; then
         _e "Err: Specify a site to install the theme."
         _e "See \"$progname install-theme -h\" for help."
@@ -1461,10 +1430,6 @@ function sub_install-plugin(){
                 SITESDIR=$(dirname "$fileExists")
             fi
         fi
-        # if [[ -f "$WORKING_DIR_ORIGINAL/wpstarter.json" ]]; then
-        #     DOCROOT=$(basename "$WORKING_DIR_ORIGINAL")
-        #     PLUGIN_NAME=$1
-        # fi
     elif [[ -z $DOCROOT ]]; then
         _e "Err: Specify a site to install the plugin."
         _e "See \"$progname install-plugin -h\" for help."
@@ -1532,20 +1497,11 @@ function sub_settings(){
                 SITESDIR=$(dirname "$fileExists")
             fi
         fi
-        # if [[ -f "$WORKING_DIR_ORIGINAL/wpstarter.json" ]]; then
-        #     DOCROOT=$(basename "$WORKING_DIR_ORIGINAL")
-        # fi
     elif [[ -z $DOCROOT ]]; then
         _e "Err: Specify a directory name. The site will be searched in \"$SITESDIR\"."
         _e "See \"$progname settings -h\" for help."
         return 1
     fi
-
-    # if [[ -z $DOCROOT ]]; then
-    #     _e "Err: Specify a directory name. The site will be searched in \"$SITESDIR\"."
-    #     _e "See \"$progname settings -h\" for help."
-    #     return 1
-    # fi
 
     if [[ ! -d "$SITESDIR/$DOCROOT" ]]; then
         _e "Err: $DOCROOT does not exist in \"$SITESDIR\"."
@@ -1574,8 +1530,6 @@ function sub_settings(){
         _w ""
     fi
     blogSettings=$($WP --skip-plugins --path="$SITESDIR/$DOCROOT/public/cms" db query 'select option_value from '"$tablePrefix"'options where option_name IN ("blogname", "blogdescription")' --skip-column-names)
-    # curBlogname=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" option get blogname)
-    # curTagline=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" option get blogdescription)
     curBlogname=$(echo "$blogSettings" | head -n1)
     curTagline=$(echo "$blogSettings" | tail -n1)
 
@@ -1584,24 +1538,14 @@ function sub_settings(){
     curAdminNicename=$(echo "$userSettings" | grep user_nicename | cut -d',' -f2)
     curAdminDisplayName=$(echo "$userSettings" | grep display_name | cut -d',' -f2)
     curAdminEmail=$(echo "$userSettings" | grep user_email | cut -d',' -f2)
-    # login name
-    # curAdminUsername=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" user get 1 --field=user_login)
-    # nicename is used as author slug
-    # curAdminNicename=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" user get 1 --field=user_nicename)
-    # This is used in author archive pages as "Author: $display_name" page title
-    # curAdminDisplayName=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" user get 1 --field=display_name)
-    # curAdminEmail=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" user get 1 --field=user_email)
 
     # Get user meta values
     userMeta=$($WP --skip-plugins --path="$SITESDIR/$DOCROOT/public/cms" user meta list 1 --format=csv)
 
-    # curAdminFirstName=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" user meta get 1 first_name)
     curAdminFirstName=$(echo "$userMeta" | grep first_name | cut -d',' -f3)
-    # curAdminLastName=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" user meta get 1 last_name)
     curAdminLastName=$(echo "$userMeta" | grep last_name | cut -d',' -f3)
 
     # nickname is required
-    # curAdminNickname=$($WP --skip-plugins --path="$SITESDIR/$1/public/cms" user meta get 1 nickname)
     curAdminNickname=$(echo "$userMeta" | grep nickname | cut -d',' -f3)
 
     if [ -t 0 ]; then
@@ -1678,17 +1622,6 @@ function sub_settings(){
         echo -e "$VALUES"
     fi
     
-    # _w "${red}Tagline${normal}:               ${BLOGDESCRIPTION}"
-    # _w ""
-    # _w "Admin User"
-    # _w "${red}First Name${normal}:            ${ADMINFIRSTNAME}"
-    # _w "${red}Last Name${normal}:             ${ADMINLASTNAME}"
-    # _w "${red}Nickname${normal}:              ${ADMINNICKNAME}"
-    # _w "${red}Nicename${normal}:              ${ADMINNICENAME}"
-    # _w "${red}Display Name${normal}:          ${ADMINDISPLAYNAME}"
-    # _w "${red}Email${normal}:                 ${ADMINEMAIL}"
-
-    # _w ""
     # read -p "Apply new settings?  (y/n) (Default No): " -r
     if [ -t 0 ]; then
         read -rp "Apply new settings?  (y/n) (Default No): " -e ANSWER
@@ -1699,8 +1632,6 @@ function sub_settings(){
     fi
 
     _w "Applying new settings..."
-
-    # wp user update 1 --display_name="John Doe" --user_nicename="john-doe" --nickname="Editor"
 
     if [[ -n $BLOGNAME ]] && [[ $BLOGNAME != "$curBlogname" ]]; then
         $WP --skip-plugins --path="$SITESDIR/$DOCROOT/public/cms" option update blogname "$BLOGNAME" --quiet
@@ -1953,7 +1884,6 @@ function sub_install() {
 	if [[ $PRODUCTION ]]; then
 		if [[ -d "$SITESDIR/$DOCROOT/public/content" ]]; then
 			# chmod -R o+w "/home/$(whoami)/sites/$SITENAME/public/content"
-            # if grep www-data /etc/group | grep $(whoami) > 2>&1; then
             if id -nG | grep www-data > /dev/null 2>&1; then
                 chown -R "$(whoami)":www-data "$SITESDIR/$DOCROOT/public/content"
             fi
@@ -2026,10 +1956,6 @@ function sub_install() {
 '"require-authentication|\/wp\/v2\/taxonomies":"1","require-authentication|\/wp\/v2\/types":"1",'\
 '"require-authentication|\/wp\/v2\/statuses":"1","require-authentication|\/wp\/v2\/settings":"1"}'
 
-        # This admin notice always appear.
-        # $WP --skip-plugins option update duplicate_post_show_notice 0
-
-        # $WP --skip-plugins user meta update 1 dismissed_wp_pointers "piklist_demos,custom-post-type-permalinks-settings"
         $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins user meta update 1 dismissed_wp_pointers "custom-post-type-permalinks-settings"
 
         CPTP_VERSION=$($WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins plugin get custom-post-type-permalinks --format=table --field=version)
