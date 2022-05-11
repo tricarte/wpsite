@@ -204,7 +204,8 @@ function deleteSite() {
     fi
     
     rm -rf "${SITESDIR:?}/${1:?}"
-    if which "$VALET" >/dev/null 2>&1; then
+    if [[ $VALET ]]; then
+    # if which "$VALET" >/dev/null 2>&1; then
         $VALET unlink "$DOCROOT" > /dev/null 2>&1
     fi
 
@@ -263,6 +264,10 @@ case "$1" in
         ;;
     --production)
         PRODUCTION=1
+        shift
+        ;;
+    --development)
+        DEVELOPMENT=1
         shift
         ;;
     -b|--bare)
@@ -358,6 +363,7 @@ function sub_default(){
     _w "    ${purple}flush-env${normal}       Delete and rebuild .env.cached.php file of a site."
     _w "    ${purple}config${normal}          Create .wpsiterc config file in $HOME."
     _w "    ${purple}testdb${normal}          Make a connection to DB to test user credentials stored in \"~/.wpsiterc\"."
+    _w "    ${purple}env${normal}             Convert WP environment to development or production."
     _w ""
     _w "For help with each subcommand run:"
     _w "${purple}$progname <subcommand> -h|--help${normal}"
@@ -624,7 +630,8 @@ function sub_restore(){
     touch "$SITESDIR/$FINALDIR/wpstarter.json"
 
     # Link valet
-    if which "$VALET" >/dev/null 2>&1; then
+    if [[ $VALET ]]; then
+    # if which "$VALET" >/dev/null 2>&1; then
         ( cd "$SITESDIR/$FINALDIR/public" && $VALET link "$FINALDIR" > /dev/null 2>&1)
     fi
     _w "$FINALDIR has been restored."
@@ -1033,7 +1040,8 @@ composer wpstarter" > "$SITESDIR/$DOCROOT/.git/hooks/post-merge"
     $COMPOSERBIN --working-dir="$SITESDIR/$DOCROOT" install || exit
     sub_install "$DOCROOT" # Most of the installation magic happens here
 
-    if which "$VALET" >/dev/null 2>&1; then
+    if [[ $VALET ]]; then
+    # if which "$VALET" >/dev/null 2>&1; then
         ( cd "$SITESDIR/$DOCROOT/public" && $VALET link "$DOCROOT" > /dev/null 2>&1)
     fi
 
@@ -1686,6 +1694,18 @@ function sub_flush-env(){
 
     DOCROOT="$1"
 
+    # If number of arguments is 0 and current directory is
+    # a wpstarter installation, then use as $DOCROOT
+    if [[ $# == 0 ]]; then
+        fileExists=$(isWPStarter)
+        if [[ -n $fileExists ]]; then
+            DOCROOT=$(basename "$fileExists")
+            if [[ $fileExists != "$SITESDIR"* ]]; then
+                SITESDIR=$(dirname "$fileExists")
+            fi
+        fi
+    fi
+
     if [[ ! -d "$SITESDIR/$DOCROOT" ]]; then
         _e "Err: \"$DOCROOT\" does not exist."
         return 1
@@ -1993,6 +2013,93 @@ function sub_install() {
     _w ""
 }
 export -f sub_install
+
+function sub_env(){
+    if [[ $SUBHELP ]]; then
+            _w "Usage: $progname env <site_name> [--production|--development]"
+            _w ""
+            _w "       Set WP environment to development or production."
+            _w ""
+            return
+    fi
+
+    DOCROOT="$1"
+
+    if [[ ! $PRODUCTION ]] && [[ ! $DEVELOPMENT ]]; then
+        _e "You didn't specify an environment."
+        _e "See \"$progname env --help\" for help."
+        exit 1
+    fi
+
+    if [[ $DOCROOT == "last" ]]; then
+        DOCROOT="$(findLastSite)"
+    fi
+
+    # If number of arguments is 0 and current directory is
+    # a wpstarter installation, then use as $DOCROOT
+    if [[ $# == 0 ]]; then
+        fileExists=$(isWPStarter)
+        if [[ -n $fileExists ]]; then
+            DOCROOT=$(basename "$fileExists")
+            if [[ $fileExists != "$SITESDIR"* ]]; then
+                SITESDIR=$(dirname "$fileExists")
+            fi
+        fi
+    fi
+
+    if [[ ! -d "$SITESDIR/$DOCROOT" ]]; then
+        _e "Err: \"$DOCROOT\" does not exist."
+        return 1
+    fi
+
+    if [[ ! -f "$SITESDIR/$DOCROOT/.env" ]]; then
+        _e "This does not seem to be a wpstarter based site."
+        exit 1
+    fi
+
+    if [[ $PRODUCTION ]]; then
+        sed -i -E -e 's/^ *?#? *?WP_ENV=(development|production)/WP_ENV=production/' \
+            -e 's/^ *?#? *?WP_CACHE=(true|false)/WP_CACHE=true/' \
+            -e 's/^ *?#? *?WP_ENVIRONMENT_TYPE=(development|production)/WP_ENVIRONMENT_TYPE=production/' \
+            -e 's/^ *?#? *?WP_DEBUG=(true|false)/WP_DEBUG=false/' \
+            -e 's/^ *?#? *?WP_DEBUG_DISPLAY=(true|false)/WP_DEBUG_DISPLAY=false/' \
+            -e 's/^ *?#? *?SAVEQUERIES=(true|false)/SAVEQUERIES=false/' \
+            -e 's/^ *?#? *?DISALLOW_FILE_EDIT=(true|false)/DISALLOW_FILE_EDIT=true/' \
+            -e 's/^ *?#? *?DISALLOW_UNFILTERED_HTML=(true|false)/DISALLOW_UNFILTERED_HTML=true/' \
+            -e 's/^ *?#? *?ALLOW_UNFILTERED_UPLOADS=(false|true)/ALLOW_UNFILTERED_UPLOADS=false/' \
+            -e 's/^ *?#? *?WP_HTTP_BLOCK_EXTERNAL=(true|false)/WP_HTTP_BLOCK_EXTERNAL=true/' \
+            -e 's/^ *?#? *?FS_CHMOD_DIR=2775/FS_CHMOD_DIR=2775/' \
+            -e 's/^ *?#? *?FS_CHMOD_FILE=2664/FS_CHMOD_FILE=2664/' \
+            -e 's/^ *?#? *?FS_METHOD=direct/FS_METHOD=direct/' \
+            -e 's/^ *?#? *?DISABLE_WP_CRON=(true|false)/DISABLE_WP_CRON=true/' \
+            -e 's/^ *?#? *?WP_MEMORY_LIMIT=64M/WP_MEMORY_LIMIT=64M/' \
+            -e 's/^ *?#? *?WP_MAX_MEMORY_LIMIT=128M/WP_MAX_MEMORY_LIMIT=128M/' "$SITESDIR/$DOCROOT/.env"
+    fi
+
+    if [[ ! $PRODUCTION ]] && [[ $DEVELOPMENT ]]; then
+        sed -i -E -e 's/^ *?#? *?WP_ENV=(development|production)/WP_ENV=development/' \
+            -e 's/^ *?#? *?WP_CACHE=(true|false)/WP_CACHE=true/' \
+            -e 's/^ *?#? *?WP_ENVIRONMENT_TYPE=(development|production)/WP_ENVIRONMENT_TYPE=development/' \
+            -e 's/^ *?#? *?WP_DEBUG=(true|false)/WP_DEBUG=true/' \
+            -e 's/^ *?#? *?WP_DEBUG_DISPLAY=(true|false)/WP_DEBUG_DISPLAY=true/' \
+            -e 's/^ *?#? *?SAVEQUERIES=(true|false)/SAVEQUERIES=true/' \
+            -e 's/^ *?#? *?DISALLOW_FILE_EDIT=(true|false)/DISALLOW_FILE_EDIT=false/' \
+            -e 's/^ *?#? *?DISALLOW_UNFILTERED_HTML=(true|false)/DISALLOW_UNFILTERED_HTML=true/' \
+            -e 's/^ *?#? *?ALLOW_UNFILTERED_UPLOADS=(false|true)/ALLOW_UNFILTERED_UPLOADS=true/' \
+            -e 's/^ *?#? *?WP_HTTP_BLOCK_EXTERNAL=(true|false)/WP_HTTP_BLOCK_EXTERNAL=false/' \
+            -e 's/^ *?#? *?FS_CHMOD_DIR=2775/FS_CHMOD_DIR=2775/' \
+            -e 's/^ *?#? *?FS_CHMOD_FILE=2664/FS_CHMOD_FILE=2664/' \
+            -e 's/^ *?#? *?FS_METHOD=direct/FS_METHOD=direct/' \
+            -e 's/^ *?#? *?DISABLE_WP_CRON=(true|false)/DISABLE_WP_CRON=true/' \
+            -e 's/^ *?#? *?WP_MEMORY_LIMIT=64M/WP_MEMORY_LIMIT=64M/' \
+            -e 's/^ *?#? *?WP_MAX_MEMORY_LIMIT=128M/WP_MAX_MEMORY_LIMIT=128M/' "$SITESDIR/$DOCROOT/.env"
+    fi
+
+    $progname flush-env "$DOCROOT"
+
+    return
+}
+export -f sub_env
 
 ##########################
 #  sub_command handling  #
