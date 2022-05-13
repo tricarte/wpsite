@@ -1849,23 +1849,24 @@ function sub_install() {
 		# ADMIN_PASS="$(tr -dc A-Za-z0-9 </dev/urandom | head -c 13)"
 		ADMIN_PASS="$(date +%s | sha256sum | base64 | head -c 13 ; echo)"
 
-		# Create separate db user and password, change .env file.
 		eval "$(grep DB_USER "$SITESDIR/$DOCROOT/.env")"
 		eval "$(grep DB_PASSWORD "$SITESDIR/$DOCROOT/.env")"
 
-		# NEW_DB_USER="$DOCROOT-$RANDOM"
+		# Create separate db user and password, change .env file.
+		NEW_DB_USER="$DOCROOT-$RANDOM"
 		# NEW_DB_PASSWORD=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 13)
-		# $MYSQLBIN -u $DB_USER -p$DB_PASSWORD -e"CREATE USER '$NEW_DB_USER'@'localhost' IDENTIFIED BY '$NEW_DB_PASSWORD';"
-		# $MYSQLBIN -u $DB_USER -p$DB_PASSWORD -e"GRANT ALL PRIVILEGES ON \`$DOCROOT\`.* TO '$NEW_DB_USER'@'localhost';"
-		$MYSQLBIN -u $DB_USER -p$DB_PASSWORD -e"CREATE USER '$ADMIN_USER'@'localhost' IDENTIFIED BY '$ADMIN_PASS';"
-		$MYSQLBIN -u $DB_USER -p$DB_PASSWORD -e"GRANT ALL PRIVILEGES ON \`$DOCROOT\`.* TO '$ADMIN_USER'@'localhost';"
+		NEW_DB_PASSWORD="$(date +%s%N | sha256sum | base64 | head -c 13 ; echo)"
+		$MYSQLBIN -u $DB_USER -p$DB_PASSWORD -e"CREATE USER '$NEW_DB_USER'@'localhost' IDENTIFIED BY '$NEW_DB_PASSWORD';"
+		$MYSQLBIN -u $DB_USER -p$DB_PASSWORD -e"GRANT ALL PRIVILEGES ON \`$DOCROOT\`.* TO '$NEW_DB_USER'@'localhost';"
+		# $MYSQLBIN -u $DB_USER -p$DB_PASSWORD -e"CREATE USER '$ADMIN_USER'@'localhost' IDENTIFIED BY '$ADMIN_PASS';"
+		# $MYSQLBIN -u $DB_USER -p$DB_PASSWORD -e"GRANT ALL PRIVILEGES ON \`$DOCROOT\`.* TO '$ADMIN_USER'@'localhost';"
 		$MYSQLBIN -u $DB_USER -p$DB_PASSWORD -e"FLUSH PRIVILEGES;"
 
 		# Now change .env with new values
-		# replace -s DB_USER=$DB_USER "DB_USER=$NEW_DB_USER" -- "$SITESDIR/$DOCROOT/.env"
-		# replace -s DB_PASSWORD=$DB_PASSWORD "DB_PASSWORD=$NEW_DB_PASSWORD" -- "$SITESDIR/$DOCROOT/.env"
-		replace -s DB_USER=$DB_USER "DB_USER=$ADMIN_USER" -- "$SITESDIR/$DOCROOT/.env"
-		replace -s DB_PASSWORD=$DB_PASSWORD "DB_PASSWORD=$ADMIN_PASS" -- "$SITESDIR/$DOCROOT/.env"
+		replace -s DB_USER=$DB_USER "DB_USER=$NEW_DB_USER" -- "$SITESDIR/$DOCROOT/.env"
+		replace -s DB_PASSWORD=$DB_PASSWORD "DB_PASSWORD=$NEW_DB_PASSWORD" -- "$SITESDIR/$DOCROOT/.env"
+		# replace -s DB_USER=$DB_USER "DB_USER=$ADMIN_USER" -- "$SITESDIR/$DOCROOT/.env"
+		# replace -s DB_PASSWORD=$DB_PASSWORD "DB_PASSWORD=$ADMIN_PASS" -- "$SITESDIR/$DOCROOT/.env"
 	else
 		ADMIN_USER="usr${DOCROOT}"
 		ADMIN_PASS="pss${DOCROOT}"
