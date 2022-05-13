@@ -1811,7 +1811,7 @@ export -f sub_testdb
 function sub_install() {
 	DOCROOT="$1"
 
-    # Use pwd if a directory (site) is not given.
+    # Use $PWD if a directory (site) is not given.
     # This is only possible when you install a tricarte/wpready3 site
     # through one of its composer scripts defined in composer.json like this:
     # "scripts": {
@@ -1872,8 +1872,16 @@ function sub_install() {
 	fi
 
 	if [[ $PRODUCTION ]]; then
-		replace -s wp-home "https://${DOCROOT}" -- "$SITESDIR/$DOCROOT/.env"
-		URL="$DOCROOT"
+        # If the given site name does not contain dot, indicating it's a not real
+        # production domain name, append '.test' to WP_HOME if --production is given
+        # and disable https. Because we think an https enabled local test is not necessary.
+        if [[ $DOCROOT =~ \. ]]; then
+            replace -s wp-home "https://${DOCROOT}" -- "$SITESDIR/$DOCROOT/.env"
+            URL="$DOCROOT"
+        else
+            replace -s wp-home "http://${DOCROOT}.test" -- "$SITESDIR/$DOCROOT/.env"
+            URL="$DOCROOT.test"
+        fi
 	else
 		replace -s wp-home "http://${DOCROOT}.test" -- "$SITESDIR/$DOCROOT/.env"
 		URL="$DOCROOT.test"
@@ -2003,6 +2011,8 @@ function sub_install() {
 
     if [[ $PRODUCTION ]]; then
         $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins plugin activate patchstack
+        # Convert environment settings to production
+        cd "$SITESDIR/$DOCROOT" && $progname env --production
     fi
 
 	_w ""
