@@ -10,7 +10,7 @@
 # set -eo pipefail # Exit when a command and any command in a pipe fails
 # set -e # Exit when a command and any command in a pipe fails
 
-[[ -n ${SUDO_USER:-} ]] && { _e "sudo detected, exiting normally!"; exit; }
+[[ -n ${SUDO_USER:-} ]] && { echo "sudo detected, exiting normally!"; exit; }
 
 if [[ -f "$HOME/.wpsiterc" ]]; then
     # shellcheck source=/dev/null
@@ -517,6 +517,16 @@ function sub_restore(){
 
     FINALDIR=""
 
+    # Setup custom installation path defined with --path, instead of $SITESDIR
+    if [[ -n $SITESDIR_CUSTOM ]]; then
+        if [[ -d "$SITESDIR_CUSTOM" ]] && [[ -w "$SITESDIR_CUSTOM" ]]; then
+            SITESDIR="$(dirname "$SITESDIR_CUSTOM")"/"$(basename "$SITESDIR_CUSTOM")"
+        else
+            _e "Neither $SITESDIR_CUSTOM exists nor writable."
+            exit 1
+        fi
+    fi
+
     if [[ -z $DOCROOT ]]; then
         _e "Err: Specify a directory to restore. It will be searched in $BACKUPSDIR."
         return 1
@@ -836,9 +846,10 @@ export -f sub_backup
 ################
 function sub_delete(){
     if [[ $SUBHELP ]]; then
-        _w "Usage: $progname delete <site_name1> <site_name2>"
+        _w "Usage: $progname delete <site_name1> <site_name2> --path search-path"
         _w ""
-        _w "       Sites will be deleted from $SITESDIR."
+        _w "       Sites will be deleted from $SITESDIR. If --path is given as"
+        _w "       parent directory, sites to be deleted will be search there."
         _w ""
         return
     fi
@@ -864,6 +875,16 @@ function sub_delete(){
         fi
 
         return
+    fi
+
+    # If --path is specified, search all sites to be deleted in that path.
+    if [[ -n $SITESDIR_CUSTOM ]]; then
+        if [[ -d $SITESDIR_CUSTOM ]]; then
+            SITESDIR=$SITESDIR_CUSTOM
+        else
+            _e "Specified path does not exist"
+            exit 1
+        fi
     fi
 
     for site in "${SITES_TO_DELETE[@]}"
