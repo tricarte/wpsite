@@ -164,6 +164,12 @@ else
     exit 1
 fi
 
+if ! $MYSQLBIN -P$DBPORT -h$DBHOST -u$DB_USER -p$DB_PASSWORD -e"quit" > /dev/null 2>&1; then
+    _e "Err: Cannot connect to DB."
+    _w "DB Credentials in $HOME/.wpsiterc is not correct."
+    exit 1
+fi
+
 # if [[ ! -w "$SITESDIR" ]]; then
 #     _e "$SITESDIR is not writable."
 #     exit 1
@@ -1071,15 +1077,15 @@ function sub_create(){
     # fi
 
     # Check DB credentials in wpstarter repo
-    eval "$(grep DB_USER "$WPSTARTERDIR/custom-templates/.env.example")"
-    eval "$(grep DB_PASSWORD "$WPSTARTERDIR/custom-templates/.env.example")"
-    if ! $MYSQLBIN -P$DBPORT -h$DBHOST -u$DB_USER -p$DB_PASSWORD -e"quit" > /dev/null 2>&1; then
-        _e "Err: Cannot connect to DB."
-        _w "DB Credentials in $WPSTARTERDIR/custom-template/.env.example"        
-        _w "is not correct."
-        _e "Installation aborted."
-        exit 1
-    fi
+    # eval "$(grep DB_USER "$WPSTARTERDIR/custom-templates/.env.example")"
+    # eval "$(grep DB_PASSWORD "$WPSTARTERDIR/custom-templates/.env.example")"
+    # if ! $MYSQLBIN -P$DBPORT -h$DBHOST -u$DB_USER -p$DB_PASSWORD -e"quit" > /dev/null 2>&1; then
+    #     _e "Err: Cannot connect to DB."
+    #     _w "DB Credentials in $WPSTARTERDIR/custom-template/.env.example"
+    #     _w "is not correct."
+    #     _e "Installation aborted."
+    #     exit 1
+    # fi
 
     if [[ ! -d "$SITESDIR" ]]; then
         mkdir -p "$SITESDIR"
