@@ -1858,6 +1858,23 @@ function sub_install() {
         fi
 	fi
 
+    # if db credentials in .env file is root/vagrant
+    # then use wpsite db credentials
+    # This means we didn't change default db credentials in custom-templates/.env.example,
+    dbuser_in_env=$(grep DB_USER "$SITESDIR/$DOCROOT/.env" | cut -d'=' -f2)
+    dbpass_in_env=$(grep DB_PASSWORD "$SITESDIR/$DOCROOT/.env" | cut -d'=' -f2)
+    if [[ $dbuser_in_env == 'root' ]] && [[ $dbpass_in_env == 'vagrant' ]]; then
+        # Only change if different
+        if [[ $dbuser_in_env != $DBUSER ]]; then
+            sed -i -e "/DB_USER/c\DB_USER=$DBUSER" "$SITESDIR/$DOCROOT/.env"
+        fi
+
+        # Only change if different
+        if [[ $dbpass_in_env != $DBPASS ]]; then
+            sed -i -e "/DB_PASSWORD/c\DB_PASSWORD=$DBPASS" "$SITESDIR/$DOCROOT/.env"
+        fi
+    fi
+
 	if [[ $PRODUCTION ]]; then
 		ADMIN_USER="$DOCROOT"-"$RANDOM"
 		# This pipe will not work with "set -eo pipefail"
