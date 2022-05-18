@@ -164,7 +164,7 @@ else
     exit 1
 fi
 
-if ! $MYSQLBIN -P$DBPORT -h$DBHOST -u$DBUSER -p$DBPASSWORD -e"quit" > /dev/null 2>&1; then
+if ! $MYSQLBIN -P$DBPORT -h$DBHOST -u$DBUSER -p$DBPASS -e"quit" > /dev/null 2>&1; then
     _e "Err: Cannot connect to DB."
     _w "DB Credentials in $HOME/.wpsiterc is not correct."
     exit 1
