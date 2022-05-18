@@ -10,11 +10,16 @@
 # set -eo pipefail # Exit when a command and any command in a pipe fails
 # set -e # Exit when a command and any command in a pipe fails
 
-[[ -n ${SUDO_USER:-} ]] && { echo "sudo detected, exiting normally!"; exit; }
+# [[ -n ${SUDO_USER:-} ]] && { echo "sudo detected, exiting normally!"; exit; }
 
 if [[ -f "$HOME/.wpsiterc" ]]; then
     # shellcheck source=/dev/null
     source "$HOME/.wpsiterc"
+else
+    if [[ -f /etc/wpsiterc ]]; then
+        # shellcheck source=/dev/null
+        source "/etc/wpsiterc"
+    fi
 fi
 
 #########################################################
@@ -124,15 +129,15 @@ else
     exit 1
 fi
 
-if [[ ! -w "$SITESDIR" ]]; then
-    _e "$SITESDIR is not writable."
-    exit 1
-fi
-
-if [[ ! -w "$BACKUPSDIR" ]]; then
-    _e "$BACKUPSDIR is not writable."
-    exit 1
-fi
+# if [[ ! -w "$SITESDIR" ]]; then
+#     _e "$SITESDIR is not writable."
+#     exit 1
+# fi
+#
+# if [[ ! -w "$BACKUPSDIR" ]]; then
+#     _e "$BACKUPSDIR is not writable."
+#     exit 1
+# fi
 
 ##########################
 #  End of prerequisites  #
@@ -1357,19 +1362,25 @@ function sub_clone-repo() {
         return
     fi
 
-    if [[ ! -d "$WPSTARTERDIR" ]]; then
+    if [[ -d "$WPSTARTERDIR" ]]; then
+        _e "\"${purple}$WPSTARTERDIR${normal}\" already exists."
+        exit 1
+    fi
+
+    if [[ -w $(dirname "$WPSTARTERDIR") ]]; then
         $GIT clone https://github.com/tricarte/wpready3 "$WPSTARTERDIR"
         # Add post-commit hook to run 'composer wpstarter'
         echo "#!/usr/bin/env bash
-export PATH=\"/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin\"
-composer wpstarter" > "$WPSTARTERDIR/.git/hooks/post-commit"
+        export PATH=\"/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin\"
+        composer wpstarter" > "$WPSTARTERDIR/.git/hooks/post-commit"
         chmod +x "$WPSTARTERDIR/.git/hooks/post-commit"
         _w ""
         _w "\"${purple}$WPSTARTERREPO${normal}\" has been cloned to \"${purple}$WPSTARTERDIR${normal}\"."
         _w "${red}DO NOT FORGET to change DB credentials${red} in ${purple}$WPSTARTERDIR/custom-templates/.env.example${purple}."
         _w "Now you can use \"wpsite create\" to create a new site."
     else
-        _w "\"${purple}$WPSTARTERDIR${normal}\" already exists."
+        _e "Either $(dirname "$WPSTARTERDIR") does not exist or is not writable."
+        exit 1
     fi
 
     return
@@ -1756,9 +1767,7 @@ function sub_config(){
             return
     fi
 
-    DOCROOT="$1"
-
-    if [[ ! -f "$HOME/.wpsiterc" ]]; then
+    if [[ -w "$HOME" ]] && [[ $HOME != "/root" ]]; then
         echo "# Uncomment the line to make a change.
 # These are the defaults. 
 # Most of the time you only have to change db credentials.
@@ -1785,9 +1794,37 @@ function sub_config(){
 
 # How many backups to keep while using \"wpsite backup your-site --purge\"
 # NUMBACKUPSTOKEEP=2" > "$HOME/.wpsiterc" && _w ".wpsiterc file created in $HOME." \
-        && _w "Edit it now according to your preferences."
-    else
-        _e ".wpsiterc config file already exists in $HOME."
+&& _w "Edit it now according to your preferences."
+    fi
+
+    if [[ ! -w "$HOME" ]] || [[ $USER == "root" ]]; then
+        echo "# Uncomment the line to make a change.
+# These are the defaults.
+# Most of the time you only have to change db credentials.
+
+# MySQL/MariaDB credentials
+# DBUSER=\"root\"
+# DBPASS=\"vagrant\"
+
+# MySQL/MariaDB Host Settings
+# DBHOST=\"localhost\"
+# DBPORT=\"3306\"
+
+# Where to host sites
+# SITESDIR=\"/var/www\"
+
+# Where to store/retore backups
+# BACKUPSDIR=\"/var/backups/sites\"
+
+# You really don't have to change this unless you fork it
+# WPSTARTERREPO=\"https://github.com/tricarte/wpready3\"
+
+# Clone of above repo, downloadable with \"wpsite clone-repo\"
+# WPSTARTERDIR=\"/var/repos/wpready3\"
+
+# How many backups to keep while using \"wpsite backup your-site --purge\"
+# NUMBACKUPSTOKEEP=2" > "/etc/wpsiterc" && _w "wpsiterc file created in /etc." \
+&& _w "Edit it now according to your preferences."
     fi
 
     return
