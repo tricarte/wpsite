@@ -11,15 +11,50 @@
 # set -e # Exit when a command and any command in a pipe fails
 
 # [[ -n ${SUDO_USER:-} ]] && { echo "sudo detected, exiting normally!"; exit; }
+if [[ $USER == "root" ]]; then
+    echo "Running wpsite with root is not allowed."
+    exit 1
+fi
 
 if [[ -f "$HOME/.wpsiterc" ]]; then
     # shellcheck source=/dev/null
     source "$HOME/.wpsiterc"
 else
-    if [[ -f /etc/wpsiterc ]]; then
-        # shellcheck source=/dev/null
-        source "/etc/wpsiterc"
+    echo ".wpsiterc does not exist in \"$HOME\"."
+    echo "Creating one..."
+    if [[ -w "$HOME" ]]; then
+        echo "# Uncomment the line to make a change.
+# These are the defaults.
+# Most of the time you only have to change db credentials.
+
+# MySQL/MariaDB credentials
+# DBUSER=\"root\"
+# DBPASS=\"vagrant\"
+
+# MySQL/MariaDB Host Settings
+# DBHOST=\"localhost\"
+# DBPORT=\"3306\"
+
+# Where to host sites
+# SITESDIR=\"\$HOME/sites\"
+
+# Where to store/retore backups
+# BACKUPSDIR=\"\$HOME/backups/sites\"
+
+# You really don't have to change this unless you fork it
+# WPSTARTERREPO=\"https://github.com/tricarte/wpready3\"
+
+# Clone of above repo, downloadable with \"wpsite clone-repo\"
+# WPSTARTERDIR=\"\$HOME/repos/wpready3\"
+
+# How many backups to keep while using \"wpsite backup your-site --purge\"
+# NUMBACKUPSTOKEEP=2" > "$HOME/.wpsiterc" && echo ".wpsiterc file created in $HOME." \
+&& echo "Edit it now according to your preferences."
+    else
+        echo "\"$HOME\" is not writable or does not exist."
+        exit 1
     fi
+    exit
 fi
 
 #########################################################
@@ -366,7 +401,6 @@ function sub_default(){
     _w "    ${purple}woo${normal}             Do a quick WooCommerce installation with StoreFront theme."
     _w "    ${purple}settings${normal}        Interactively change necessary WP settings that are set generically at the site installation."
     _w "    ${purple}flush-env${normal}       Delete and rebuild .env.cached.php file of a site."
-    _w "    ${purple}config${normal}          Create .wpsiterc config file in $HOME."
     _w "    ${purple}testdb${normal}          Make a connection to DB to test user credentials stored in \"~/.wpsiterc\"."
     _w "    ${purple}env${normal}             Convert WP environment to development or production."
     _w ""
@@ -1756,82 +1790,6 @@ function sub_flush-env(){
 export -f sub_flush-env
 
 ################
-#  sub_config  #
-################
-function sub_config(){
-    if [[ $SUBHELP ]]; then
-            _w "Usage: $progname config"
-            _w ""
-            _w "       Create .wpsiterc config file in $HOME."
-            _w ""
-            return
-    fi
-
-    if [[ -w "$HOME" ]] && [[ $HOME != "/root" ]]; then
-        echo "# Uncomment the line to make a change.
-# These are the defaults. 
-# Most of the time you only have to change db credentials.
-
-# MySQL/MariaDB credentials
-# DBUSER=\"root\"
-# DBPASS=\"vagrant\"
-
-# MySQL/MariaDB Host Settings
-# DBHOST=\"localhost\"
-# DBPORT=\"3306\"
-
-# Where to host sites 
-# SITESDIR=\"\$HOME/sites\"
-
-# Where to store/retore backups
-# BACKUPSDIR=\"\$HOME/backups/sites\"
-
-# You really don't have to change this unless you fork it
-# WPSTARTERREPO=\"https://github.com/tricarte/wpready3\"
-
-# Clone of above repo, downloadable with \"wpsite clone-repo\"
-# WPSTARTERDIR=\"\$HOME/repos/wpready3\"
-
-# How many backups to keep while using \"wpsite backup your-site --purge\"
-# NUMBACKUPSTOKEEP=2" > "$HOME/.wpsiterc" && _w ".wpsiterc file created in $HOME." \
-&& _w "Edit it now according to your preferences."
-    fi
-
-    if [[ ! -w "$HOME" ]] || [[ $USER == "root" ]]; then
-        echo "# Uncomment the line to make a change.
-# These are the defaults.
-# Most of the time you only have to change db credentials.
-
-# MySQL/MariaDB credentials
-# DBUSER=\"root\"
-# DBPASS=\"vagrant\"
-
-# MySQL/MariaDB Host Settings
-# DBHOST=\"localhost\"
-# DBPORT=\"3306\"
-
-# Where to host sites
-# SITESDIR=\"/var/www\"
-
-# Where to store/retore backups
-# BACKUPSDIR=\"/var/backups/sites\"
-
-# You really don't have to change this unless you fork it
-# WPSTARTERREPO=\"https://github.com/tricarte/wpready3\"
-
-# Clone of above repo, downloadable with \"wpsite clone-repo\"
-# WPSTARTERDIR=\"/var/repos/wpready3\"
-
-# How many backups to keep while using \"wpsite backup your-site --purge\"
-# NUMBACKUPSTOKEEP=2" > "/etc/wpsiterc" && _w "wpsiterc file created in /etc." \
-&& _w "Edit it now according to your preferences."
-    fi
-
-    return
-}
-export -f sub_config
-
-################
 #  sub_testdb  #
 ################
 function sub_testdb(){
@@ -1848,7 +1806,6 @@ function sub_testdb(){
     else
         _e "Cannot connect to database using specified credentials in $HOME/.wpsiterc."
         _e "Check \".wpsiterc\" in $HOME."
-        _e "or issue the command \"$progname config\" if not exists."
     fi
 
     if checkDBCredentials wpstarter; then
