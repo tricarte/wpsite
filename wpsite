@@ -567,7 +567,7 @@ function sub_restore(){
         if [[ -d "$SITESDIR_CUSTOM" ]] && [[ -w "$SITESDIR_CUSTOM" ]]; then
             SITESDIR="$(dirname "$SITESDIR_CUSTOM")"/"$(basename "$SITESDIR_CUSTOM")"
         else
-            _e "Neither $SITESDIR_CUSTOM exists nor writable."
+            _e "\"$SITESDIR_CUSTOM\" is not writable or does not exist."
             exit 1
         fi
     fi
@@ -839,6 +839,11 @@ function sub_backup(){
         fi
     fi
 
+    if [[ ! -w "$BACKUPSDIR" ]]; then
+        _e "\"$BACKUPSDIR\" is not writable or does not exist."
+        exit 1
+    fi
+
     if [[ $PURGE ]]; then
         # Delete older backups if there are more than $NUMBACKUPSTOKEEP.
         cd "$BACKUPSDIR/$DOCROOT" || exit
@@ -1005,6 +1010,15 @@ function sub_create(){
         return
     fi
 
+    # Check source repo exists.
+    if [[ ! -d "$WPSTARTERDIR" ]]; then
+        _w "\"$WPSTARTERDIR\" directory does not exist."
+        _w
+        _w "Cloning from github..."
+        _w
+        $progname clone-repo
+    fi
+
 	if [[ $PRODUCTION ]] && [[ $BARE ]]; then
 	    _e "--bare and --production flags cannot be used at the same time."
 	    exit
@@ -1012,13 +1026,6 @@ function sub_create(){
 
     if [[ -n "$REPO_PATH" ]] && [[ -d "$REPO_PATH" ]]; then
         WPSTARTERDIR=$REPO_PATH
-    fi
-
-    # Check source repo exists.
-    if [[ ! -d "$WPSTARTERDIR" ]]; then
-        _e "Err: \"$WPSTARTERDIR\" directory does not exist."
-        _e "Use \"wpsite clone-repo\" to download it from github."
-        return 1
     fi
 
     # Check if any argument is provided
@@ -1032,7 +1039,7 @@ function sub_create(){
         if [[ -d "$SITESDIR_CUSTOM" ]] && [[ -w "$SITESDIR_CUSTOM" ]]; then
             SITESDIR="$(dirname "$SITESDIR_CUSTOM")"/"$(basename "$SITESDIR_CUSTOM")"
         else
-            _e "Neither $SITESDIR_CUSTOM exists nor writable."
+            _e "\"$SITESDIR_CUSTOM\" is not writable or does not exist."
             exit 1
         fi
     fi
@@ -1087,8 +1094,9 @@ function sub_create(){
     #     exit 1
     # fi
 
-    if [[ ! -d "$SITESDIR" ]]; then
-        mkdir -p "$SITESDIR"
+    if [[ ! -w "$SITESDIR" ]]; then
+        _e "\"$SITESDIR\" is not writable or does not exist."
+        exit 1
     fi
 
     if [[ -n "$NOTIFYBIN" ]]; then
@@ -1407,21 +1415,21 @@ function sub_clone-repo() {
         exit 1
     fi
 
-    if [[ -w $(dirname "$WPSTARTERDIR") ]]; then
-        $GIT clone https://github.com/tricarte/wpready3 "$WPSTARTERDIR"
-        # Add post-commit hook to run 'composer wpstarter'
-        echo "#!/usr/bin/env bash
-        export PATH=\"/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin\"
-        composer wpstarter" > "$WPSTARTERDIR/.git/hooks/post-commit"
-        chmod +x "$WPSTARTERDIR/.git/hooks/post-commit"
-        _w ""
-        _w "\"${purple}$WPSTARTERREPO${normal}\" has been cloned to \"${purple}$WPSTARTERDIR${normal}\"."
-        _w "${red}DO NOT FORGET to change DB credentials${red} in ${purple}$WPSTARTERDIR/custom-templates/.env.example${purple}."
-        _w "Now you can use \"wpsite create\" to create a new site."
-    else
-        _e "Either $(dirname "$WPSTARTERDIR") does not exist or is not writable."
+    if ! ping -c1 8.8.8.8 > /dev/null 2>&1; then
+        _e "Check your internet connection."
         exit 1
     fi
+
+    $GIT clone https://github.com/tricarte/wpready3 "$WPSTARTERDIR"
+    # Add post-commit hook to run 'composer wpstarter'
+    echo "#!/usr/bin/env bash
+    export PATH=\"/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin\"
+    composer wpstarter" > "$WPSTARTERDIR/.git/hooks/post-commit"
+    chmod +x "$WPSTARTERDIR/.git/hooks/post-commit"
+    _w ""
+    _w "\"${purple}$WPSTARTERREPO${normal}\" has been cloned to \"${purple}$WPSTARTERDIR${normal}\"."
+    # _w "${red}DO NOT FORGET to change DB credentials${red} in ${purple}$WPSTARTERDIR/custom-templates/.env.example${purple}."
+    _w "Now you can use \"$progname create\" to create a new site."
 
     return
 }
