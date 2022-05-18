@@ -516,6 +516,11 @@ function sub_update(){
         fi
     fi
 
+    if ! ping -c1 8.8.8.8 > /dev/null 2>&1; then
+        _e "Check your internet connection."
+        exit 1
+    fi
+
     createTmpDir
 
     cp "$WPSTARTERDIR/composer.lock" "$tmpDir/composer.lock"
