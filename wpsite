@@ -249,6 +249,7 @@ function deleteSite() {
         $MYSQLBIN -P$DBPORT -h$DBHOST -u$DB_USER -p$DB_PASSWORD -e "FLUSH PRIVILEGES;"
     fi
     
+    # Stop executing if $SITESDIR and $1 are unset.
     rm -rf "${SITESDIR:?}/${1:?}"
     if [[ $VALET ]]; then
     # if which "$VALET" >/dev/null 2>&1; then
@@ -692,6 +693,8 @@ function sub_restore(){
     # Link valet
     if [[ $VALET ]]; then
     # if which "$VALET" >/dev/null 2>&1; then
+        # Why is this in a subshell?
+        # Prevent changing $PWD for the script.
         ( cd "$SITESDIR/$FINALDIR/public" && $VALET link "$FINALDIR" > /dev/null 2>&1)
     fi
     _w "$FINALDIR has been restored."
@@ -873,6 +876,7 @@ function sub_backup(){
     fi
 
     # Create backups directory.
+    # Directory will be named as YYYY-MM-DD-HHMMSS
     TSTAMP=$(date +%Y-%m-%d-%H%M%S)
     mkdir -p "$BACKUPSDIR/$DOCROOT/$TSTAMP"
 
@@ -942,6 +946,8 @@ function sub_delete(){
         fi
     fi
 
+    # Using quotes here is about treating quoted arguments passed to the script
+    # as single parameter. ( wpsite delete site1 site2 "some site" )
     for site in "${SITES_TO_DELETE[@]}"
     do
         # Deletion will be aborted if any check fails.
@@ -1363,7 +1369,7 @@ function sub_fm(){
     fi
 
     FM=$(command -v ranger)
-    if [ ! $? ]; then
+    if [[ ! $FM ]]; then
         FM="xdg-open"
     fi
 
@@ -1965,6 +1971,8 @@ function sub_install() {
 			# chmod -R o+w "/home/$(whoami)/sites/$SITENAME/public/content"
             if id -nG | grep www-data > /dev/null 2>&1; then
                 chown -R "$(whoami)":www-data "$SITESDIR/$DOCROOT/public/content"
+            else
+                _e "www-data group does not exist or \"$USER\" is not a member of it."
             fi
 		fi
 	fi
@@ -2076,6 +2084,9 @@ function sub_install() {
 }
 export -f sub_install
 
+#############
+#  sub_env  #
+#############
 function sub_env(){
     if [[ $SUBHELP ]]; then
             _w "Usage: $progname env <site_name> [--production|--development]"
