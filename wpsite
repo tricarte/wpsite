@@ -654,13 +654,13 @@ function sub_restore(){
             mv "$tmpDir/$DOCROOT" "$SITESDIR/$NEWDOCROOT"
             replace -s "$DOCROOT" "$NEWDOCROOT" -- "$SITESDIR/$NEWDOCROOT/.env"
             rm -f "$SITESDIR/$NEWDOCROOT/.env.cached.php"
-            $WP --skip-plugins --path="$SITESDIR/$NEWDOCROOT/public" search-replace "$DOCROOT" "$NEWDOCROOT" > /dev/null 2>&1
+            $WP --skip-plugins --path="$SITESDIR/$NEWDOCROOT/public/cms" search-replace "$DOCROOT" "$NEWDOCROOT" --precise --all-tables > /dev/null 2>&1
             _w "Performing search-replace in WordPress DB... DONE."
-            $WP --skip-plugins --skip-mail --path="$SITESDIR/$NEWDOCROOT/public" user update usr"$NEWDOCROOT" --user_pass=pss"$NEWDOCROOT" > /dev/null 2>&1
+            $WP --skip-plugins --skip-mail --path="$SITESDIR/$NEWDOCROOT/public/cms" user update usr"$NEWDOCROOT" --user_pass=pss"$NEWDOCROOT" > /dev/null 2>&1
             _w "Updating the admin user... DONE."
             rm -f "$SITESDIR/$NEWDOCROOT/public/content/db.php"
-            $WP --skip-plugins --path="$SITESDIR/$NEWDOCROOT/public" plugin deactivate query-monitor > /dev/null 2>&1
-            $WP --skip-plugins --path="$SITESDIR/$NEWDOCROOT/public" plugin activate query-monitor > /dev/null 2>&1
+            $WP --skip-plugins --path="$SITESDIR/$NEWDOCROOT/public/cms" plugin deactivate query-monitor > /dev/null 2>&1
+            $WP --skip-plugins --path="$SITESDIR/$NEWDOCROOT/public/cms" plugin activate query-monitor > /dev/null 2>&1
 
             FINALDIR=$NEWDOCROOT
         else
@@ -688,7 +688,7 @@ function sub_restore(){
     fi
 
     # To determine the most recently created site for "wpsite last"
-    touch "$SITESDIR/$FINALDIR/wpstarter.json"
+    touch -m "$SITESDIR/$FINALDIR/wpstarter.json"
 
     # Link valet
     if [[ $VALET ]]; then
@@ -1834,7 +1834,7 @@ function sub_testdb(){
     fi
 
     if checkDBCredentials wpstarter; then
-        _w "DB credentials in $WPSTARTERDIR/custom-templates/.env.example are correct"
+        _w "DB credentials in $WPSTARTERDIR/custom-templates/.env.example are correct."
     else
         _w ""
         _e "Cannot connect to database using specified credentials in $WPSTARTERDIR/custom-templates/.env.example."
