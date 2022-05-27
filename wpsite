@@ -1,16 +1,8 @@
 #!/usr/bin/env bash
-##############################################################################
-#  wpsite: Easily create composer and wpstarter based WP test installations  #
-##############################################################################
+#############################################################################
+#  wpsite: Easily create composer and wpstarter based WordPress installations
+#############################################################################
 
-# set -x # Print any command before running
-# set -u # Treat unset variables as errors
-# You have to use ${VAR:-} everywhere when using set -u
-# set -E # You must use this if you want "trap" apply to everything including subshells.
-# set -eo pipefail # Exit when a command and any command in a pipe fails
-# set -e # Exit when a command and any command in a pipe fails
-
-# [[ -n ${SUDO_USER:-} ]] && { echo "sudo detected, exiting normally!"; exit; }
 if [[ $USER == "root" ]]; then
     echo "Running wpsite with root is not allowed."
     exit 1
@@ -169,16 +161,6 @@ if ! $MYSQLBIN -P$DBPORT -h$DBHOST -u$DBUSER -p$DBPASS -e"quit" > /dev/null 2>&1
     _w "DB Credentials in $HOME/.wpsiterc is not correct."
     exit 1
 fi
-
-# if [[ ! -w "$SITESDIR" ]]; then
-#     _e "$SITESDIR is not writable."
-#     exit 1
-# fi
-#
-# if [[ ! -w "$BACKUPSDIR" ]]; then
-#     _e "$BACKUPSDIR is not writable."
-#     exit 1
-# fi
 
 ##########################
 #  End of prerequisites  #
@@ -386,9 +368,12 @@ subcommand=$1
 #################
 function sub_default(){
     _w ""
+    _w "$progname: Easily create WordPress installations using composer and github.com/tricarte/wpready3."
+    _w ""
     _w "Usage: ${purple}$progname <subcommand> [dir1] [dir2] OPTIONS${normal}"
     _w ""
     _w "Subcommands:"
+    _w ""
     _w "    ${purple}create${normal}          Create a new WP site."
     _w "    ${purple}backup${normal}          Backup an existing WP site."
     _w "    ${purple}delete${normal}          Delete an existing WP site."
@@ -397,19 +382,20 @@ function sub_default(){
     _w "    ${purple}list${normal}            List all wpstarter-enabled sites in \"$SITESDIR\"."
     _w "    ${purple}last${normal}            Open the most recently created site's admin dashboard."
     _w "    ${purple}lang${normal}            Install a new language into an existing wpstarter installation."
-    _w "    ${purple}quick${normal}           Quickly create a new WP test site without asking too much."
+    _w "    ${purple}quick${normal}           Quickly create a new WP test site from an existing boilerplate backup."
     _w "    ${purple}update${normal}          Apply \"composer update\" to the wpstarter repository."
     _w "    ${purple}admin${normal}           Open site's admin dashboard in browser."
     _w "    ${purple}boilerplate${normal}     Create boilerplate template backup for use with \"wpsite quick\" in \"$BACKUPSDIR\"."
-    _w "    ${purple}clone-repo${normal}      Download wpstarter source repo from github."
+    _w "    ${purple}clone-repo${normal}      Download composer based WP source repository from github."
     _w "    ${purple}fm${normal}              Open site root directory in file manager."
     _w "    ${purple}install-plugin${normal}  Install a plugin to a site and activate it."
     _w "    ${purple}install-theme${normal}   Install a theme to a site and activate it."
     _w "    ${purple}woo${normal}             Do a quick WooCommerce installation with StoreFront theme."
-    _w "    ${purple}settings${normal}        Interactively change necessary WP settings that are set generically at the site installation."
-    _w "    ${purple}flush-env${normal}       Delete and rebuild .env.cached.php file of a site."
-    _w "    ${purple}testdb${normal}          Make a connection to DB to test user credentials stored in \"~/.wpsiterc\"."
-    _w "    ${purple}env${normal}             Convert WP environment to development or production."
+    _w "    ${purple}settings${normal}        Change necessary WP settings that are set generically at the site installation."
+    _w "    ${purple}flush-env${normal}       Delete and rebuild \".env.cached.php\" file of a site."
+    _w "    ${purple}config${normal}          Create .wpsiterc file in $HOME."
+    _w "    ${purple}testdb${normal}          Make a test connection to the database server."
+    _w "    ${purple}env${normal}             Set WP environment to development or production."
     _w ""
     _w "For help with each subcommand run:"
     _w "${purple}$progname <subcommand> -h|--help${normal}"
@@ -1006,17 +992,16 @@ function sub_create(){
         _w "Usage: ${red}$progname create <site_name> [-n|--no-browse] --bare --production [-r|--repo /path/to/wpstarter/repo]${normal}"
         _w "                                          --path /where/to/create/the/site"
         _w ""
-        _w "       The site will be created in $SITESDIR. If --path is specified it will be used instead."
-        _w "       Use -r to specify different wpstarter repo path"
-        _w "       with which you will base the created site on."
+        _w "       The site will be created in $SITESDIR. If --path is specified it will be used"
+        _w "       instead. Use -r to specify different wpstarter repo path with which you will"
+        _w "       base the created site on. If not defined, default wpstarter repository will be"
+        _w "       searched in \"$WPSTARTERDIR\"."
         _w ""
         _w "       Use --production to disable some development related plugins and options."
         _w ""
         _w "       Use --bare to not apply any further customizations to the default WP installation."
         _w "       Plugins will still be installed but not activated."
         _w ""
-        _w "       If not defined, default wpstarter repository will be" 
-        _w "       searched in \"$WPSTARTERDIR\"."
         _w ""
         return
     fi
@@ -1416,7 +1401,9 @@ function sub_clone-repo() {
         _w "       It will be cloned to \"${purple}$WPSTARTERDIR${normal}\"."
         _w ""
         _w "       After cloning, ${red}DO NOT FORGET to change DB credentials${red} in"
-        _w "       ${purple}$WPSTARTERDIR/custom-templates/.env.example${purple}."
+        _w "       ${purple}$WPSTARTERDIR/custom-templates/.env.example${normal}."
+        _w "       If not, the script will use its own settings defined in"
+        _w "       $HOME/.wpsiterc."
         _w ""
         return
     fi
@@ -1557,7 +1544,7 @@ function sub_woo(){
     if [[ $SUBHELP ]]; then
         _w "Usage: $progname woo"
         _w ""
-        _w "       Create a WooCommerce site quickly."
+        _w "       Do a quick WooCommerce installation with StoreFront theme."
         _w ""
         return
     fi
