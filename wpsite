@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
-#############################################################################
-#  wpsite: Easily create composer and wpstarter based WordPress installations
-#############################################################################
+# -------------------------------------------------------------------------
+# wpsite: Easily create composer and wpstarter based WordPress installations
+# Installed sites will be based on github.com/tricarte/wpready3 repository.
+# -------------------------------------------------------------------------
+# GitHub: https://github.com/tricarte/wpsite
+# -------------------------------------------------------------------------
 
 if [[ $USER == "root" ]]; then
     echo "Running wpsite with root is not allowed."
@@ -49,9 +52,10 @@ else
     exit
 fi
 
-#########################################################
-#  DO NOT EDIT these defaults, use ~/.wpsiterc instead  #
-#########################################################
+#-------------------------------------------------------------
+# DO NOT EDIT these defaults, use ~/.wpsiterc instead
+# which can be created with the first invocation of the script
+#-------------------------------------------------------------
 
 # MySQL/MariaDB credentials
 if [[ -z $DBUSER ]]; then DBUSER="root"; fi 
@@ -75,13 +79,13 @@ if [[ -z $WPSTARTERDIR ]]; then WPSTARTERDIR="$HOME/repos/wpready3"; fi
 # How many backups to keep while using "wpsite backup your-site --purge"
 if [[ -z $NUMBACKUPSTOKEEP ]]; then NUMBACKUPSTOKEEP=2; fi 
 
-#####################
-#  End of Defaults  #
-#####################
+#--------------------------
+# End of Defaults
+#--------------------------
 
-#######################
-#  Utility functions  #
-#######################
+#--------------------------
+# Utility functions
+#--------------------------
 
 red='\033[0;31m'
 green='\033[0;32m'
@@ -98,13 +102,13 @@ _a() { _w " > $1"; }
 _e() { _a "${red}$1${normal}" >&2; }
 _s() { _a "${green}$1${normal}"; }
 
-##############################
-#  End of Utility functions  #
-##############################
+#--------------------------
+# End of Utility functions
+#--------------------------
 
-###################
-#  Prerequisites  #
-###################
+#--------------------------
+# Prerequisites
+#--------------------------
 
 if [[ -n "$XDG_CURRENT_DESKTOP" ]]; then
     if command -v notify-send > /dev/null 2>&1; then
@@ -162,12 +166,16 @@ if ! $MYSQLBIN -P$DBPORT -h$DBHOST -u$DBUSER -p$DBPASS -e"quit" > /dev/null 2>&1
     exit 1
 fi
 
-##########################
-#  End of prerequisites  #
-##########################
+#-------------------------
+# End of prerequisites
+#-------------------------
 
 WORKING_DIR_ORIGINAL="$(pwd)"
 
+#------------------------------------------------------------------
+# Can check both the credentials in source repository
+# or the ones used by this script that is stored in $HOME/.wpsiterc
+#------------------------------------------------------------------
 function checkDBCredentials() {
     if [[ $1 == 'wpstarter' ]]; then
         # Check DB credentials in wpstarter repo
@@ -203,8 +211,9 @@ function createTmpDir() {
         { _e "Could not create temporary directory! Exiting."; exit 1; }
 }
 
-# function openBrowser()
+#------------------------------------------------
 # Used by sub_restore(), sub_create(), sub_last()
+#------------------------------------------------
 function openBrowser() {
     if [[ -n "$NOTIFYBIN" ]]; then
         $NOTIFYBIN -a WPSITE "Opening $1 in browser..."
@@ -218,6 +227,9 @@ function openBrowser() {
     return
 }
 
+#------------------------------
+# Used by sub_delete()
+#------------------------------
 function deleteSite() {
     DB_USER=$DBUSER
     DB_PASSWORD=$DBPASS
@@ -258,7 +270,9 @@ function findLastSite() {
     echo "$SITE"
 }
 
+#-------------------------------------------------------------------------
 # Check current working directory is a subdirectory of a wpstarter project
+#-------------------------------------------------------------------------
 function isWPStarter() {
     current=$WORKING_DIR_ORIGINAL
     while [[ $current != "/" ]];
@@ -272,10 +286,9 @@ function isWPStarter() {
     done
 }
 
-###########################
-#  Global Option Parsing  #
-###########################
-# https://medium.com/@Drew_Stokes/bash-argument-parsing-54f3b81a6a8f
+#-------------------------------------------------------------------
+# Global Option Parsing
+#-------------------------------------------------------------------
 PARAMS=""
 while (( "$#" )); do
 case "$1" in
@@ -359,13 +372,13 @@ eval set -- "$PARAMS"
 progname=$(basename "$0")
 subcommand=$1
 
-#################
-#  SUBCOMMANDS  #
-#################
+#----------------
+#  SUBCOMMANDS 
+#----------------
 
-#################
-#  sub_default  #
-#################
+#------------------------------------------------------
+# Main subcommand controller
+#------------------------------------------------------
 function sub_default(){
     _w ""
     _w "$progname: Easily create WordPress installations using composer and github.com/tricarte/wpready3."
@@ -404,14 +417,11 @@ function sub_default(){
 }
 export -f sub_default
 
-##############
-#  sub_list  #
-##############
 function sub_list(){
     if [[ $SUBHELP ]]; then
         _w "Usage: $progname list"
         _w ""
-        _w "       List all wpstarter-enabled sites in $SITESDIR."
+        _w "       List all installed sites in $SITESDIR."
         _w ""
         return
     fi
@@ -433,9 +443,9 @@ function sub_list(){
 }
 export -f sub_list
 
-#####################
-#  sub_boilerplate  #
-#####################
+#-------------------------------------------
+#  Create boilerplate installation for reuse
+#-------------------------------------------
 function sub_boilerplate(){
     if [[ $SUBHELP ]]; then
         _w "Usage: $progname boilerplate"
@@ -474,14 +484,11 @@ function sub_boilerplate(){
 }
 export -f sub_boilerplate
 
-################
-#  sub_update  #
-################
 function sub_update(){
     if [[ $SUBHELP ]]; then
         _w "Usage: $progname update"
         _w ""
-        _w "       Update composer packages in wpstarter source repository."
+        _w "       Update composer packages in source repository."
         _w ""
         return
     fi
@@ -535,9 +542,6 @@ function sub_update(){
 }
 export -f sub_update
 
-#################
-#  sub_restore  #
-#################
 function sub_restore(){
     if [[ $SUBHELP ]]; then
         _w "Usage: $progname restore <site_name> [new_site_name] [-n|--no-browse]"
@@ -695,13 +699,11 @@ function sub_restore(){
 }
 export -f sub_restore
 
-################
-#  sub_rename  #
-################
 function sub_rename(){
     if [[ $SUBHELP ]]; then
         _w "Usage: $progname rename <site_name> <new_site_name>"
         _w ""
+        _w "       Rename an existing site."
         return
     fi
 
@@ -782,9 +784,6 @@ function sub_rename(){
 }
 export -f sub_rename
 
-################
-#  sub_backup  #
-################
 function sub_backup(){
     if [[ $SUBHELP ]]; then
         _w "Usage: $progname backup <site_name> [-p|--purge]"
@@ -886,9 +885,6 @@ function sub_backup(){
 }
 export -f sub_backup
 
-################
-#  sub_delete  #
-################
 function sub_delete(){
     if [[ $SUBHELP ]]; then
         _w "Usage: $progname delete <site_name1> <site_name2> --path search-path"
@@ -983,9 +979,10 @@ function sub_delete(){
 }
 export -f sub_delete
 
-################
-#  sub_create  #
-################
+#------------------------------------------------------
+# The main workhorse here is the "composer install" and
+# sub_install() function.
+#------------------------------------------------------
 function sub_create(){
     if [[ $SUBHELP ]]; then
         _w ""
@@ -1131,9 +1128,6 @@ composer wpstarter" > "$SITESDIR/$DOCROOT/.git/hooks/post-merge"
 }
 export -f sub_create
 
-##############
-#  sub_lang  #
-##############
 function sub_lang(){
     if [[ $SUBHELP ]]; then
         _w "Usage: $progname lang <site_name> <language_code>"
@@ -1221,9 +1215,6 @@ function sub_lang(){
 }
 export -f sub_lang
 
-###############
-#  sub_quick  #
-###############
 function sub_quick(){
     if [[ $SUBHELP ]]; then
         _w "Usage: $progname quick [-n|--no-browse]"
@@ -1262,9 +1253,9 @@ function sub_quick(){
 }
 export -f sub_quick
 
-###############
-#  sub_admin  #
-###############
+#-------------------------------------------
+#  Opens the site's dashboard in web browser
+#-------------------------------------------
 function sub_admin(){
     if [[ $SUBHELP ]]; then
         _w "Usage: $progname admin <site_name>"
@@ -1314,10 +1305,6 @@ function sub_admin(){
 }
 export -f sub_admin
 
-
-##############
-#  sub_last  #
-##############
 function sub_last(){
     if [[ $SUBHELP ]]; then
         _w "Usage: $progname last"
@@ -1340,9 +1327,10 @@ function sub_last(){
 }
 export -f sub_last
 
-############
-#  sub_fm  #
-############
+#------------------------------------------------------
+# Open site root directory in file manager
+# ranger file manager will be used if installed.
+#------------------------------------------------------
 function sub_fm(){
     if [[ $SUBHELP ]]; then
         _w "Usage: $progname fm <site_name>"
@@ -1390,9 +1378,9 @@ function sub_fm(){
 }
 export -f sub_fm
 
-####################
-#  sub_clone-repo  #
-####################
+#--------------------------------------------------------
+# Clone tricarte/wpready3 to be used as source repository
+#--------------------------------------------------------
 function sub_clone-repo() {
     if [[ $SUBHELP ]]; then
         _w "Usage: $progname clone-repo"
@@ -1433,9 +1421,6 @@ function sub_clone-repo() {
 }
 export -f sub_clone-repo
 
-#######################
-#  sub_install-theme  #
-#######################
 function sub_install-theme(){
     if [[ $SUBHELP ]]; then
         _w "Usage: $progname install-theme <site> <theme-slug>"
@@ -1485,9 +1470,6 @@ function sub_install-theme(){
 }
 export -f sub_install-theme
 
-########################
-#  sub_install-plugin  #
-########################
 function sub_install-plugin(){
     if [[ $SUBHELP ]]; then
         _w "Usage: $progname install-plugin <site> <plugin-slug>"
@@ -1537,9 +1519,6 @@ function sub_install-plugin(){
 }
 export -f sub_install-plugin
 
-#############
-#  sub_woo  #
-#############
 function sub_woo(){
     if [[ $SUBHELP ]]; then
         _w "Usage: $progname woo"
@@ -1557,9 +1536,6 @@ function sub_woo(){
 }
 export -f sub_woo
 
-##################
-#  sub_settings  #
-##################
 function sub_settings(){
     if [[ $SUBHELP ]]; then
         _w "Usage: $progname settings <site_name>"
@@ -1758,9 +1734,10 @@ function sub_settings(){
 }
 export -f sub_settings
 
-###################
-#  sub_flush-env  #
-###################
+#------------------------------------------------------
+# Delete and rebuild .env.cached.php file of a site
+# Useful when you make a change in .env file.
+#------------------------------------------------------
 function sub_flush-env(){
     if [[ $SUBHELP ]]; then
             _w "Usage: $progname flush-env <site_name>"
@@ -1801,9 +1778,6 @@ function sub_flush-env(){
 }
 export -f sub_flush-env
 
-################
-#  sub_testdb  #
-################
 function sub_testdb(){
     if [[ $SUBHELP ]]; then
             _w "Usage: $progname testdb"
@@ -1831,10 +1805,10 @@ function sub_testdb(){
 }
 export -f sub_testdb
 
-# Used by sub_create
-#################
-#  sub_install  #
-#################
+#------------------------------------------------------
+# Start installation process for a created site.
+# Used by sub_create().
+#------------------------------------------------------
 function sub_install() {
 	DOCROOT="$1"
 
@@ -2071,9 +2045,9 @@ function sub_install() {
 }
 export -f sub_install
 
-#############
-#  sub_env  #
-#############
+#------------------------------------------------------
+# Switch environment for a site
+#------------------------------------------------------
 function sub_env(){
     if [[ $SUBHELP ]]; then
             _w "Usage: $progname env <site_name> [--production|--development]"
