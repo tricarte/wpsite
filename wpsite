@@ -175,6 +175,9 @@ WORKING_DIR_ORIGINAL="$(pwd)"
 #------------------------------------------------------------------
 # Can check both the credentials in source repository
 # or the ones used by this script that is stored in $HOME/.wpsiterc
+# With no arguments, it checks db credentials in $HOME/.wpsiterc.
+# If 'wpstarter' is given as argument, it checks db credentials in
+# source repository that is set in $WPSTARTERDIR.
 #------------------------------------------------------------------
 function checkDBCredentials() {
     if [[ $1 == 'wpstarter' ]]; then
@@ -229,6 +232,8 @@ function openBrowser() {
 
 #------------------------------
 # Used by sub_delete()
+# Arguments:
+#   Site name to be deleted
 #------------------------------
 function deleteSite() {
     DB_USER=$DBUSER
@@ -258,6 +263,12 @@ function deleteSite() {
     return
 }
 
+#----------------------------------------------------------
+# Find the most recently created site in $SITESDIR
+# based on the modification time of the file wpstarter.json
+# Returns:
+#   Only the site name not the whole path.
+#----------------------------------------------------------
 function findLastSite() {
     SITE=$( find "$SITESDIR"/ \
         -maxdepth 2 \
@@ -272,6 +283,8 @@ function findLastSite() {
 
 #-------------------------------------------------------------------------
 # Check current working directory is a subdirectory of a wpstarter project
+# Returns:
+#   The absolute path to the site root
 #-------------------------------------------------------------------------
 function isWPStarter() {
     current=$WORKING_DIR_ORIGINAL
@@ -444,7 +457,9 @@ function sub_list(){
 export -f sub_list
 
 #-------------------------------------------
-#  Create boilerplate installation for reuse
+# Create boilerplate installation for reuse
+# Arguments:
+#   None
 #-------------------------------------------
 function sub_boilerplate(){
     if [[ $SUBHELP ]]; then
@@ -484,6 +499,7 @@ function sub_boilerplate(){
 }
 export -f sub_boilerplate
 
+# TODO: Add which packages are updated to the commit message.
 function sub_update(){
     if [[ $SUBHELP ]]; then
         _w "Usage: $progname update"
@@ -784,6 +800,11 @@ function sub_rename(){
 }
 export -f sub_rename
 
+#-----------------------------------------------
+# Backup an existing site
+# Arguments:
+#   "last" or a site name
+#-----------------------------------------------
 function sub_backup(){
     if [[ $SUBHELP ]]; then
         _w "Usage: $progname backup <site_name> [-p|--purge]"
@@ -885,6 +906,14 @@ function sub_backup(){
 }
 export -f sub_backup
 
+#---------------------------------------------------------------
+# Delete existing sites
+#   Arguments:
+#       Site names to be deleted
+#   Flags:
+#       --path: Where to search the specified sites to be deleted
+#       -y: Delete without confirmation
+#---------------------------------------------------------------
 function sub_delete(){
     if [[ $SUBHELP ]]; then
         _w "Usage: $progname delete <site_name1> <site_name2> --path search-path"
@@ -982,6 +1011,14 @@ export -f sub_delete
 #------------------------------------------------------
 # The main workhorse here is the "composer install" and
 # sub_install() function.
+# Arguments:
+#   Site name
+# Flags:
+#   -n|--no-browse: Do not open browser
+#   --bare: Do not customize the default WordPress installation.
+#   --production: Disable development related plugins and settings.
+#   -r|--repo: Specify a source repository other than $WPSTARTERREPO
+#   --path: Where to install the site
 #------------------------------------------------------
 function sub_create(){
     if [[ $SUBHELP ]]; then
@@ -1254,7 +1291,9 @@ function sub_quick(){
 export -f sub_quick
 
 #-------------------------------------------
-#  Opens the site's dashboard in web browser
+# Opens the site's dashboard in web browser
+# Arguments:
+#   "last" or a site name
 #-------------------------------------------
 function sub_admin(){
     if [[ $SUBHELP ]]; then
@@ -1328,8 +1367,10 @@ function sub_last(){
 export -f sub_last
 
 #------------------------------------------------------
-# Open site root directory in file manager
-# ranger file manager will be used if installed.
+# Open site root directory in file manager.
+# Ranger file manager will be used if installed.
+# Arguments:
+#   Site name
 #------------------------------------------------------
 function sub_fm(){
     if [[ $SUBHELP ]]; then
@@ -1541,7 +1582,7 @@ function sub_settings(){
         _w "Usage: $progname settings <site_name>"
         _w ""
         _w "       Interactively change necessary WP settings"
-        _w "       that are generically set at the site installation."
+        _w "       which are generically set at the site installation."
         _w ""
         return
     fi
@@ -1683,7 +1724,6 @@ function sub_settings(){
         echo -e "$VALUES"
     fi
     
-    # read -p "Apply new settings?  (y/n) (Default No): " -r
     if [ -t 0 ]; then
         read -rp "Apply new settings?  (y/n) (Default No): " -e ANSWER
         if [[ ! $ANSWER =~ ^[Yy]$ ]]; then
@@ -1737,6 +1777,8 @@ export -f sub_settings
 #------------------------------------------------------
 # Delete and rebuild .env.cached.php file of a site
 # Useful when you make a change in .env file.
+# Arguments:
+#   Site name
 #------------------------------------------------------
 function sub_flush-env(){
     if [[ $SUBHELP ]]; then
@@ -1808,6 +1850,8 @@ export -f sub_testdb
 #------------------------------------------------------
 # Start installation process for a created site.
 # Used by sub_create().
+# Arguments:
+#   Site name
 #------------------------------------------------------
 function sub_install() {
 	DOCROOT="$1"
@@ -2047,6 +2091,11 @@ export -f sub_install
 
 #------------------------------------------------------
 # Switch environment for a site
+# Arguments:
+#   Site name
+#   Flags:
+#       --production
+#       --development
 #------------------------------------------------------
 function sub_env(){
     if [[ $SUBHELP ]]; then
