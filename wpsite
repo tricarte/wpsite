@@ -18,7 +18,8 @@ else
     echo ".wpsiterc does not exist in \"$HOME\"."
     echo "Creating one..."
     if [[ -w "$HOME" ]]; then
-        echo "# Uncomment the line to make a change.
+        echo "\
+# Uncomment the line to make a change.
 # These are the defaults.
 # Most of the time you only have to change db credentials.
 
@@ -396,7 +397,7 @@ case "$1" in
         ;;
 esac
 done
-# set positional arguments in their proper place
+
 eval set -- "$PARAMS"
 
 progname=$(basename "$0")
@@ -442,7 +443,7 @@ Subcommands:
 
 For help with each subcommand run:
 ${purple}$progname <subcommand> -h|--help${normal}
-    "
+"
     exit
 }
 export -f sub_default
@@ -847,12 +848,14 @@ This will take some time...
     $progname delete "$DOCROOT" -y > /dev/null 2>&1
 
     # Delete the created backup for this process
-    LATEST_BACKUP=$(find "$BACKUPSDIR"/"$DOCROOT"/* \
+    LATEST_BACKUP=$(
+    find "$BACKUPSDIR"/"$DOCROOT"/* \
         -maxdepth 0 \
         -type d -printf '%f\n' \
         -regextype 'posix-extended' \
         -regex "^[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{6}$" \
-        | sort -nr | head -n1)
+        | sort -nr | head -n1
+    )
 
     rm -rf "${BACKUPSDIR:?}/$DOCROOT/$LATEST_BACKUP"
     find "$BACKUPSDIR" -empty -type d -delete
@@ -1694,8 +1697,10 @@ Usage: $progname settings <site_name>
     tablePrefix=$(grep DB_TABLE_PREFIX "$SITESDIR/$DOCROOT/.env" | cut -d"=" -f2)
 
     if [[ -z $tablePrefix ]]; then
-        tablePrefix=$($WP --skip-plugins \
-            --path="$SITESDIR/$DOCROOT/public/cms" db prefix)
+        tablePrefix=$(
+        $WP --skip-plugins \
+            --path="$SITESDIR/$DOCROOT/public/cms" db prefix
+        )
         if [[ -z $tablePrefix ]]; then
             _e "Cannot determine WP table prefix."
             return 1
@@ -1709,24 +1714,28 @@ Usage: $progname settings <site_name>
     fi
     blogSettings=$(
     $WP --skip-plugins \
-    --path="$SITESDIR/$DOCROOT/public/cms" \
-    db query \
-    'select option_value from '"$tablePrefix"'options where option_name IN ("blogname", "blogdescription")' \
-    --skip-column-names
-)
+        --path="$SITESDIR/$DOCROOT/public/cms" \
+        db query \
+        'select option_value from '"$tablePrefix"'options where option_name IN ("blogname", "blogdescription")' \
+        --skip-column-names
+    )
     curBlogname=$(echo "$blogSettings" | head -n1)
     curTagline=$(echo "$blogSettings" | tail -n1)
 
-    userSettings=$($WP --skip-plugins --path="$SITESDIR/$DOCROOT/public/cms" user \
-        get 1 --fields=user_login,user_nicename,display_name,user_email --format=csv)
+    userSettings=$(
+    $WP --skip-plugins --path="$SITESDIR/$DOCROOT/public/cms" user \
+        get 1 --fields=user_login,user_nicename,display_name,user_email --format=csv
+    )
     curAdminUsername=$(echo "$userSettings" | grep user_login | cut -d',' -f2)
     curAdminNicename=$(echo "$userSettings" | grep user_nicename | cut -d',' -f2)
     curAdminDisplayName=$(echo "$userSettings" | grep display_name | cut -d',' -f2)
     curAdminEmail=$(echo "$userSettings" | grep user_email | cut -d',' -f2)
 
     # Get user meta values
-    userMeta=$($WP --skip-plugins \
-        --path="$SITESDIR/$DOCROOT/public/cms" user meta list 1 --format=csv)
+    userMeta=$(
+    $WP --skip-plugins \
+        --path="$SITESDIR/$DOCROOT/public/cms" user meta list 1 --format=csv
+    )
 
     curAdminFirstName=$(echo "$userMeta" | grep first_name | cut -d',' -f3)
     curAdminLastName=$(echo "$userMeta" | grep last_name | cut -d',' -f3)
@@ -1752,8 +1761,10 @@ ${red}Email${normal}:                 $curAdminEmail
 "
     fi
 
-    read -rp "Site Title (blogname) (Leave empty to use the current value): " -e BLOGNAME
-    read -rp "Tagline (blogdescription) (Leave empty to use the current value): " -e BLOGDESCRIPTION
+    read -rp "Site Title (blogname) (Leave empty to use the current value): " \
+        -e BLOGNAME
+    read -rp "Tagline (blogdescription) (Leave empty to use the current value): " \
+        -e BLOGDESCRIPTION
 
     if [ -t 0 ]; then
         _w ""
@@ -1781,7 +1792,8 @@ Current nice name: ${red}$curAdminNicename${normal}"
         _w "
 Display name is used in author archive pages as title such as \"Author: DISPLAY_NAME\"."
     fi
-    read -rp "Display Name (Leave empty to use the current value): " -e ADMINDISPLAYNAME
+    read -rp "Display Name (Leave empty to use the current value): " \
+        -e ADMINDISPLAYNAME
 
     read -rp "Email (Leave empty to use the current value): " -e ADMINEMAIL
     
@@ -1804,7 +1816,7 @@ Exiting without any changes."
     fi
 
     if [ -t 0 ]; then
-        _w "\
+        _w "
 ####################
 #  Entered values  #
 ####################"
@@ -2187,9 +2199,11 @@ function sub_install() {
             user meta update 1 \
             dismissed_wp_pointers "custom-post-type-permalinks-settings"
 
-        CPTP_VERSION=$($WP --path="$SITESDIR/$DOCROOT/public/cms" \
+        CPTP_VERSION=$(
+        $WP --path="$SITESDIR/$DOCROOT/public/cms" \
             --skip-plugins plugin get custom-post-type-permalinks \
-            --format=table --field=version)
+            --format=table --field=version
+        )
         $WP --path="$SITESDIR/$DOCROOT/public/cms" --skip-plugins \
             option update cptp_permalink_checked "$CPTP_VERSION" --autoload=yes
 
