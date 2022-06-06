@@ -114,6 +114,13 @@ _s() { _a "${green}$1${normal}"; }
 # Prerequisites
 #--------------------------
 
+if command -v php7.4 > /dev/null 2>&1; then
+    PHPBIN=$(command -v php7.4)
+else
+    echo "This script requires PHP 7.4."
+    exit 1
+fi
+
 if [[ -n "$XDG_CURRENT_DESKTOP" ]]; then
     if command -v notify-send > /dev/null 2>&1; then
         NOTIFYBIN=$(command -v notify-send)
@@ -131,7 +138,7 @@ if [[  $DBSTATUS != 'active' ]]; then
 fi
 
 if command -v wp > /dev/null 2>&1; then
-    WP=$(command -v wp)
+    WP="${PHPBIN} $(command -v wp)"
 else
     _e "Err: WPCLI is not installed."
     exit 1
@@ -151,14 +158,14 @@ else
 fi
 
 if command -v composer > /dev/null 2>&1; then
-    COMPOSERBIN=$(command -v composer)
+    COMPOSERBIN="${PHPBIN} $(command -v composer)"
 else
     _e "Err: Composer cli is not installed."
     exit 1
 fi
 
 if command -v mysql > /dev/null 2>&1; then
-    MYSQLBIN=$(command -v mysql)
+    MYSQLBIN="$(command -v mysql) --protocol TCP"
 else
     _e "Err: mysql/mardiadb client is not installed."
     exit 1
@@ -1953,6 +1960,8 @@ Usage: $progname testdb
         _w ""
         _e "Cannot connect to database using specified credentials"
         _e "in $WPSTARTERDIR/custom-templates/.env.example."
+        _w ""
+        _w "Using credentials of ~/.wpsiterc instead."
     fi
 
     return
