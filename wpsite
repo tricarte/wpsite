@@ -875,7 +875,7 @@ Please wait...
     )
 
     if [[ -d "${BACKUPSDIR}/$DOCROOT/$LATEST_BACKUP" ]]; then
-        rm -rf "${BACKUPSDIR}/$DOCROOT/$LATEST_BACKUP"
+        rm -rf "${BACKUPSDIR:?}/$DOCROOT/$LATEST_BACKUP"
     fi
     # Delete every empty directory under $BACKUPSDIR
     find "$BACKUPSDIR" -empty -type d -print0 | xargs -0 -I {} /bin/rmdir "{}"
