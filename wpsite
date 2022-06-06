@@ -69,9 +69,15 @@ if [[ -z $DBPORT ]]; then DBPORT="3306"; fi
 
 # Where to host sites 
 if [[ -z $SITESDIR ]]; then SITESDIR="$HOME/sites"; fi 
+if [[ ! -d "$SITESDIR" ]]; then
+    mkdir -p "$SITESDIR"
+fi
 
 # Where to store/retore backups
 if [[ -z $BACKUPSDIR ]]; then BACKUPSDIR="$HOME/backups/sites"; fi 
+if [[ ! -d "$BACKUPSDIR" ]]; then
+    mkdir -p "$BACKUPSDIR"
+fi
 
 if [[ -z $WPSTARTERREPO ]]; then
     WPSTARTERREPO="https://github.com/tricarte/wpready3";
@@ -561,7 +567,7 @@ Usage: $progname update
 
     if [[ ! $PROCEED ]]; then
         read -p "Composer packages in wpstarter repository \
-            will be updated! Proceed?  (y/n) (Default No): " -r
+will be updated! Proceed?  (y/n) (Default No): " -r
         if [[ ! $REPLY =~ ^[Yy]$ ]]; then
             _w "Update aborted."
             return 1
@@ -847,14 +853,18 @@ Usage: $progname rename <site_name> <new_site_name>
 
     _w "\
 Renaming $DOCROOT to $NEWDOCROOT.
-This will take some time...
+Please wait...
 "
 
+    printf "(Step 1/4)\r"
     $progname backup "$DOCROOT" > /dev/null 2>&1
+    printf "(Step 2/4)\r"
     $progname restore "$DOCROOT" "$NEWDOCROOT" -n > /dev/null 2>&1
+    printf "(Step 3/4)\r"
     $progname delete "$DOCROOT" -y > /dev/null 2>&1
 
     # Delete the created backup for this process
+    printf "(Step 4/4)\n"
     LATEST_BACKUP=$(
     find "$BACKUPSDIR"/"$DOCROOT"/* \
         -maxdepth 0 \
@@ -864,8 +874,11 @@ This will take some time...
         | sort -nr | head -n1
     )
 
-    rm -rf "${BACKUPSDIR:?}/$DOCROOT/$LATEST_BACKUP"
-    find "$BACKUPSDIR" -empty -type d -delete
+    if [[ -d "${BACKUPSDIR}/$DOCROOT/$LATEST_BACKUP" ]]; then
+        rm -rf "${BACKUPSDIR}/$DOCROOT/$LATEST_BACKUP"
+    fi
+    # Delete every empty directory under $BACKUPSDIR
+    find "$BACKUPSDIR" -empty -type d -print0 | xargs -0 -I {} /bin/rmdir "{}"
 
     _w "DONE."
 
