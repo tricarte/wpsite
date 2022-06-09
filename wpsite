@@ -288,7 +288,9 @@ function deleteSite() {
     _w "Site ${red}\"$1\"${normal} has been deleted."
 
     if [[ -n "$NOTIFYBIN" ]]; then
-        $NOTIFYBIN -a WPSITE "Site \"$1\" has been deleted."
+        if [[ ! $QUIET ]]; then
+            $NOTIFYBIN -a WPSITE "Site \"$1\" has been deleted."
+        fi
     fi
     return
 }
@@ -358,6 +360,10 @@ case "$1" in
         ;;
     -b|--bare)
         BARE=1
+        shift
+        ;;
+    -q|--quiet)
+        QUIET=1
         shift
         ;;
     -r|--repo)
@@ -513,7 +519,7 @@ Usage: $progname boilerplate
     fi
 
     if [[ -d "$SITESDIR/boiler" ]]; then
-        $progname delete boiler
+        $progname delete boiler -y -q
     fi
     _w "Temporary site ${purple}\"boiler\"${normal} is being created..."
     # TODO: dev/null thing
@@ -521,7 +527,7 @@ Usage: $progname boilerplate
     _w "Backing up ${purple}\"boiler\"${normal} for later use..."
     $progname backup boiler
     _w "Removing temporary site..."
-    $progname delete boiler -y
+    $progname delete boiler -y -q
 
     # Delete everything but the last backup.
     _w "Removing older versions of the boilerplate from ${purple}\"$BACKUPSDIR/boiler\"${normal}..."
@@ -853,18 +859,17 @@ Usage: $progname rename <site_name> <new_site_name>
 
     _w "\
 Renaming $DOCROOT to $NEWDOCROOT.
-Please wait...
-"
+Please wait..."
 
-    printf "(Step 1/4)\r"
+    printf "(Step 1/4) Cloning existing installation...\r"
     $progname backup "$DOCROOT" > /dev/null 2>&1
-    printf "(Step 2/4)\r"
+    printf "(Step 2/4) Renaming...\033[K\r"
     $progname restore "$DOCROOT" "$NEWDOCROOT" -n > /dev/null 2>&1
-    printf "(Step 3/4)\r"
-    $progname delete "$DOCROOT" -y > /dev/null 2>&1
+    printf "(Step 3/4) Deleting old installation...\033[K\r"
+    $progname delete "$DOCROOT" -y -q > /dev/null 2>&1
 
     # Delete the created backup for this process
-    printf "(Step 4/4)\n"
+    printf "(Step 4/4) Removing artifacts...\033[K\n"
     LATEST_BACKUP=$(
     find "$BACKUPSDIR"/"$DOCROOT"/* \
         -maxdepth 0 \
@@ -878,7 +883,7 @@ Please wait...
         rm -rf "${BACKUPSDIR:?}/$DOCROOT/$LATEST_BACKUP"
     fi
     # Delete every empty directory under $BACKUPSDIR
-    find "$BACKUPSDIR" -empty -type d -print0 | xargs -0 -I {} /bin/rmdir "{}"
+    find "$BACKUPSDIR" -empty -type d -print0 | xargs -0 -I {} rmdir "{}"
 
     _w "DONE."
 
