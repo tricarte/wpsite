@@ -171,7 +171,8 @@ else
 fi
 
 if command -v mysql > /dev/null 2>&1; then
-    MYSQLBIN="$(command -v mysql) --protocol TCP"
+    # MYSQLBIN="$(command -v mysql) --protocol TCP"
+    MYSQLBIN=$(command -v mysql)
 else
     _e "Err: mysql/mardiadb client is not installed."
     exit 1
