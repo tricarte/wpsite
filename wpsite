@@ -133,6 +133,10 @@ if [[ -n "$XDG_CURRENT_DESKTOP" ]]; then
     fi
 fi
 
+if command -v mysqldump > /dev/null 2>&1; then
+    MYSQLDUMP=$(command -v mysqldump)
+fi
+
 # Check MySQL/MariaDB is running
 DBSTATUS=$(systemctl is-active mysql.service)
 if [[  $DBSTATUS != 'active' ]]; then
@@ -986,10 +990,16 @@ Usage: $progname backup <site_name> [-p|--purge]
     mkdir -p "$BACKUPSDIR/$DOCROOT/$TSTAMP"
 
     _w "Exporting database..."
-    $WP --skip-plugins db export \
-        --path="$SITESDIR/$DOCROOT/public/cms" - \
-        | gzip > "$BACKUPSDIR/$DOCROOT/$TSTAMP/database.sql.gz" && \
-        _w "Exporting database DONE"
+    if [[ -n $MYSQLDUMP ]]; then
+        $MYSQLDUMP -u$DBUSER -h$DBHOST -p$DBPASS --single-transaction \
+            --no-create-db --routines --events $DOCROOT  \
+            | gzip --stdout > "$BACKUPSDIR/$DOCROOT/$TSTAMP/database.sql.gz"
+    else
+        $WP --skip-plugins db export \
+            --path="$SITESDIR/$DOCROOT/public/cms" - \
+            | gzip --stdout > "$BACKUPSDIR/$DOCROOT/$TSTAMP/database.sql.gz"
+    fi
+    _w "Exporting database DONE"
 
     _w "Exporting site files..."
     tar czf \
