@@ -201,8 +201,8 @@ function checkDBCredentials() {
     if [[ $1 == 'wpstarter' ]]; then
         # Check DB credentials in wpstarter repo
         if [[ -d "$WPSTARTERDIR" ]]; then
-            eval "$(grep DB_USER "${WPSTARTERDIR}/custom-templates/.env.example")"
-            eval "$(grep DB_PASSWORD "${WPSTARTERDIR}/custom-templates/.env.example")"
+            eval "$(grep DB_USER "${WPSTARTERDIR}/custom-templates/.env.example" | tr -d ' ')"
+            eval "$(grep DB_PASSWORD "${WPSTARTERDIR}/custom-templates/.env.example" | tr -d ' ')"
             if $MYSQLBIN \
                 -P${DBPORT} -h${DBHOST} \
                 -u${DB_USER} -p${DB_PASSWORD} -e"quit" > /dev/null 2>&1; then
@@ -1218,7 +1218,7 @@ Cloning from github...
     fi
 
     # Exit if directory name contains spaces
-    if echo "$DOCROOT" | grep -q -E '[ ]'; then
+    if grep -q -E '[ ]' <<<"$DOCROOT"; then
         _e "Don't use spaces in directory names."
         return 1
     fi
@@ -1734,7 +1734,8 @@ Usage: ${progname} settings <site_name>
     fi
 
     # Another option is to use 'wp db prefix' but this will be faster.
-    tablePrefix=$(grep DB_TABLE_PREFIX "${SITESDIR}/${DOCROOT}/.env" | cut -d"=" -f2)
+    tablePrefix=$(grep DB_TABLE_PREFIX "${SITESDIR}/${DOCROOT}/.env" | tr -d ' ')
+    tablePrefix=${tablePrefix#*=}
 
     if [[ -z $tablePrefix ]]; then
         tablePrefix=$(
@@ -1759,17 +1760,21 @@ Usage: ${progname} settings <site_name>
         'select option_value from '"${tablePrefix}"'options where option_name IN ("blogname", "blogdescription")' \
         --skip-column-names
     )
-    curBlogname=$(echo "$blogSettings" | head -n1)
-    curTagline=$(echo "$blogSettings" | tail -n1)
+    curBlogname=$(head -n1 <<<"$blogSettings")
+    curTagline=$(tail -n1 <<<"$blogSettings")
 
     userSettings=$(
     $WP --skip-plugins --path="${SITESDIR}/${DOCROOT}/public/cms" user \
         get 1 --fields=user_login,user_nicename,display_name,user_email --format=csv
     )
-    curAdminUsername=$(echo "$userSettings" | grep user_login | cut -d',' -f2)
-    curAdminNicename=$(echo "$userSettings" | grep user_nicename | cut -d',' -f2)
-    curAdminDisplayName=$(echo "$userSettings" | grep display_name | cut -d',' -f2)
-    curAdminEmail=$(echo "$userSettings" | grep user_email | cut -d',' -f2)
+    curAdminUsername=$(grep user_login <<<"$userSettings")
+    curAdminUsername=${curAdminUsername##*,}
+    curAdminNicename=$(grep user_nicename <<<"$userSettings")
+    curAdminNicename=${curAdminNicename##*,}
+    curAdminDisplayName=$(grep display_name <<<"$userSettings")
+    curAdminDisplayName=${curAdminDisplayName##*,}
+    curAdminEmail=$(grep user_email <<<"$userSettings")
+    curAdminEmail=${curAdminEmail##*,}
 
     # Get user meta values
     userMeta=$(
@@ -1777,11 +1782,14 @@ Usage: ${progname} settings <site_name>
         --path="${SITESDIR}/${DOCROOT}/public/cms" user meta list 1 --format=csv
     )
 
-    curAdminFirstName=$(echo "$userMeta" | grep first_name | cut -d',' -f3)
-    curAdminLastName=$(echo "$userMeta" | grep last_name | cut -d',' -f3)
+    curAdminFirstName=$(grep first_name <<<"$userMeta")
+    curAdminFirstName=${curAdminFirstName##*,}
+    curAdminLastName=$(grep last_name <<<"$userMeta")
+    curAdminLastName=${curAdminLastName##*,}
 
     # nickname is required
-    curAdminNickname=$(echo "$userMeta" | grep nickname | cut -d',' -f3)
+    curAdminNickname=$(grep nickname <<<"$userMeta")
+    curAdminNickname=${curAdminNickname##*,}
 
     if [ -t 0 ]; then
         _w "\
@@ -2046,8 +2054,8 @@ function sub_install() {
     # if db credentials in .env file is root/vagrant
     # then use wpsite db credentials
     # This means we didn't change default db credentials in custom-templates/.env.example,
-    dbuser_in_env=$(grep DB_USER "${SITESDIR}/${DOCROOT}/.env" | cut -d'=' -f2)
-    dbpass_in_env=$(grep DB_PASSWORD "${SITESDIR}/${DOCROOT}/.env" | cut -d'=' -f2)
+    dbuser_in_env=$(grep DB_USER "${SITESDIR}/${DOCROOT}/.env" | tr -d ' ' | cut -d'=' -f2)
+    dbpass_in_env=$(grep DB_PASSWORD "${SITESDIR}/${DOCROOT}/.env" | tr -d ' ' | cut -d'=' -f2)
     if [[ $dbuser_in_env == 'root' ]] && [[ $dbpass_in_env == 'vagrant' ]]; then
         # Only change if different
         if [[ $dbuser_in_env != "$DBUSER" ]]; then
@@ -2064,8 +2072,8 @@ function sub_install() {
 		ADMIN_USER="${DOCROOT}"-"${RANDOM}"
 		ADMIN_PASS="$(date +%s | sha256sum | base64 | head -c 13 ; echo)"
 
-		eval "$(grep DB_USER "${SITESDIR}/${DOCROOT}/.env")"
-		eval "$(grep DB_PASSWORD "${SITESDIR}/${DOCROOT}/.env")"
+		eval "$(grep DB_USER "${SITESDIR}/${DOCROOT}/.env" | tr -d ' ')"
+		eval "$(grep DB_PASSWORD "${SITESDIR}/${DOCROOT}/.env" | tr -d ' ')"
 
 		# Create separate db user and password, change .env file.
 		NEW_DB_USER="${DOCROOT}-${RANDOM}"
