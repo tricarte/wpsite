@@ -24,8 +24,8 @@ else
 # Most of the time you only have to change db credentials.
 
 # MySQL/MariaDB credentials
-# DBUSER=\"root\"
-# DBPASS=\"vagrant\"
+# DBUSER=\"admin\"
+# DBPASS=\"password\"
 
 # MySQL/MariaDB Host Settings
 # DBHOST=\"127.0.0.1\"
@@ -61,8 +61,8 @@ fi
 #-------------------------------------------------------------
 
 # MySQL/MariaDB credentials
-if [[ -z $DBUSER ]]; then DBUSER="root"; fi 
-if [[ -z $DBPASS ]]; then DBPASS="vagrant"; fi 
+if [[ -z $DBUSER ]]; then DBUSER="admin"; fi 
+if [[ -z $DBPASS ]]; then DBPASS="password"; fi 
 
 # MySQL/MariaDB Host Settings
 if [[ -z $DBHOST ]]; then DBHOST="127.0.0.1"; fi
@@ -2051,12 +2051,12 @@ function sub_install() {
         fi
 	fi
 
-    # if db credentials in .env file is root/vagrant
+    # if db credentials in .env file is admin/password
     # then use wpsite db credentials
     # This means we didn't change default db credentials in custom-templates/.env.example,
     dbuser_in_env=$(grep DB_USER "${SITESDIR}/${DOCROOT}/.env" | tr -d ' ' | cut -d'=' -f2)
     dbpass_in_env=$(grep DB_PASSWORD "${SITESDIR}/${DOCROOT}/.env" | tr -d ' ' | cut -d'=' -f2)
-    if [[ $dbuser_in_env == 'root' ]] && [[ $dbpass_in_env == 'vagrant' ]]; then
+    if [[ $dbuser_in_env == 'admin' ]] && [[ $dbpass_in_env == 'password' ]]; then
         # Only change if different
         if [[ $dbuser_in_env != "$DBUSER" ]]; then
             sed -i -e "/DB_USER/c\DB_USER=${DBUSER}" "${SITESDIR}/${DOCROOT}/.env"
