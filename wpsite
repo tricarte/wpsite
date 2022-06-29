@@ -438,7 +438,7 @@ subcommand=$1
 #------------------------------------------------------
 # Main subcommand controller
 #------------------------------------------------------
-function sub_default(){
+function sub_default() {
     _w "
 ${progname}: Easily create WordPress installations using composer and github.com/tricarte/wpready3.
 
@@ -476,7 +476,7 @@ ${purple}$progname <subcommand> -h|--help${normal}
 }
 export -f sub_default
 
-function sub_list(){
+function sub_list() {
     if [[ $SUBHELP ]]; then
         _w "
 Usage: ${progname} list
@@ -561,7 +561,7 @@ to create sites based on that template."
 export -f sub_boilerplate
 
 # TODO: Add which packages are updated to the commit message.
-function sub_update(){
+function sub_update() {
     if [[ $SUBHELP ]]; then
         _w "
 Usage: ${progname} update
@@ -623,7 +623,7 @@ to be later used with ${purple}\"${progname} quick\"${normal}.
 }
 export -f sub_update
 
-function sub_restore(){
+function sub_restore() {
     if [[ $SUBHELP ]]; then
         _w "
 Usage: ${progname} restore <site_name> [new_site_name] [-n|--no-browse]
@@ -801,7 +801,7 @@ Usage: ${progname} restore <site_name> [new_site_name] [-n|--no-browse]
 }
 export -f sub_restore
 
-function sub_rename(){
+function sub_rename() {
     if [[ $SUBHELP ]]; then
         _w "
 Usage: ${progname} rename <site_name> <new_site_name>
@@ -905,7 +905,7 @@ export -f sub_rename
 # Arguments:
 #   "last" or a site name
 #-----------------------------------------------
-function sub_backup(){
+function sub_backup() {
     if [[ $SUBHELP ]]; then
         _w "\
 Usage: ${progname} backup <site_name> [-p|--purge]
@@ -1027,7 +1027,7 @@ export -f sub_backup
 #       --path: Where to search the specified sites to be deleted
 #       -y: Delete without confirmation
 #---------------------------------------------------------------
-function sub_delete(){
+function sub_delete() {
     if [[ $SUBHELP ]]; then
         _w "
 Usage: ${progname} delete <site_name1> <site_name2> --path search-path
@@ -1270,7 +1270,7 @@ composer wpstarter" > "${SITESDIR}/${DOCROOT}/.git/hooks/post-merge"
 }
 export -f sub_create
 
-function sub_lang(){
+function sub_lang() {
     if [[ $SUBHELP ]]; then
         _w "
 Usage: ${progname} lang <site_name> <language_code>
@@ -1360,7 +1360,7 @@ Usage: ${progname} lang <site_name> <language_code>
 }
 export -f sub_lang
 
-function sub_quick(){
+function sub_quick() {
     if [[ $SUBHELP ]]; then
         _w "
 Usage: ${progname} quick [-n|--no-browse]
@@ -1454,7 +1454,7 @@ Usage: ${progname} admin <site_name>
 }
 export -f sub_admin
 
-function sub_last(){
+function sub_last() {
     if [[ $SUBHELP ]]; then
         _w "
 Usage: ${progname} last
@@ -1483,7 +1483,7 @@ export -f sub_last
 # Arguments:
 #   Site name
 #------------------------------------------------------
-function sub_fm(){
+function sub_fm() {
     if [[ $SUBHELP ]]; then
         _w "
 Usage: ${progname} fm <site_name>
@@ -1574,7 +1574,7 @@ Now you can use \"${progname} create\" to create a new site."
 }
 export -f sub_clone-repo
 
-function sub_install-theme(){
+function sub_install-theme() {
     if [[ $SUBHELP ]]; then
         _w "
 Usage: ${progname} install-theme <site> <theme-slug>
@@ -1625,7 +1625,7 @@ Usage: ${progname} install-theme <site> <theme-slug>
 }
 export -f sub_install-theme
 
-function sub_install-plugin(){
+function sub_install-plugin() {
     if [[ $SUBHELP ]]; then
         _w "
 Usage: ${progname} install-plugin <site> <plugin-slug>
@@ -1676,7 +1676,7 @@ Usage: ${progname} install-plugin <site> <plugin-slug>
 }
 export -f sub_install-plugin
 
-function sub_woo(){
+function sub_woo() {
     if [[ $SUBHELP ]]; then
         _w "
 Usage: ${progname} woo
@@ -1694,7 +1694,7 @@ Usage: ${progname} woo
 }
 export -f sub_woo
 
-function sub_settings(){
+function sub_settings() {
     if [[ $SUBHELP ]]; then
         _w "
 Usage: ${progname} settings <site_name>
@@ -1936,7 +1936,7 @@ export -f sub_settings
 # Arguments:
 #   Site name
 #------------------------------------------------------
-function sub_flush-env(){
+function sub_flush-env() {
     if [[ $SUBHELP ]]; then
             _w "
 Usage: ${progname} flush-env <site_name>
@@ -1978,7 +1978,7 @@ Usage: ${progname} flush-env <site_name>
 }
 export -f sub_flush-env
 
-function sub_testdb(){
+function sub_testdb() {
     if [[ $SUBHELP ]]; then
             _w "
 Usage: ${progname} testdb
@@ -2310,7 +2310,7 @@ export -f sub_install
 #       --production
 #       --development
 #------------------------------------------------------
-function sub_env(){
+function sub_env() {
     if [[ $SUBHELP ]]; then
             _w "
 Usage: ${progname} env <site_name> [--production|--development]
