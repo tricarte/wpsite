@@ -205,7 +205,7 @@ function checkDBCredentials() {
             eval "$(grep DB_PASSWORD "${WPSTARTERDIR}/custom-templates/.env.example" | tr -d ' ')"
             if $MYSQLBIN \
                 -P${DBPORT} -h${DBHOST} \
-                -u${DB_USER} -p${DB_PASSWORD} -e"quit" > /dev/null 2>&1; then
+                -u"${DB_USER}" -p"${DB_PASSWORD}" -e"quit" > /dev/null 2>&1; then
                 true
                 return
             else
@@ -1079,7 +1079,7 @@ Usage: ${progname} delete <site_name1> <site_name2> --path search-path
         # Deletion will be aborted if any check fails.
 
         if [[ ! -d "${SITESDIR}/${site}" ]]; then
-            _e "Err: Site \"$s{ite}\" does not exist."
+            _e "Err: Site \"${site}\" does not exist."
             return 1
         fi
 
@@ -1996,7 +1996,7 @@ Usage: ${progname} testdb
     fi
 
     if checkDBCredentials wpstarter; then
-        _w "DB credentials in ${PSTARTERDIR}/custom-templates/.env.example are correct."
+        _w "DB credentials in ${WPSTARTERDIR}/custom-templates/.env.example are correct."
     else
         _w ""
         _e "Cannot connect to database using specified credentials"
