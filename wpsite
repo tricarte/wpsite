@@ -610,7 +610,7 @@ will be updated! Proceed?  (y/n) (Default No): " -r
         $GIT --git-dir="${WPSTARTERDIR}/.git" \
             --work-tree="${WPSTARTERDIR}" add composer.lock
         $GIT --git-dir="${WPSTARTERDIR}/.git" \
-            --work-tree="${WPSTARTERDIR}" commit -m"versions updated"
+            --work-tree="${WPSTARTERDIR}" commit -m"composer packages updated."
         _w "$WPSTARTERDIR updated.
         
 Now creating a boilerplate site based on the updated repository
