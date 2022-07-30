@@ -1207,7 +1207,7 @@ Cloning from github...
 
     if ! checkDBCredentials; then
         _e "Cannot connect to database using specified credentials."
-        _e "Run ${progname} testdb for help."
+        _e "Run \"${progname} testdb\" for help."
         exit 1
     fi
 
@@ -1999,10 +1999,9 @@ Usage: ${progname} testdb
         _w "DB credentials in ${WPSTARTERDIR}/custom-templates/.env.example are correct."
     else
         _w ""
-        _e "Cannot connect to database using specified credentials"
-        _e "in ${WPSTARTERDIR}/custom-templates/.env.example."
-        _w ""
-        _w "Using credentials of ~/.wpsiterc instead."
+        _e "Cannot connect to database using specified credentials in"
+        _e "${WPSTARTERDIR}/custom-templates/.env.example."
+        _e "Edit DB credentials in this file accordingly and commit your changes."
     fi
 
     return
@@ -2051,21 +2050,11 @@ function sub_install() {
         fi
 	fi
 
-    # if db credentials in .env file is admin/password
-    # then use wpsite db credentials
-    # This means we didn't change default db credentials in custom-templates/.env.example,
-    dbuser_in_env=$(grep DB_USER "${SITESDIR}/${DOCROOT}/.env" | tr -d ' ' | cut -d'=' -f2)
-    dbpass_in_env=$(grep DB_PASSWORD "${SITESDIR}/${DOCROOT}/.env" | tr -d ' ' | cut -d'=' -f2)
-    if [[ $dbuser_in_env == 'admin' ]] && [[ $dbpass_in_env == 'password' ]]; then
-        # Only change if different
-        if [[ $dbuser_in_env != "$DBUSER" ]]; then
-            sed -i -e "/DB_USER/c\DB_USER=${DBUSER}" "${SITESDIR}/${DOCROOT}/.env"
-        fi
-
-        # Only change if different
-        if [[ $dbpass_in_env != "$DBPASS" ]]; then
-            sed -i -e "/DB_PASSWORD/c\DB_PASSWORD=${DBPASS}" "${SITESDIR}/${DOCROOT}/.env"
-        fi
+    # If db credentials in wpstarter repo does not work
+    # use those set in ~/.wpsiterc instead.
+    if ! checkDBCredentials wpstarter; then
+        sed -i -e "/^DB_USER=/c\DB_USER=${DBUSER}" "${SITESDIR}/${DOCROOT}/.env"
+        sed -i -e "/^DB_PASSWORD=/c\DB_PASSWORD=${DBPASS}" "${SITESDIR}/${DOCROOT}/.env"
     fi
 
 	if [[ $PRODUCTION ]]; then
