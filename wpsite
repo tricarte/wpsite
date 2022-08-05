@@ -2208,6 +2208,7 @@ function sub_install() {
             surge \
             fluent-smtp \
             log-http-requests \
+            create-block-theme \
             gutenberg
 
         if [[ ! $PRODUCTION ]]; then
