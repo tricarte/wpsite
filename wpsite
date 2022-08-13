@@ -163,7 +163,7 @@ fi
 
 COMPOSERBIN=$(command -v composer)
 if [[ $COMPOSERBIN ]]; then
-    COMPOSERBIN="${PHPBIN} $COMPOSERBIN"
+    COMPOSERBIN="${PHPBIN} $COMPOSERBIN --ignore-platform-reqs"
 else
     _e "Err: Composer cli is not installed."
     exit 1
