@@ -2209,6 +2209,7 @@ function sub_install() {
             fluent-smtp \
             log-http-requests \
             create-block-theme \
+            async-javascript \
             gutenberg
 
         if [[ ! $PRODUCTION ]]; then
@@ -2256,6 +2257,16 @@ function sub_install() {
             option update apcm_analytics 0
         $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
             option update apcm_gc 0
+
+        # Async-JavaScript options
+        $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
+            option update aj_enabled 1
+        $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
+            option update aj_method defer
+        $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
+            option update aj_enabled_logged 1
+        $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
+            option update aj_jquery exclude
 
         $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins rewrite flush
 
