@@ -2210,6 +2210,7 @@ function sub_install() {
             log-http-requests \
             create-block-theme \
             async-javascript \
+            reusable-blocks-extended \
             gutenberg
 
         if [[ ! $PRODUCTION ]]; then
