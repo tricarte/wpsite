@@ -121,9 +121,11 @@ _s() { _a "${green}$1${normal}"; } # Success
 # Prerequisites
 #--------------------------
 
-PHPBIN=$(command -v "php7.4")
+# PHPV="7.4"
+PHPV="8.1"
+PHPBIN=$(command -v "php${PHPV}")
 if [[ ! $PHPBIN ]]; then
-    echo "This script requires PHP 7.4."
+    echo "This script requires PHP ${PHPV}."
     exit 1
 fi
 
@@ -1363,36 +1365,48 @@ export -f sub_lang
 function sub_quick() {
     if [[ $SUBHELP ]]; then
         _w "
-Usage: ${progname} quick [-n|--no-browse]
+Usage: ${progname} quick [site_name] [-n|--no-browse] [--with-plugin plugin_slug]
+        [--with-theme theme_slug]
 
-       Quickly create a random site by restoring the boilerplate backup.
-       You can create the boilerplate backup using \"${progname} boilerplate\"
-       if it does not exist.
+       Quickly create a random site by restoring the boilerplate backup. If you
+       do not provide 'site_name' then a random number instead will be used as
+       name. You can create the boilerplate backup using \"${progname}
+       boilerplate\" if it does not exist.
 "
         return
     fi
 
-    SITENAME=$RANDOM
-    if [[ -n "$NOTIFYBIN" ]]; then
-        $NOTIFYBIN -a WPSITE "Site ${SITENAME} is being created." "Please wait..."
+    DOCROOT="$1"
+    if [[ -z $DOCROOT ]]; then
+        DOCROOT=$RANDOM
     fi
-    $progname restore boiler $SITENAME -n
+
+    # "last" keyword is reserved
+    if [[ $DOCROOT == "last" ]]; then
+        DOCROOT="last_site"
+    fi
+
+    if [[ -n "$NOTIFYBIN" ]]; then
+        $NOTIFYBIN -a WPSITE "Site ${DOCROOT} is being created." "Please wait..."
+    fi
+
+    $progname restore boiler $DOCROOT -n
 
     if [[ -n "$INSTALL_PLUGIN" ]]; then
-        $progname install-plugin "$SITENAME"
+        $progname install-plugin "$DOCROOT" "$INSTALL_PLUGIN"
     fi
 
     if [[ -n "$INSTALL_THEME" ]]; then
-        $progname isntall-theme "$SITENAME"
+        $progname install-theme "$DOCROOT" "$INSTALL_THEME"
     fi
 
     if [[ ! $NOBROWSE ]]; then
-        $progname admin "$SITENAME"
+        $progname admin "$DOCROOT"
         return
     fi
 
     if [[ -n "$NOTIFYBIN" ]]; then
-        $NOTIFYBIN -a WPSITE "Site ${SITENAME} created." "Use \"${progname} last\" to open the dashboard."
+        $NOTIFYBIN -a WPSITE "Site ${DOCROOT} created." "Use \"${progname} last\" to open the dashboard."
     fi
 
     return
