@@ -7,18 +7,18 @@
 # -------------------------------------------------------------------------
 
 if [[ $USER == "root" ]]; then
-    echo "Running wpsite with root is not allowed."
-    exit 1
+  echo "Running wpsite with root is not allowed."
+  exit 1
 fi
 
 if [[ -f "${HOME}/.wpsiterc" ]]; then
-    # shellcheck source=/dev/null
-    source "${HOME}/.wpsiterc"
+  # shellcheck source=/dev/null
+  source "${HOME}/.wpsiterc"
 else
-    echo ".wpsiterc does not exist in \"${HOME}\"."
-    echo "Creating one..."
-    if [[ -w "$HOME" ]]; then
-        echo "\
+  echo ".wpsiterc does not exist in \"${HOME}\"."
+  echo "Creating one..."
+  if [[ -w "$HOME" ]]; then
+    echo "\
 # Uncomment the line to make a change.
 # These are the defaults.
 # Most of the time you only have to change db credentials.
@@ -44,15 +44,15 @@ else
 # WPSTARTERDIR=\"\$HOME/repos/wpready3\"
 
 # How many backups to keep while using \"wpsite backup your-site --purge\"
-# NUMBACKUPSTOKEEP=2" > "${HOME}/.wpsiterc"
+# NUMBACKUPSTOKEEP=2" >"${HOME}/.wpsiterc"
 
-        echo ".wpsiterc file created in ${HOME}."
-        echo "Edit it now according to your preferences."
-    else
-        echo "\"${HOME}\" is not writable or does not exist."
-        exit 1
-    fi
-    exit
+    echo ".wpsiterc file created in ${HOME}."
+    echo "Edit it now according to your preferences."
+  else
+    echo "\"${HOME}\" is not writable or does not exist."
+    exit 1
+  fi
+  exit
 fi
 
 #-------------------------------------------------------------
@@ -61,34 +61,34 @@ fi
 #-------------------------------------------------------------
 
 # MySQL/MariaDB credentials
-if [[ -z $DBUSER ]]; then DBUSER="admin"; fi 
-if [[ -z $DBPASS ]]; then DBPASS="password"; fi 
+if [[ -z $DBUSER ]]; then DBUSER="admin"; fi
+if [[ -z $DBPASS ]]; then DBPASS="password"; fi
 
 # MySQL/MariaDB Host Settings
 if [[ -z $DBHOST ]]; then DBHOST="127.0.0.1"; fi
-if [[ -z $DBPORT ]]; then DBPORT="3306"; fi 
+if [[ -z $DBPORT ]]; then DBPORT="3306"; fi
 
-# Where to host sites 
-if [[ -z $SITESDIR ]]; then SITESDIR="$HOME/sites"; fi 
+# Where to host sites
+if [[ -z $SITESDIR ]]; then SITESDIR="$HOME/sites"; fi
 if [[ ! -d "$SITESDIR" ]]; then
-    mkdir -p "$SITESDIR"
+  mkdir -p "$SITESDIR"
 fi
 
 # Where to store/retore backups
 if [[ -z $BACKUPSDIR ]]; then BACKUPSDIR="${HOME}/backups/sites"; fi
 if [[ ! -d "$BACKUPSDIR" ]]; then
-    mkdir -p "$BACKUPSDIR"
+  mkdir -p "$BACKUPSDIR"
 fi
 
 if [[ -z $WPSTARTERREPO ]]; then
-    WPSTARTERREPO="https://github.com/tricarte/wpready3";
+  WPSTARTERREPO="https://github.com/tricarte/wpready3"
 fi
 
 # Clone of above repo, downloadable with "wpsite clone-repo"
 if [[ -z $WPSTARTERDIR ]]; then WPSTARTERDIR="${HOME}/repos/wpready3"; fi
 
 # How many backups to keep while using "wpsite backup your-site --purge"
-if [[ -z $NUMBACKUPSTOKEEP ]]; then NUMBACKUPSTOKEEP=2; fi 
+if [[ -z $NUMBACKUPSTOKEEP ]]; then NUMBACKUPSTOKEEP=2; fi
 
 #--------------------------
 # End of Defaults
@@ -109,9 +109,9 @@ _w() {
   local -r text="${1:-}"
   echo -e "$text"
 }
-_a() { _w " > $1"; } # Alert
+_a() { _w " > $1"; }                 # Alert
 _e() { _a "${red}$1${normal}" >&2; } # Error
-_s() { _a "${green}$1${normal}"; } # Success
+_s() { _a "${green}$1${normal}"; }   # Success
 
 #--------------------------
 # End of Utility functions
@@ -125,64 +125,71 @@ _s() { _a "${green}$1${normal}"; } # Success
 PHPV="8.1"
 PHPBIN=$(command -v "php${PHPV}")
 if [[ ! $PHPBIN ]]; then
-    echo "This script requires PHP ${PHPV}."
-    exit 1
+  echo "This script requires PHP ${PHPV}."
+  exit 1
 fi
 
 if [[ -n "$XDG_CURRENT_DESKTOP" ]]; then
-    NOTIFYBIN=$(command -v notify-send)
+  NOTIFYBIN=$(command -v notify-send)
 fi
 
 MYSQLDUMP=$(command -v mysqldump)
 
 # Check MySQL/MariaDB is running
 DBSTATUS=$(systemctl is-active mysql.service)
-if [[  $DBSTATUS != 'active' ]]; then
-    _e "Database server is not running."
-    if [[ -n "$NOTIFYBIN" ]]; then
-        $NOTIFYBIN -a WPSITE "Database server is not running."
-    fi
-    exit 1
+if [[ $DBSTATUS != 'active' ]]; then
+  _e "Database server is not running."
+  if [[ -n "$NOTIFYBIN" ]]; then
+    $NOTIFYBIN -a WPSITE "Database server is not running."
+  fi
+  exit 1
 fi
 
 WP=$(command -v wp)
 if [[ $WP ]]; then
-    WP="${PHPBIN} $WP"
+  WP="${PHPBIN} $WP"
 else
-    _e "Err: WPCLI is not installed."
-    exit 1
+  _e "Err: WPCLI is not installed."
+  exit 1
+fi
+
+PIGZ=$(command -v pigz)
+if [[ $PIGZ ]]; then
+  TAR="tar -I ${PIGZ} -cf"
+else
+  TAR="tar czf"
 fi
 
 if [[ -n "$XDG_CURRENT_DESKTOP" ]]; then
-    VALET=$(command -v valet)
+  VALET=$(command -v valet)
 fi
 
 GIT=$(command -v git)
 if [[ ! $GIT ]]; then
-    _e "Err: git is not installed."
-    exit 1
+  _e "Err: git is not installed."
+  exit 1
 fi
 
 COMPOSERBIN=$(command -v composer)
 if [[ $COMPOSERBIN ]]; then
-    COMPOSERBIN="${PHPBIN} $COMPOSERBIN --ignore-platform-reqs"
+  COMPOSERBIN="${PHPBIN} $COMPOSERBIN --ignore-platform-reqs"
 else
-    _e "Err: Composer cli is not installed."
-    exit 1
+  _e "Err: Composer cli is not installed."
+  exit 1
 fi
 
 MYSQLBIN=$(command -v mysql)
 if [[ ! $MYSQLBIN ]]; then
-    _e "Err: mysql/mardiadb client is not installed."
-    exit 1
+  _e "Err: mysql/mardiadb client is not installed."
+  exit 1
 fi
 
 if ! $MYSQLBIN -P${DBPORT} -h${DBHOST} \
-    -u${DBUSER} -p${DBPASS} -e"quit" > /dev/null 2>&1; then
-    _e "Err: Cannot connect to DB."
-    _e "DB Credentials in ${HOME}/.wpsiterc is not correct."
-    _e "Check your access privileges."
-    exit 1
+  -u${DBUSER} -p${DBPASS} -e"quit" >/dev/null 2>&1; then
+  _e "Err: Cannot connect to DB."
+  _e "DB Credentials in ${HOME}/.wpsiterc is not correct."
+  _e "Check your access privileges."
+  exit 1
 fi
 
 #-------------------------
@@ -200,70 +207,73 @@ WORKING_DIR_ORIGINAL="$PWD"
 # source repository that is set in $WPSTARTERDIR.
 #------------------------------------------------------------------
 function checkDBCredentials() {
-    if [[ $1 == 'wpstarter' ]]; then
-        # Check DB credentials in wpstarter repo
-        if [[ -d "$WPSTARTERDIR" ]]; then
-            eval "$(grep DB_USER "${WPSTARTERDIR}/custom-templates/.env.example" | tr -d ' ')"
-            eval "$(grep DB_PASSWORD "${WPSTARTERDIR}/custom-templates/.env.example" | tr -d ' ')"
-            if $MYSQLBIN \
-                -P${DBPORT} -h${DBHOST} \
-                -u"${DB_USER}" -p"${DB_PASSWORD}" -e"quit" > /dev/null 2>&1; then
-                true
-                return
-            else
-                false
-                return
-            fi
-        else
-            false
-            return
-        fi
+  if [[ $1 == 'wpstarter' ]]; then
+    # Check DB credentials in wpstarter repo
+    if [[ -d "$WPSTARTERDIR" ]]; then
+      eval "$(grep DB_USER "${WPSTARTERDIR}/custom-templates/.env.example" | tr -d ' ')"
+      eval "$(grep DB_PASSWORD "${WPSTARTERDIR}/custom-templates/.env.example" | tr -d ' ')"
+      if $MYSQLBIN \
+        -P${DBPORT} -h${DBHOST} \
+        -u"${DB_USER}" -p"${DB_PASSWORD}" -e"quit" >/dev/null 2>&1; then
+        true
+        return
+      else
+        false
+        return
+      fi
     else
-        if $MYSQLBIN -P${DBPORT} -h${DBHOST} \
-            -u${DBUSER} -p${DBPASS} -e"quit" > /dev/null 2>&1; then
-            true
-            return
-        else
-            false
-            return
-        fi
+      false
+      return
     fi
+  else
+    if $MYSQLBIN -P${DBPORT} -h${DBHOST} \
+      -u${DBUSER} -p${DBPASS} -e"quit" >/dev/null 2>&1; then
+      true
+      return
+    else
+      false
+      return
+    fi
+  fi
 
 }
 
 function createTmpDir() {
-    tmpDir="/tmp/$(basename "$0").$RANDOM.$RANDOM.$RANDOM.$$"
-    (umask 077 && mkdir -p "${tmpDir}") || \
-        { _e "Could not create temporary directory! Exiting."; exit 1; }
+  tmpDir="/tmp/$(basename "$0").$RANDOM.$RANDOM.$RANDOM.$$"
+  (umask 077 && mkdir -p "${tmpDir}") ||
+    {
+      _e "Could not create temporary directory! Exiting."
+      exit 1
+    }
 }
 
 #------------------------------------------------
 # Used by sub_restore(), sub_create(), sub_last()
 #------------------------------------------------
 function openBrowser() {
-    if [[ $NOTIFYBIN ]]; then
-        $NOTIFYBIN -a WPSITE "Opening ${1} in browser..."
-    fi
+  if [[ $NOTIFYBIN ]]; then
+    $NOTIFYBIN -a WPSITE "Opening ${1} in browser..."
+  fi
 
-    if [[ -n "$XDG_CURRENT_DESKTOP" ]]; then
-        URL=$(
-        $WP --skip-plugins \
-            --path="${SITESDIR}/${1}/public/cms" \
-            eval "echo get_dashboard_url();"
-        )
+  if [[ -n "$XDG_CURRENT_DESKTOP" ]]; then
+    URL=$(
+      $WP --skip-plugins \
+        --path="${SITESDIR}/${1}/public/cms" \
+        eval "echo get_dashboard_url();"
+    )
 
-        urlRegex='^http[s]?://'
-        if [[ $URL =~ $urlRegex ]]; then
-            $(command -v xdg-open) "$URL"
-        else
-            _e "Cannot open site: ${URL}."
-            if [[ $NOTIFYBIN ]]; then
-                $NOTIFYBIN -a WPSITE "Cannot open site: ${URL}."
-            fi
-            exit 1
-        fi
+    urlRegex='^http[s]?://'
+    if [[ $URL =~ $urlRegex ]]; then
+      $(command -v xdg-open) "$URL"
+    else
+      _e "Cannot open site: ${URL}."
+      if [[ $NOTIFYBIN ]]; then
+        $NOTIFYBIN -a WPSITE "Cannot open site: ${URL}."
+      fi
+      exit 1
     fi
-    return
+  fi
+  return
 }
 
 #------------------------------
@@ -272,38 +282,38 @@ function openBrowser() {
 #   Site name to be deleted
 #------------------------------
 function deleteSite() {
-    DB_USER=$DBUSER
-    DB_PASSWORD=$DBPASS
+  DB_USER=$DBUSER
+  DB_PASSWORD=$DBPASS
 
-    $MYSQLBIN -P${DBPORT} -h${DBHOST} \
-        -u${DB_USER} -p${DB_PASSWORD} -e "DROP DATABASE IF EXISTS \`${1}\`"
+  $MYSQLBIN -P${DBPORT} -h${DBHOST} \
+    -u${DB_USER} -p${DB_PASSWORD} -e "DROP DATABASE IF EXISTS \`${1}\`"
 
-    # Drop additional users created with 'wpsite crete site_name --production'
-    DELETE_USER=$(
+  # Drop additional users created with 'wpsite crete site_name --production'
+  DELETE_USER=$(
     $MYSQLBIN -P${DBPORT} -h${DBHOST} -Nsr \
-        -u${DB_USER} -p${DB_PASSWORD} -e "SELECT user from mysql.user where user like '${1}%'"
-    )
-    if [[ -n $DELETE_USER ]]; then
-        $MYSQLBIN -P${DBPORT} -h${DBHOST} -u${DB_USER} -p${DB_PASSWORD} \
-            -e "DROP USER '${DELETE_USER}'@'127.0.0.1';"
-        $MYSQLBIN -P${DBPORT} -h${DBHOST} -u${DB_USER} -p${DB_PASSWORD} \
-            -e "FLUSH PRIVILEGES;"
-    fi
-    
-    # ? causes script to stop executing if $SITESDIR and $1 are unset.
-    rm -rf "${SITESDIR:?}/${1:?}"
-    if [[ $VALET ]]; then
-        $VALET unlink "$DOCROOT" > /dev/null 2>&1
-    fi
+      -u${DB_USER} -p${DB_PASSWORD} -e "SELECT user from mysql.user where user like '${1}%'"
+  )
+  if [[ -n $DELETE_USER ]]; then
+    $MYSQLBIN -P${DBPORT} -h${DBHOST} -u${DB_USER} -p${DB_PASSWORD} \
+      -e "DROP USER '${DELETE_USER}'@'127.0.0.1';"
+    $MYSQLBIN -P${DBPORT} -h${DBHOST} -u${DB_USER} -p${DB_PASSWORD} \
+      -e "FLUSH PRIVILEGES;"
+  fi
 
-    _w "Site ${red}\"${1}\"${normal} has been deleted."
+  # ? causes script to stop executing if $SITESDIR and $1 are unset.
+  rm -rf "${SITESDIR:?}/${1:?}"
+  if [[ $VALET ]]; then
+    $VALET unlink "$DOCROOT" >/dev/null 2>&1
+  fi
 
-    if [[ $NOTIFYBIN ]]; then
-        if [[ ! $QUIET ]]; then
-            $NOTIFYBIN -a WPSITE "Site \"${1}\" has been deleted."
-        fi
+  _w "Site ${red}\"${1}\"${normal} has been deleted."
+
+  if [[ $NOTIFYBIN ]]; then
+    if [[ ! $QUIET ]]; then
+      $NOTIFYBIN -a WPSITE "Site \"${1}\" has been deleted."
     fi
-    return
+  fi
+  return
 }
 
 #----------------------------------------------------------
@@ -313,16 +323,16 @@ function deleteSite() {
 #   Only the site name not the whole path.
 #----------------------------------------------------------
 function findLastSite() {
-    SITE=$(
+  SITE=$(
     find "$SITESDIR"/ \
-        -maxdepth 2 \
-        -type f \
-        -name wpstarter.json \
-        -printf "%CY-%Cm-%Cd %CT %h\n" \
-        | sort -r | head -n1 | xargs -I '{}' basename '{}'
-    )
+      -maxdepth 2 \
+      -type f \
+      -name wpstarter.json \
+      -printf "%CY-%Cm-%Cd %CT %h\n" |
+      sort -r | head -n1 | xargs -I '{}' basename '{}'
+  )
 
-    echo "$SITE"
+  echo "$SITE"
 }
 
 #-------------------------------------------------------------------------
@@ -331,101 +341,100 @@ function findLastSite() {
 #   The absolute path to the site root
 #-------------------------------------------------------------------------
 function isWPStarter() {
-    current=$WORKING_DIR_ORIGINAL
-    while [[ $current != "/" ]];
-    do
-        if [[ -f "${current}/wpstarter.json" ]]; then
-            echo "$current"
-            break
-        else
-            current=$(dirname "$current")
-        fi
-    done
+  current=$WORKING_DIR_ORIGINAL
+  while [[ $current != "/" ]]; do
+    if [[ -f "${current}/wpstarter.json" ]]; then
+      echo "$current"
+      break
+    else
+      current=$(dirname "$current")
+    fi
+  done
 }
 
 #-------------------------------------------------------------------
 # Global Option Parsing
 #-------------------------------------------------------------------
 PARAMS=""
-while (( "$#" )); do
-case "$1" in
-    -y|--yes)
-        PROCEED=1
-        shift # Pop the first element off the array on each iteration.
-        ;;
-    -p|--purge)
-        PURGE=1
-        shift
-        ;;
-    -n|--no-browse)
-        NOBROWSE=1
-        shift
-        ;;
-    --production)
-        PRODUCTION=1
-        shift
-        ;;
-    --development)
-        DEVELOPMENT=1
-        shift
-        ;;
-    -b|--bare)
-        BARE=1
-        shift
-        ;;
-    -q|--quiet)
-        QUIET=1
-        shift
-        ;;
-    -r|--repo)
-        if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
-            REPO_PATH=$2
-            shift 2
-        else
-            _e "Error: Argument for $1 is missing" >&2
-            exit 1
-        fi
-        ;;
-    --with-plugin)
-        if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
-            INSTALL_PLUGIN=$2
-            shift 2
-        else
-            _e "Error: Argument for $1 is missing" >&2
-            exit 1
-        fi
-        ;;
-    --with-theme)
-        if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
-            INSTALL_THEME=$2
-            shift 2
-        else
-            _e "Error: Argument for $1 is missing" >&2
-            exit 1
-        fi
-        ;;
-    --path)
-        if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
-            SITESDIR_CUSTOM=$2
-            shift 2
-        else
-            _e "Error: Argument for $1 is missing" >&2
-            exit 1
-        fi
-        ;;
-    -h|--help)
-        SUBHELP=1
-        shift
-        ;;
-    --*|-*) # unsupported flags
-        _e "Error: Unsupported flag $1" >&2
-        exit 1
-        ;;
-    *) # preserve positional arguments
-        PARAMS="$PARAMS $1"
-        shift
-        ;;
-esac
+while (("$#")); do
+  case "$1" in
+  -y | --yes)
+    PROCEED=1
+    shift # Pop the first element off the array on each iteration.
+    ;;
+  -p | --purge)
+    PURGE=1
+    shift
+    ;;
+  -n | --no-browse)
+    NOBROWSE=1
+    shift
+    ;;
+  --production)
+    PRODUCTION=1
+    shift
+    ;;
+  --development)
+    DEVELOPMENT=1
+    shift
+    ;;
+  -b | --bare)
+    BARE=1
+    shift
+    ;;
+  -q | --quiet)
+    QUIET=1
+    shift
+    ;;
+  -r | --repo)
+    if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
+      REPO_PATH=$2
+      shift 2
+    else
+      _e "Error: Argument for $1 is missing" >&2
+      exit 1
+    fi
+    ;;
+  --with-plugin)
+    if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
+      INSTALL_PLUGIN=$2
+      shift 2
+    else
+      _e "Error: Argument for $1 is missing" >&2
+      exit 1
+    fi
+    ;;
+  --with-theme)
+    if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
+      INSTALL_THEME=$2
+      shift 2
+    else
+      _e "Error: Argument for $1 is missing" >&2
+      exit 1
+    fi
+    ;;
+  --path)
+    if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
+      SITESDIR_CUSTOM=$2
+      shift 2
+    else
+      _e "Error: Argument for $1 is missing" >&2
+      exit 1
+    fi
+    ;;
+  -h | --help)
+    SUBHELP=1
+    shift
+    ;;
+  --* | -*) # unsupported flags
+    _e "Error: Unsupported flag $1" >&2
+    exit 1
+    ;;
+  *) # preserve positional arguments
+    PARAMS="$PARAMS $1"
+    shift
+    ;;
+  esac
 done
 
 eval set -- "$PARAMS"
@@ -434,14 +443,14 @@ progname=$(basename "$0")
 subcommand=$1
 
 #----------------
-#  SUBCOMMANDS 
+#  SUBCOMMANDS
 #----------------
 
 #------------------------------------------------------
 # Main subcommand controller
 #------------------------------------------------------
 function sub_default() {
-    _w "
+  _w "
 ${progname}: Easily create WordPress installations using composer and github.com/tricarte/wpready3.
 
     Usage: ${purple}${progname} <subcommand> [dir1] [dir2] OPTIONS${normal}
@@ -474,42 +483,42 @@ Subcommands:
 For help with each subcommand run:
 ${purple}$progname <subcommand> -h|--help${normal}
 "
-    exit
+  exit
 }
 export -f sub_default
 
 function sub_list() {
-    if [[ $SUBHELP ]]; then
-        _w "
+  if [[ $SUBHELP ]]; then
+    _w "
 Usage: ${progname} list
         
        List all installed sites in $SITESDIR.
 "
-        return
-    fi
-
-    FD=$(command -v fd)
-    if [[ $FD ]]; then
-        sitesList=$(
-        $FD wpstarter.json --max-depth 2 \
-            --type f -a --base-directory "$SITESDIR" \
-            --color never --exec dirname | xargs -I '{}' basename '{}'
-        )
-    else
-        sitesList=$(
-        find "${SITESDIR}/" -maxdepth 2 -type f \
-            -name wpstarter.json -exec dirname {} \; \
-            | xargs -I '{}' basename '{}' -0
-        )
-    fi
-
-    if [[ -n $sitesList ]]; then
-        echo "$sitesList"
-    else
-        _w "There are no wpstarter based WordPress installations in ${SITESDIR}."
-    fi
-
     return
+  fi
+
+  FD=$(command -v fd)
+  if [[ $FD ]]; then
+    sitesList=$(
+      $FD wpstarter.json --max-depth 2 \
+        --type f -a --base-directory "$SITESDIR" \
+        --color never --exec dirname | xargs -I '{}' basename '{}'
+    )
+  else
+    sitesList=$(
+      find "${SITESDIR}/" -maxdepth 2 -type f \
+        -name wpstarter.json -exec dirname {} \; |
+        xargs -I '{}' basename '{}' -0
+    )
+  fi
+
+  if [[ -n $sitesList ]]; then
+    echo "$sitesList"
+  else
+    _w "There are no wpstarter based WordPress installations in ${SITESDIR}."
+  fi
+
+  return
 }
 export -f sub_list
 
@@ -519,386 +528,386 @@ export -f sub_list
 #   None
 #-------------------------------------------
 function sub_boilerplate() {
-    if [[ $SUBHELP ]]; then
-        _w "
+  if [[ $SUBHELP ]]; then
+    _w "
 Usage: ${progname} boilerplate
         
        Create a boilerplate template backup 
        for use with ${purple}\"wpsite quick\"${normal} in \"${BACKUPSDIR}\".
 "
-        return
-    fi
+    return
+  fi
 
-    if [[ -d "${SITESDIR}/boiler" ]]; then
-        $progname delete boiler -y -q
-    fi
-    _w "Temporary site ${purple}\"boiler\"${normal} is being created..."
-    # TODO: dev/null thing
-    $progname create boiler -n
-    _w "Backing up ${purple}\"boiler\"${normal} for later use..."
-    $progname backup boiler
-    _w "Removing temporary site..."
+  if [[ -d "${SITESDIR}/boiler" ]]; then
     $progname delete boiler -y -q
+  fi
+  _w "Temporary site ${purple}\"boiler\"${normal} is being created..."
+  # TODO: dev/null thing
+  $progname create boiler -n
+  _w "Backing up ${purple}\"boiler\"${normal} for later use..."
+  $progname backup boiler
+  _w "Removing temporary site..."
+  $progname delete boiler -y -q
 
-    # Delete everything but the last backup.
-    _w "Removing older versions of the boilerplate from ${purple}\"${BACKUPSDIR}/boiler\"${normal}..."
-    cd "${BACKUPSDIR}/boiler" || exit
-    mapfile -t BACKUPSLIST < <(
+  # Delete everything but the last backup.
+  _w "Removing older versions of the boilerplate from ${purple}\"${BACKUPSDIR}/boiler\"${normal}..."
+  cd "${BACKUPSDIR}/boiler" || exit
+  mapfile -t BACKUPSLIST < <(
     find -- * -maxdepth 0 -type d \
-        -printf "%f\n" -regextype 'posix-extended' \
-        -regex "^[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{6}$"
-    )
-    for (( i = 0; i < ( ${#BACKUPSLIST[@]} - 1 ); i++ )); do
-        rm -rf "${BACKUPSLIST[i]}"
-    done
-    _w "DONE."
+      -printf "%f\n" -regextype 'posix-extended' \
+      -regex "^[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{6}$"
+  )
+  for ((i = 0; i < (${#BACKUPSLIST[@]} - 1); i++)); do
+    rm -rf "${BACKUPSLIST[i]}"
+  done
+  _w "DONE."
 
-    _w "
+  _w "
 Boilerplate template created in ${red}\"${BACKUPSDIR}\"${normal}.
 Now you can use ${purple}\"${progname} quick\"${normal}
 to create sites based on that template."
 
-    return
+  return
 }
 export -f sub_boilerplate
 
 # TODO: Add which packages are updated to the commit message.
 function sub_update() {
-    if [[ $SUBHELP ]]; then
-        _w "
+  if [[ $SUBHELP ]]; then
+    _w "
 Usage: ${progname} update
         
        Update composer packages in source repository.
 "
-        return
-    fi
+    return
+  fi
 
-    start=$SECONDS
+  start=$SECONDS
 
-    # Check source repo exists.
-    if [[ ! -d "$WPSTARTERDIR" ]]; then
-        _e "Err: wpstarter repository does not exist."
-        _e "It was searched in ${WPSTARTERDIR}".
-        return 1
-    fi
+  # Check source repo exists.
+  if [[ ! -d "$WPSTARTERDIR" ]]; then
+    _e "Err: wpstarter repository does not exist."
+    _e "It was searched in ${WPSTARTERDIR}".
+    return 1
+  fi
 
-    if [[ ! $PROCEED ]]; then
-        read -p "Composer packages in wpstarter repository \
+  if [[ ! $PROCEED ]]; then
+    read -p "Composer packages in wpstarter repository \
 will be updated! Proceed?  (y/n) (Default No): " -r
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            _w "Update aborted."
-            return 1
-        fi
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+      _w "Update aborted."
+      return 1
     fi
+  fi
 
-    if ! ping -c1 8.8.8.8 > /dev/null 2>&1; then
-        _e "Check your internet connection."
-        exit 1
-    fi
+  if ! ping -c1 8.8.8.8 >/dev/null 2>&1; then
+    _e "Check your internet connection."
+    exit 1
+  fi
 
-    createTmpDir
+  createTmpDir
 
-    cp "${WPSTARTERDIR}/composer.lock" "${tmpDir}/composer.lock"
+  cp "${WPSTARTERDIR}/composer.lock" "${tmpDir}/composer.lock"
 
-    _w "Updating composer packages..."
-    $COMPOSERBIN --working-dir="${WPSTARTERDIR}" update -q || exit
+  _w "Updating composer packages..."
+  $COMPOSERBIN --working-dir="${WPSTARTERDIR}" update -q || exit
 
-    if cmp -s "${WPSTARTERDIR}/composer.lock" "${tmpDir}/composer.lock"; then
-        _w "No updates are available."
-        return
-    else
-        end=$SECONDS
-        _w "Composer update took $((end-start)) seconds to finish."
-        $GIT --git-dir="${WPSTARTERDIR}/.git" \
-            --work-tree="${WPSTARTERDIR}" add composer.lock
-        $GIT --git-dir="${WPSTARTERDIR}/.git" \
-            --work-tree="${WPSTARTERDIR}" commit -m"composer packages updated."
-        _w "$WPSTARTERDIR updated.
+  if cmp -s "${WPSTARTERDIR}/composer.lock" "${tmpDir}/composer.lock"; then
+    _w "No updates are available."
+    return
+  else
+    end=$SECONDS
+    _w "Composer update took $((end - start)) seconds to finish."
+    $GIT --git-dir="${WPSTARTERDIR}/.git" \
+      --work-tree="${WPSTARTERDIR}" add composer.lock
+    $GIT --git-dir="${WPSTARTERDIR}/.git" \
+      --work-tree="${WPSTARTERDIR}" commit -m"composer packages updated."
+    _w "$WPSTARTERDIR updated.
 
 Now creating a boilerplate site based on the updated repository
 to be later used with ${purple}\"${progname} quick\"${normal}.
 "
-        $progname boilerplate
-    fi
+    $progname boilerplate
+  fi
 
-    return
+  return
 }
 export -f sub_update
 
 function sub_restore() {
-    if [[ $SUBHELP ]]; then
-        _w "
+  if [[ $SUBHELP ]]; then
+    _w "
 Usage: ${progname} restore <site_name> [new_site_name] [-n|--no-browse]
         
        The backup named <site_name> inside ${BACKUPSDIR}
        will be restored either to the same name
        or to [new_site_name] inside ${SITESDIR}.
 "
-        return
-    fi
-
-    DOCROOT=$1
-    NEWDOCROOT=$2
-
-    FINALDIR=""
-
-    # Setup custom installation path defined with --path, instead of $SITESDIR
-    if [[ -n $SITESDIR_CUSTOM ]]; then
-        if [[ -d "$SITESDIR_CUSTOM" ]] && [[ -w "$SITESDIR_CUSTOM" ]]; then
-            SITESDIR="$(dirname "$SITESDIR_CUSTOM")"/"$(basename "$SITESDIR_CUSTOM")"
-        else
-            _e "\"${SITESDIR_CUSTOM}\" is not writable or does not exist."
-            exit 1
-        fi
-    fi
-
-    if [[ -z $DOCROOT ]]; then
-        _e "Err: Specify a directory to restore. It will be searched in ${BACKUPSDIR}."
-        return 1
-    fi
-
-    if [[ -n $NEWDOCROOT ]]; then
-        if [[ -d "${SITESDIR}/${NEWDOCROOT}" ]]; then
-            _e "Err: A site with the name \"${NEWDOCROOT}\" is already available."
-            return 1
-        fi
-    fi
-
-    # Exit if a site with the same name already exists
-    if [[ -d "${SITESDIR}/${DOCROOT}" ]] && [[ -z $NEWDOCROOT ]]; then
-        _e "Err: A site with the name \"${DOCROOT}\" is already available."
-        return 1
-    fi
-
-    # Exit if backup directory does not exist.
-    if [[ ! -d "${BACKUPSDIR}/${DOCROOT}" ]]; then
-        _e "Err: Backup directory 'boiler' does not exist in ${BACKUPSDIR}."
-        _w "You can create one with \"${progname} boilerplate\"."
-        return 1
-    fi
-
-    # Find the latest backup directory
-    LATEST_BACKUP=$(
-    find "${BACKUPSDIR}/${DOCROOT}/"* \
-        -maxdepth 0 \
-        -type d -printf '%f\n' \
-        -regextype 'posix-extended' \
-        -regex "^[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{6}$" | sort -nr | head -n1
-    )
-
-    # Exit if backups don't exist.
-    if [[ ! -f "${BACKUPSDIR}/${DOCROOT}/${LATEST_BACKUP}/files.tar.gz" ]]; then
-        _e "Err: files.tar.gz does not exist."
-        return 1
-    fi
-
-    # Exit if backups don't exist.
-    if [[ ! -f "${BACKUPSDIR}/${DOCROOT}/${LATEST_BACKUP}/database.sql.gz" ]]; then
-        _e "Err: database.sql.gz does not exist."
-        return 1
-    fi
-
-    if ! checkDBCredentials; then
-        _e "Cannot connect to database using specified credentials."
-        _e "Run ${progname} testdb for help."
-        return 1
-    fi
-
-    createTmpDir
-
-    if [[ -n $NEWDOCROOT ]]; then
-            $MYSQLBIN -P${DBPORT} -h${DBHOST} -u ${DBUSER} \
-                -p${DBPASS} "$NEWDOCROOT" -e exit > /dev/null 2>&1 && \
-                _e "Err: A database with the same new name already exists." && \
-                return 1
-            $MYSQLBIN -P${DBPORT} -h${DBHOST} \
-                -u ${DBUSER} -p${DBPASS} \
-                -e"CREATE DATABASE \`${NEWDOCROOT}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" && \
-                _w "Creating the database ${NEWDOCROOT}... DONE."
-            gunzip < "${BACKUPSDIR}/${DOCROOT}/${LATEST_BACKUP}/database.sql.gz" \
-                | $MYSQLBIN -P${DBPORT} -h${DBHOST} \
-                -u ${DBUSER} -p${DBPASS} "$NEWDOCROOT" && \
-                _w "Importing the database backup... DONE."
-            tar zxf "${BACKUPSDIR}/${DOCROOT}/${LATEST_BACKUP}/files.tar.gz" \
-                --checkpoint=.1000 -C "$tmpDir" && \
-                _w "" && _w "Extracting files from backup... DONE."
-
-            # Check if this is a wpstarter project
-            if [[ ! -f "${tmpDir}/${DOCROOT}/wpstarter.json" ]]; then
-                _e "Err: wpstarter.json could not be found in the backup."
-                _e "This may not be a wpstarter project. Aborting..."
-                rm -rf "$tmpDir/${DOCROOT:?}"
-                $MYSQLBIN -P${DBPORT} -h${DBHOST} \
-                    -u ${DBUSER} -p${DBPASS} -e "DROP DATABASE IF EXISTS ${NEWDOCROOT}"
-                _w "Changes reverted. No backup is restored."
-                return 1
-            fi
-
-            mv "${tmpDir}/${DOCROOT}" "${SITESDIR}/${NEWDOCROOT}"
-            replace -s "$DOCROOT" "$NEWDOCROOT" -- "${SITESDIR}/${NEWDOCROOT}/.env"
-            rm -f "${SITESDIR}/${NEWDOCROOT}/.env.cached.php"
-            $WP --skip-plugins --path="${SITESDIR}/${NEWDOCROOT}/public/cms" \
-                search-replace "$DOCROOT" "$NEWDOCROOT" \
-                --precise --all-tables > /dev/null 2>&1
-            _w "Performing search-replace in WordPress DB... DONE."
-            $WP --skip-plugins --skip-mail \
-                --path="${SITESDIR}/${NEWDOCROOT}/public/cms" user update \
-                "usr${NEWDOCROOT}" --user_pass="pss${NEWDOCROOT}" > /dev/null 2>&1
-            _w "Updating the admin user... DONE."
-            rm -f "${SITESDIR}/${NEWDOCROOT}/public/content/db.php"
-            $WP --skip-plugins --path="${SITESDIR}/${NEWDOCROOT}/public/cms" \
-                plugin deactivate query-monitor > /dev/null 2>&1
-            $WP --skip-plugins --path="${SITESDIR}/${NEWDOCROOT}/public/cms" \
-                plugin activate query-monitor > /dev/null 2>&1
-
-            FINALDIR=$NEWDOCROOT
-        else
-            $MYSQLBIN -P${DBPORT} -h${DBHOST} -u ${DBUSER} -p${DBPASS} "$DOCROOT" \
-                -e exit > /dev/null 2>&1 && \
-                _e "Err: A database with the same name already exists." && \
-                return 1
-            $MYSQLBIN -P${DBPORT} -h${DBHOST} \
-                -u $DBUSER -p${DBPASS} \
-                -e"CREATE DATABASE \`${DOCROOT}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" && \
-                _w "Creating the dabase $DOCROOT... DONE."
-            gunzip < "${BACKUPSDIR}/${DOCROOT}/${LATEST_BACKUP}/database.sql.gz" \
-                | $MYSQLBIN -P${DBPORT} -h${DBHOST} -u $DBUSER -p${DBPASS} "$DOCROOT" && \
-                _w "Importing the database backup... DONE."
-            tar zxf "${BACKUPSDIR}/${DOCROOT}/${LATEST_BACKUP}/files.tar.gz" \
-                --checkpoint=.1000 -C "$SITESDIR" && \
-                _w "" && _w "Extracting files from backup... DONE."
-            
-            # Check if this is a wpstarter project
-            if [[ ! -f "${SITESDIR}/${DOCROOT}/wpstarter.json" ]]; then
-                _e "Err: wpstarter.json could not be found in the backup."
-                _e "This may not be a wpstarter project. Aborting..."
-                rm -rf "${SITESDIR:?}/${DOCROOT:?}"
-                $MYSQLBIN -P${DBPORT} -h${DBHOST} \
-                    -u ${DBUSER} -p${DBPASS} -e "DROP DATABASE IF EXISTS ${DOCROOT}"
-                _w "Changes reverted. No backup is restored."
-                return 1
-            fi
-
-            FINALDIR=$DOCROOT
-    fi
-
-    # To determine the most recently created site for "wpsite last"
-    touch -m "${SITESDIR}/${FINALDIR}/wpstarter.json"
-
-    # Link valet
-    if [[ $VALET ]]; then
-        # Why is this in a subshell?
-        # Prevent changing $PWD for the script.
-        (cd "${SITESDIR}/${FINALDIR}/public" && $VALET link "$FINALDIR" > /dev/null 2>&1)
-    fi
-    _w "${FINALDIR} has been restored."
-
-    if [[ $NOBROWSE ]]; then
-        return
-    else
-        openBrowser "$FINALDIR"
-    fi
-
     return
+  fi
+
+  DOCROOT=$1
+  NEWDOCROOT=$2
+
+  FINALDIR=""
+
+  # Setup custom installation path defined with --path, instead of $SITESDIR
+  if [[ -n $SITESDIR_CUSTOM ]]; then
+    if [[ -d "$SITESDIR_CUSTOM" ]] && [[ -w "$SITESDIR_CUSTOM" ]]; then
+      SITESDIR="$(dirname "$SITESDIR_CUSTOM")"/"$(basename "$SITESDIR_CUSTOM")"
+    else
+      _e "\"${SITESDIR_CUSTOM}\" is not writable or does not exist."
+      exit 1
+    fi
+  fi
+
+  if [[ -z $DOCROOT ]]; then
+    _e "Err: Specify a directory to restore. It will be searched in ${BACKUPSDIR}."
+    return 1
+  fi
+
+  if [[ -n $NEWDOCROOT ]]; then
+    if [[ -d "${SITESDIR}/${NEWDOCROOT}" ]]; then
+      _e "Err: A site with the name \"${NEWDOCROOT}\" is already available."
+      return 1
+    fi
+  fi
+
+  # Exit if a site with the same name already exists
+  if [[ -d "${SITESDIR}/${DOCROOT}" ]] && [[ -z $NEWDOCROOT ]]; then
+    _e "Err: A site with the name \"${DOCROOT}\" is already available."
+    return 1
+  fi
+
+  # Exit if backup directory does not exist.
+  if [[ ! -d "${BACKUPSDIR}/${DOCROOT}" ]]; then
+    _e "Err: Backup directory 'boiler' does not exist in ${BACKUPSDIR}."
+    _w "You can create one with \"${progname} boilerplate\"."
+    return 1
+  fi
+
+  # Find the latest backup directory
+  LATEST_BACKUP=$(
+    find "${BACKUPSDIR}/${DOCROOT}/"* \
+      -maxdepth 0 \
+      -type d -printf '%f\n' \
+      -regextype 'posix-extended' \
+      -regex "^[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{6}$" | sort -nr | head -n1
+  )
+
+  # Exit if backups don't exist.
+  if [[ ! -f "${BACKUPSDIR}/${DOCROOT}/${LATEST_BACKUP}/files.tar.gz" ]]; then
+    _e "Err: files.tar.gz does not exist."
+    return 1
+  fi
+
+  # Exit if backups don't exist.
+  if [[ ! -f "${BACKUPSDIR}/${DOCROOT}/${LATEST_BACKUP}/database.sql.gz" ]]; then
+    _e "Err: database.sql.gz does not exist."
+    return 1
+  fi
+
+  if ! checkDBCredentials; then
+    _e "Cannot connect to database using specified credentials."
+    _e "Run ${progname} testdb for help."
+    return 1
+  fi
+
+  createTmpDir
+
+  if [[ -n $NEWDOCROOT ]]; then
+    $MYSQLBIN -P${DBPORT} -h${DBHOST} -u ${DBUSER} \
+      -p${DBPASS} "$NEWDOCROOT" -e exit >/dev/null 2>&1 &&
+      _e "Err: A database with the same new name already exists." &&
+      return 1
+    $MYSQLBIN -P${DBPORT} -h${DBHOST} \
+      -u ${DBUSER} -p${DBPASS} \
+      -e"CREATE DATABASE \`${NEWDOCROOT}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" &&
+      _w "Creating the database ${NEWDOCROOT}... DONE."
+    gunzip <"${BACKUPSDIR}/${DOCROOT}/${LATEST_BACKUP}/database.sql.gz" |
+      $MYSQLBIN -P${DBPORT} -h${DBHOST} \
+        -u ${DBUSER} -p${DBPASS} "$NEWDOCROOT" &&
+      _w "Importing the database backup... DONE."
+    tar zxf "${BACKUPSDIR}/${DOCROOT}/${LATEST_BACKUP}/files.tar.gz" \
+      --checkpoint=.1000 -C "$tmpDir" &&
+      _w "" && _w "Extracting files from backup... DONE."
+
+    # Check if this is a wpstarter project
+    if [[ ! -f "${tmpDir}/${DOCROOT}/wpstarter.json" ]]; then
+      _e "Err: wpstarter.json could not be found in the backup."
+      _e "This may not be a wpstarter project. Aborting..."
+      rm -rf "$tmpDir/${DOCROOT:?}"
+      $MYSQLBIN -P${DBPORT} -h${DBHOST} \
+        -u ${DBUSER} -p${DBPASS} -e "DROP DATABASE IF EXISTS ${NEWDOCROOT}"
+      _w "Changes reverted. No backup is restored."
+      return 1
+    fi
+
+    mv "${tmpDir}/${DOCROOT}" "${SITESDIR}/${NEWDOCROOT}"
+    replace -s "$DOCROOT" "$NEWDOCROOT" -- "${SITESDIR}/${NEWDOCROOT}/.env"
+    rm -f "${SITESDIR}/${NEWDOCROOT}/.env.cached.php"
+    $WP --skip-plugins --path="${SITESDIR}/${NEWDOCROOT}/public/cms" \
+      search-replace "$DOCROOT" "$NEWDOCROOT" \
+      --precise --all-tables >/dev/null 2>&1
+    _w "Performing search-replace in WordPress DB... DONE."
+    $WP --skip-plugins --skip-mail \
+      --path="${SITESDIR}/${NEWDOCROOT}/public/cms" user update \
+      "usr${NEWDOCROOT}" --user_pass="pss${NEWDOCROOT}" >/dev/null 2>&1
+    _w "Updating the admin user... DONE."
+    rm -f "${SITESDIR}/${NEWDOCROOT}/public/content/db.php"
+    $WP --skip-plugins --path="${SITESDIR}/${NEWDOCROOT}/public/cms" \
+      plugin deactivate query-monitor >/dev/null 2>&1
+    $WP --skip-plugins --path="${SITESDIR}/${NEWDOCROOT}/public/cms" \
+      plugin activate query-monitor >/dev/null 2>&1
+
+    FINALDIR=$NEWDOCROOT
+  else
+    $MYSQLBIN -P${DBPORT} -h${DBHOST} -u ${DBUSER} -p${DBPASS} "$DOCROOT" \
+      -e exit >/dev/null 2>&1 &&
+      _e "Err: A database with the same name already exists." &&
+      return 1
+    $MYSQLBIN -P${DBPORT} -h${DBHOST} \
+      -u $DBUSER -p${DBPASS} \
+      -e"CREATE DATABASE \`${DOCROOT}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" &&
+      _w "Creating the dabase $DOCROOT... DONE."
+    gunzip <"${BACKUPSDIR}/${DOCROOT}/${LATEST_BACKUP}/database.sql.gz" |
+      $MYSQLBIN -P${DBPORT} -h${DBHOST} -u $DBUSER -p${DBPASS} "$DOCROOT" &&
+      _w "Importing the database backup... DONE."
+    tar zxf "${BACKUPSDIR}/${DOCROOT}/${LATEST_BACKUP}/files.tar.gz" \
+      --checkpoint=.1000 -C "$SITESDIR" &&
+      _w "" && _w "Extracting files from backup... DONE."
+
+    # Check if this is a wpstarter project
+    if [[ ! -f "${SITESDIR}/${DOCROOT}/wpstarter.json" ]]; then
+      _e "Err: wpstarter.json could not be found in the backup."
+      _e "This may not be a wpstarter project. Aborting..."
+      rm -rf "${SITESDIR:?}/${DOCROOT:?}"
+      $MYSQLBIN -P${DBPORT} -h${DBHOST} \
+        -u ${DBUSER} -p${DBPASS} -e "DROP DATABASE IF EXISTS ${DOCROOT}"
+      _w "Changes reverted. No backup is restored."
+      return 1
+    fi
+
+    FINALDIR=$DOCROOT
+  fi
+
+  # To determine the most recently created site for "wpsite last"
+  touch -m "${SITESDIR}/${FINALDIR}/wpstarter.json"
+
+  # Link valet
+  if [[ $VALET ]]; then
+    # Why is this in a subshell?
+    # Prevent changing $PWD for the script.
+    (cd "${SITESDIR}/${FINALDIR}/public" && $VALET link "$FINALDIR" >/dev/null 2>&1)
+  fi
+  _w "${FINALDIR} has been restored."
+
+  if [[ $NOBROWSE ]]; then
+    return
+  else
+    openBrowser "$FINALDIR"
+  fi
+
+  return
 }
 export -f sub_restore
 
 function sub_rename() {
-    if [[ $SUBHELP ]]; then
-        _w "
+  if [[ $SUBHELP ]]; then
+    _w "
 Usage: ${progname} rename <site_name> <new_site_name>
         
        Rename an existing site.
 "
-        return
+    return
+  fi
+
+  DOCROOT=$1
+  NEWDOCROOT=$2
+
+  if [[ $DOCROOT == "last" ]]; then
+    DOCROOT="$(findLastSite)"
+  fi
+
+  # If number of arguments is 1 and current directory is a
+  # wpstarter installation, then use as $DOCROOT
+  if [[ $# == 1 ]]; then
+    fileExists=$(isWPStarter)
+    if [[ -n $fileExists ]]; then
+      DOCROOT=$(basename "$fileExists")
+      NEWDOCROOT=$1
+      if [[ $fileExists != "$SITESDIR"* ]]; then
+        SITESDIR=$(dirname "$fileExists")
+      fi
     fi
+  elif [[ -z $DOCROOT ]]; then
+    _e "Err: Specify an existing site to rename."
+    _e "It will be searched in ${SITESDIR}."
+    _e "See \"${progname} rename -h\" for help."
+    return 1
+  fi
 
-    DOCROOT=$1
-    NEWDOCROOT=$2
+  if [[ -z $DOCROOT ]]; then
+    _e "Err: Specify an existing site to rename."
+    _e "It will be searched in ${SITESDIR}."
+    return 1
+  elif [[ ! -d "${SITESDIR}/${DOCROOT}" ]]; then
+    _e "Err: A site with the name \"${DOCROOT}\" does not exist."
+    return 1
+  fi
 
-    if [[ $DOCROOT == "last" ]]; then
-        DOCROOT="$(findLastSite)"
+  # "last" is a reserved keyword.
+  if [[ $NEWDOCROOT == "last" ]]; then
+    NEWDOCROOT="last_site"
+  fi
+
+  if [[ -n $NEWDOCROOT ]]; then
+    if [[ -d "${SITESDIR}/${NEWDOCROOT}" ]]; then
+      _e "Err: A site with the name \"${NEWDOCROOT}\" already exists."
+      return 1
     fi
+  else
+    _e "Err: You didn't specify a new name for the site."
+    return 1
+  fi
 
-    # If number of arguments is 1 and current directory is a
-    # wpstarter installation, then use as $DOCROOT
-    if [[ $# == 1 ]]; then
-        fileExists=$(isWPStarter)
-        if [[ -n $fileExists ]]; then
-            DOCROOT=$(basename "$fileExists")
-            NEWDOCROOT=$1
-            if [[ $fileExists != "$SITESDIR"* ]]; then
-                SITESDIR=$(dirname "$fileExists")
-            fi
-        fi
-    elif [[ -z $DOCROOT ]]; then
-        _e "Err: Specify an existing site to rename."
-        _e "It will be searched in ${SITESDIR}."
-        _e "See \"${progname} rename -h\" for help."
-        return 1
-    fi
+  if [[ ! -f "${SITESDIR}/${DOCROOT}/wpstarter.json" ]]; then
+    _e "Err: wpstarter.json could not be found in ${DOCROOT}."
+    _e "This may not be a wpstarter project. Aborting..."
+    return 1
+  fi
 
-    if [[ -z $DOCROOT ]]; then
-        _e "Err: Specify an existing site to rename."
-        _e "It will be searched in ${SITESDIR}."
-        return 1
-    elif [[ ! -d "${SITESDIR}/${DOCROOT}" ]]; then
-        _e "Err: A site with the name \"${DOCROOT}\" does not exist."
-        return 1
-    fi
-
-    # "last" is a reserved keyword.
-    if [[ $NEWDOCROOT == "last" ]]; then
-        NEWDOCROOT="last_site"
-    fi
-
-    if [[ -n $NEWDOCROOT ]]; then
-        if [[ -d "${SITESDIR}/${NEWDOCROOT}" ]]; then
-            _e "Err: A site with the name \"${NEWDOCROOT}\" already exists."
-            return 1
-        fi
-    else 
-        _e "Err: You didn't specify a new name for the site."
-        return 1
-    fi
-
-    if [[ ! -f "${SITESDIR}/${DOCROOT}/wpstarter.json" ]]; then
-        _e "Err: wpstarter.json could not be found in ${DOCROOT}."
-        _e "This may not be a wpstarter project. Aborting..."
-        return 1
-    fi
-
-    _w "\
+  _w "\
 Renaming ${DOCROOT} to ${NEWDOCROOT}.
 Please wait..."
 
-    printf "(Step 1/4) Cloning existing installation...\r"
-    $progname backup "$DOCROOT" > /dev/null 2>&1
-    printf "(Step 2/4) Renaming...\033[K\r"
-    $progname restore "$DOCROOT" "$NEWDOCROOT" -n > /dev/null 2>&1
-    printf "(Step 3/4) Deleting old installation...\033[K\r"
-    $progname delete "$DOCROOT" -y -q > /dev/null 2>&1
+  printf "(Step 1/4) Cloning existing installation...\r"
+  $progname backup "$DOCROOT" >/dev/null 2>&1
+  printf "(Step 2/4) Renaming...\033[K\r"
+  $progname restore "$DOCROOT" "$NEWDOCROOT" -n >/dev/null 2>&1
+  printf "(Step 3/4) Deleting old installation...\033[K\r"
+  $progname delete "$DOCROOT" -y -q >/dev/null 2>&1
 
-    # Delete the created backup for this process
-    printf "(Step 4/4) Removing artifacts...\033[K\n"
-    LATEST_BACKUP=$(
+  # Delete the created backup for this process
+  printf "(Step 4/4) Removing artifacts...\033[K\n"
+  LATEST_BACKUP=$(
     find "${BACKUPSDIR}/${DOCROOT}/"* \
-        -maxdepth 0 \
-        -type d -printf '%f\n' \
-        -regextype 'posix-extended' \
-        -regex "^[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{6}$" \
-        | sort -nr | head -n1
-    )
+      -maxdepth 0 \
+      -type d -printf '%f\n' \
+      -regextype 'posix-extended' \
+      -regex "^[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{6}$" |
+      sort -nr | head -n1
+  )
 
-    if [[ -d "${BACKUPSDIR}/${DOCROOT}/${LATEST_BACKUP}" ]]; then
-        rm -rf "${BACKUPSDIR:?}/${DOCROOT}/${LATEST_BACKUP}"
-    fi
-    # Delete every empty directory under $BACKUPSDIR
-    find "$BACKUPSDIR" -empty -type d -print0 | xargs -0 -I {} rmdir "{}"
+  if [[ -d "${BACKUPSDIR}/${DOCROOT}/${LATEST_BACKUP}" ]]; then
+    rm -rf "${BACKUPSDIR:?}/${DOCROOT}/${LATEST_BACKUP}"
+  fi
+  # Delete every empty directory under $BACKUPSDIR
+  find "$BACKUPSDIR" -empty -type d -print0 | xargs -0 -I {} rmdir "{}"
 
-    _w "DONE."
+  _w "DONE."
 
-    return
+  return
 }
 export -f sub_rename
 
@@ -908,8 +917,8 @@ export -f sub_rename
 #   "last" or a site name
 #-----------------------------------------------
 function sub_backup() {
-    if [[ $SUBHELP ]]; then
-        _w "\
+  if [[ $SUBHELP ]]; then
+    _w "\
 Usage: ${progname} backup <site_name> [-p|--purge]
         
     The directory <site_name> in ${SITESDIR}
@@ -917,107 +926,107 @@ Usage: ${progname} backup <site_name> [-p|--purge]
 
     To delete older backups of <site_name> use --purge option.
 "
-        return
-    fi
-
-    # Check if any argument is provided
-    DOCROOT=$1
-
-    if [[ $DOCROOT == "last" ]]; then
-        DOCROOT="$(findLastSite)"
-    fi
-
-    # If number of arguments is 0 and current directory is
-    # a wpstarter installation, then use as $DOCROOT
-    if [[ $# == 0 ]]; then
-        fileExists=$(isWPStarter)
-        if [[ -n $fileExists ]]; then
-            DOCROOT=$(basename "$fileExists")
-            if [[ $fileExists != "$SITESDIR"* ]]; then
-                SITESDIR=$(dirname "$fileExists")
-            fi
-        fi
-    fi
-
-    if [[ -z $DOCROOT ]]; then
-        _e "Err: Specify a site to backup."
-        _e "See \"${progname} backup -h\" for help."
-        return 1
-    fi
-
-    # Exit if directory does not exist.
-    if [[ ! -d "${SITESDIR}/${DOCROOT}" ]]; then
-        _e "Err: Directory does not exist. See \"${progname} backup -h\" for help."
-        return 1
-    else
-        # Check if this is a wpstarter installation.
-        if [[ ! -f "${SITESDIR}/${DOCROOT}/wpstarter.json" ]]; then
-            _e "Err: ${DOCROOT} is not a WP installation"
-            _e "that is installed via wpstarter."
-            return 1
-        fi
-    fi
-
-    if [[ ! -w "$BACKUPSDIR" ]]; then
-        _e "\"${BACKUPSDIR}\" is not writable or does not exist."
-        exit 1
-    fi
-
-    if [[ $PURGE ]]; then
-        # Delete older backups if there are more than $NUMBACKUPSTOKEEP.
-        cd "${BACKUPSDIR}/${DOCROOT}" || exit
-        mapfile -t BACKUPSLIST < <(
-        find -- * -maxdepth 0 -type d \
-            -printf "%f\n" -regextype 'posix-extended' \
-            -regex "^[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{6}$"
-        )
-
-        if [[ ${#BACKUPSLIST[@]} -gt $NUMBACKUPSTOKEEP ]]; then
-            read -p "Older backups will be deleted! Proceed?  (y/n) (Default No): " -r
-            if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-                _w "Removal of older backups aborted."
-            else
-                _w ""
-                _w "Removing older backups..."
-                for (( i = 0; i < ( ${#BACKUPSLIST[@]} - NUMBACKUPSTOKEEP ); i++ )); do
-                    rm -rfv "${BACKUPSLIST[i]}"
-                done
-            fi
-        else
-            _w "You don't have more than $NUMBACKUPSTOKEEP backup[s] to purge."
-            return 0
-        fi
-        return
-    fi
-
-    # Create backups directory.
-    # Directory will be named as YYYY-MM-DD-HHMMSS
-    TSTAMP=$(date +%Y-%m-%d-%H%M%S)
-    mkdir -p "${BACKUPSDIR}/${DOCROOT}/${TSTAMP}"
-
-    _w "Exporting database..."
-    if [[ -n $MYSQLDUMP ]]; then
-        $MYSQLDUMP -u${DBUSER} -h${DBHOST} -p${DBPASS} --single-transaction \
-            --no-create-db --routines --events "$DOCROOT"  \
-            | gzip --stdout > "${BACKUPSDIR}/${DOCROOT}/${TSTAMP}/database.sql.gz"
-    else
-        $WP --skip-plugins db export \
-            --path="${SITESDIR}/${DOCROOT}/public/cms" - \
-            | gzip --stdout > "${BACKUPSDIR}/${DOCROOT}/${TSTAMP}/database.sql.gz"
-    fi
-    _w "Exporting database DONE"
-
-    _w "Exporting site files..."
-    tar czf \
-        "${BACKUPSDIR}/${DOCROOT}/${TSTAMP}/files.tar.gz"  \
-        --checkpoint=.1000 \
-        --exclude=*.tar.gz --directory="${SITESDIR}" "$DOCROOT" && \
-        _w ""
-        _w "Exporting site files DONE."
-
-    _w ""
-    _w "Backup created in: ${BACKUPSDIR}/${DOCROOT}/${TSTAMP}"
     return
+  fi
+
+  # Check if any argument is provided
+  DOCROOT=$1
+
+  if [[ $DOCROOT == "last" ]]; then
+    DOCROOT="$(findLastSite)"
+  fi
+
+  # If number of arguments is 0 and current directory is
+  # a wpstarter installation, then use as $DOCROOT
+  if [[ $# == 0 ]]; then
+    fileExists=$(isWPStarter)
+    if [[ -n $fileExists ]]; then
+      DOCROOT=$(basename "$fileExists")
+      if [[ $fileExists != "$SITESDIR"* ]]; then
+        SITESDIR=$(dirname "$fileExists")
+      fi
+    fi
+  fi
+
+  if [[ -z $DOCROOT ]]; then
+    _e "Err: Specify a site to backup."
+    _e "See \"${progname} backup -h\" for help."
+    return 1
+  fi
+
+  # Exit if directory does not exist.
+  if [[ ! -d "${SITESDIR}/${DOCROOT}" ]]; then
+    _e "Err: Directory does not exist. See \"${progname} backup -h\" for help."
+    return 1
+  else
+    # Check if this is a wpstarter installation.
+    if [[ ! -f "${SITESDIR}/${DOCROOT}/wpstarter.json" ]]; then
+      _e "Err: ${DOCROOT} is not a WP installation"
+      _e "that is installed via wpstarter."
+      return 1
+    fi
+  fi
+
+  if [[ ! -w "$BACKUPSDIR" ]]; then
+    _e "\"${BACKUPSDIR}\" is not writable or does not exist."
+    exit 1
+  fi
+
+  if [[ $PURGE ]]; then
+    # Delete older backups if there are more than $NUMBACKUPSTOKEEP.
+    cd "${BACKUPSDIR}/${DOCROOT}" || exit
+    mapfile -t BACKUPSLIST < <(
+      find -- * -maxdepth 0 -type d \
+        -printf "%f\n" -regextype 'posix-extended' \
+        -regex "^[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{6}$"
+    )
+
+    if [[ ${#BACKUPSLIST[@]} -gt $NUMBACKUPSTOKEEP ]]; then
+      read -p "Older backups will be deleted! Proceed?  (y/n) (Default No): " -r
+      if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        _w "Removal of older backups aborted."
+      else
+        _w ""
+        _w "Removing older backups..."
+        for ((i = 0; i < (${#BACKUPSLIST[@]} - NUMBACKUPSTOKEEP); i++)); do
+          rm -rfv "${BACKUPSLIST[i]}"
+        done
+      fi
+    else
+      _w "You don't have more than $NUMBACKUPSTOKEEP backup[s] to purge."
+      return 0
+    fi
+    return
+  fi
+
+  # Create backups directory.
+  # Directory will be named as YYYY-MM-DD-HHMMSS
+  TSTAMP=$(date +%Y-%m-%d-%H%M%S)
+  mkdir -p "${BACKUPSDIR}/${DOCROOT}/${TSTAMP}"
+
+  _w "Exporting database..."
+  if [[ -n $MYSQLDUMP ]]; then
+    $MYSQLDUMP -u${DBUSER} -h${DBHOST} -p${DBPASS} --single-transaction \
+      --no-create-db --routines --events "$DOCROOT" |
+      gzip --stdout >"${BACKUPSDIR}/${DOCROOT}/${TSTAMP}/database.sql.gz"
+  else
+    $WP --skip-plugins db export \
+      --path="${SITESDIR}/${DOCROOT}/public/cms" - |
+      gzip --stdout >"${BACKUPSDIR}/${DOCROOT}/${TSTAMP}/database.sql.gz"
+  fi
+  _w "Exporting database DONE"
+
+  _w "Exporting site files..."
+  $TAR \
+    "${BACKUPSDIR}/${DOCROOT}/${TSTAMP}/files.tar.gz" \
+    --checkpoint=.1000 \
+    --exclude=*.tar.gz --directory="${SITESDIR}" "$DOCROOT" &&
+    _w ""
+  _w "Exporting site files DONE."
+
+  _w ""
+  _w "Backup created in: ${BACKUPSDIR}/${DOCROOT}/${TSTAMP}"
+  return
 }
 export -f sub_backup
 
@@ -1030,98 +1039,95 @@ export -f sub_backup
 #       -y: Delete without confirmation
 #---------------------------------------------------------------
 function sub_delete() {
-    if [[ $SUBHELP ]]; then
-        _w "
+  if [[ $SUBHELP ]]; then
+    _w "
 Usage: ${progname} delete <site_name1> <site_name2> --path search-path
         
        Sites will be deleted from ${SITESDIR}.
 
        If --path is given as parent directory, sites to be deleted will be searched there.
-"       
-        return
+"
+    return
+  fi
+
+  SITES_TO_DELETE=("${@}")
+
+  if [[ ${#SITES_TO_DELETE[@]} == 0 ]]; then
+    _e "Err: Specify one or more sites to delete."
+    _w "See \"${progname} delete --help\" for help."
+    return 1
+  fi
+
+  # If "last" provided as the site name to be deleted
+  if [[ ${SITES_TO_DELETE[*]} =~ "last" ]]; then
+    LAST_SITE="$(findLastSite)"
+
+    if [[ -d "${SITESDIR}/${LAST_SITE}" ]]; then
+      if [[ $PROCEED ]]; then
+        $progname delete "$LAST_SITE" -y
+      else
+        $progname delete "$LAST_SITE"
+      fi
     fi
-
-    SITES_TO_DELETE=("${@}")
-
-    if [[ ${#SITES_TO_DELETE[@]} == 0 ]]; then
-        _e "Err: Specify one or more sites to delete."
-        _w "See \"${progname} delete --help\" for help."
-        return 1
-    fi
-
-    # If "last" provided as the site name to be deleted
-    if [[ ${SITES_TO_DELETE[*]} =~ "last" ]]; then
-        LAST_SITE="$(findLastSite)"
-
-        if [[ -d "${SITESDIR}/${LAST_SITE}" ]] ; then
-            if [[ $PROCEED ]]; then
-                $progname delete "$LAST_SITE" -y
-            else
-                $progname delete "$LAST_SITE"
-            fi
-        fi
-
-        return
-    fi
-
-    # If --path is specified, search all sites to be deleted in that path.
-    if [[ -n $SITESDIR_CUSTOM ]]; then
-        if [[ -d $SITESDIR_CUSTOM ]]; then
-            SITESDIR=$SITESDIR_CUSTOM
-        else
-            _e "Specified path does not exist"
-            exit 1
-        fi
-    fi
-
-    # Using quotes here is about treating quoted arguments passed to the script
-    # as single parameter. ( wpsite delete site1 site2 "some site" )
-    for site in "${SITES_TO_DELETE[@]}"
-    do
-        # Deletion will be aborted if any check fails.
-
-        if [[ ! -d "${SITESDIR}/${site}" ]]; then
-            _e "Err: Site \"${site}\" does not exist."
-            return 1
-        fi
-
-        if [[ ! -f "${SITESDIR}/${site}/wpstarter.json" ]]; then
-            _e "Err: wpstarter.json could not be found in \"${site}\" root."
-            _e "\"${site}\" is not a wpstarter project."
-            return 1
-        fi
-    done
-
-    if ! checkDBCredentials; then
-        _e "Cannot connect to database using specified credentials."
-        _e "Run ${progname} testdb for help."
-        exit 1
-    fi
-
-    if [[ $PROCEED ]]; then
-        for site in "${SITES_TO_DELETE[@]}"
-        do
-            deleteSite "$site"
-        done
-        return
-    fi
-    
-    _w "${red}Below site[s] will be deleted:${normal}"
-    _w ""
-    _w "${SITES_TO_DELETE[*]}"
-    _w ""
-    read -p "Are you sure?  (y/n) (Default No): " -r
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        _w "Deletion aborted!"
-        return 1
-    fi
-
-    for site in "${SITES_TO_DELETE[@]}"
-    do
-        deleteSite "$site"
-    done
 
     return
+  fi
+
+  # If --path is specified, search all sites to be deleted in that path.
+  if [[ -n $SITESDIR_CUSTOM ]]; then
+    if [[ -d $SITESDIR_CUSTOM ]]; then
+      SITESDIR=$SITESDIR_CUSTOM
+    else
+      _e "Specified path does not exist"
+      exit 1
+    fi
+  fi
+
+  # Using quotes here is about treating quoted arguments passed to the script
+  # as single parameter. ( wpsite delete site1 site2 "some site" )
+  for site in "${SITES_TO_DELETE[@]}"; do
+    # Deletion will be aborted if any check fails.
+
+    if [[ ! -d "${SITESDIR}/${site}" ]]; then
+      _e "Err: Site \"${site}\" does not exist."
+      return 1
+    fi
+
+    if [[ ! -f "${SITESDIR}/${site}/wpstarter.json" ]]; then
+      _e "Err: wpstarter.json could not be found in \"${site}\" root."
+      _e "\"${site}\" is not a wpstarter project."
+      return 1
+    fi
+  done
+
+  if ! checkDBCredentials; then
+    _e "Cannot connect to database using specified credentials."
+    _e "Run ${progname} testdb for help."
+    exit 1
+  fi
+
+  if [[ $PROCEED ]]; then
+    for site in "${SITES_TO_DELETE[@]}"; do
+      deleteSite "$site"
+    done
+    return
+  fi
+
+  _w "${red}Below site[s] will be deleted:${normal}"
+  _w ""
+  _w "${SITES_TO_DELETE[*]}"
+  _w ""
+  read -p "Are you sure?  (y/n) (Default No): " -r
+  if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    _w "Deletion aborted!"
+    return 1
+  fi
+
+  for site in "${SITES_TO_DELETE[@]}"; do
+    deleteSite "$site"
+  done
+
+  return
 }
 export -f sub_delete
 
@@ -1138,8 +1144,8 @@ export -f sub_delete
 #   --path: Where to install the site
 #------------------------------------------------------
 function sub_create() {
-    if [[ $SUBHELP ]]; then
-        _w "
+  if [[ $SUBHELP ]]; then
+    _w "
 Usage: ${red}${progname} create <site_name>
                 [-n|--no-browse]
                 --bare
@@ -1157,124 +1163,124 @@ Usage: ${red}${progname} create <site_name>
        Use --bare to not apply any further customizations to the default
        WP installation. Plugins will still be installed but not activated.
 "
-        return
-    fi
+    return
+  fi
 
-    # Check source repo exists.
-    if [[ ! -d "$WPSTARTERDIR" ]]; then
-        _w "\
+  # Check source repo exists.
+  if [[ ! -d "$WPSTARTERDIR" ]]; then
+    _w "\
 \"$WPSTARTERDIR\" directory does not exist.
         
 Cloning from github...
 "
-        $progname clone-repo
+    $progname clone-repo
+  fi
+
+  if [[ $PRODUCTION ]] && [[ $BARE ]]; then
+    _e "--bare and --production flags cannot be used at the same time."
+    exit
+  fi
+
+  if [[ -n "$REPO_PATH" ]] && [[ -d "$REPO_PATH" ]]; then
+    WPSTARTERDIR=$REPO_PATH
+  fi
+
+  # Check if any argument is provided
+  # WHY DID I USE QUOTES?
+  # wpsite create "dir1 dir2" -> dir1 and dir2 become separate params
+  # https://stackoverflow.com/a/51677667
+  DOCROOT="$1"
+
+  # Setup custom installation path defined with --path, instead of $SITESDIR
+  if [[ -n $SITESDIR_CUSTOM ]]; then
+    if [[ -d "$SITESDIR_CUSTOM" ]] && [[ -w "$SITESDIR_CUSTOM" ]]; then
+      SITESDIR="$(dirname "$SITESDIR_CUSTOM")"/"$(basename "$SITESDIR_CUSTOM")"
+    else
+      _e "\"${SITESDIR_CUSTOM}\" is not writable or does not exist."
+      exit 1
     fi
+  fi
 
-	if [[ $PRODUCTION ]] && [[ $BARE ]]; then
-	    _e "--bare and --production flags cannot be used at the same time."
-	    exit
-    fi
+  # "last" keyword is reserved
+  if [[ $DOCROOT == "last" ]]; then
+    DOCROOT="last_site"
+  fi
 
-    if [[ -n "$REPO_PATH" ]] && [[ -d "$REPO_PATH" ]]; then
-        WPSTARTERDIR=$REPO_PATH
-    fi
+  if [[ -z $DOCROOT ]]; then
+    _e "Err: Specify a directory name."
+    _e "The site will be created in \"${SITESDIR}\"."
+    _e "See \"${progname} create -h\" for help."
+    return 1
+  fi
 
-    # Check if any argument is provided
-    # WHY DID I USE QUOTES?
-    # wpsite create "dir1 dir2" -> dir1 and dir2 become separate params
-    # https://stackoverflow.com/a/51677667
-    DOCROOT="$1"
+  if ! checkDBCredentials; then
+    _e "Cannot connect to database using specified credentials."
+    _e "Run \"${progname} testdb\" for help."
+    exit 1
+  fi
 
-    # Setup custom installation path defined with --path, instead of $SITESDIR
-    if [[ -n $SITESDIR_CUSTOM ]]; then
-        if [[ -d "$SITESDIR_CUSTOM" ]] && [[ -w "$SITESDIR_CUSTOM" ]]; then
-            SITESDIR="$(dirname "$SITESDIR_CUSTOM")"/"$(basename "$SITESDIR_CUSTOM")"
-        else
-            _e "\"${SITESDIR_CUSTOM}\" is not writable or does not exist."
-            exit 1
-        fi
-    fi
+  # Exit if directory already exists.
+  if [[ -d "${SITESDIR}/${DOCROOT}" ]]; then
+    _e "Err: A site with the same already exists. Specify another one."
+    return 1
+  fi
 
-    # "last" keyword is reserved
-    if [[ $DOCROOT == "last" ]]; then
-        DOCROOT="last_site"
-    fi
+  # Exit if directory name contains spaces
+  if grep -q -E '[ ]' <<<"$DOCROOT"; then
+    _e "Don't use spaces in directory names."
+    return 1
+  fi
 
-    if [[ -z $DOCROOT ]]; then
-        _e "Err: Specify a directory name."
-        _e "The site will be created in \"${SITESDIR}\"."
-        _e "See \"${progname} create -h\" for help."
-        return 1
-    fi
-
-    if ! checkDBCredentials; then
-        _e "Cannot connect to database using specified credentials."
-        _e "Run \"${progname} testdb\" for help."
-        exit 1
-    fi
-
-    # Exit if directory already exists.
-    if [[ -d "${SITESDIR}/${DOCROOT}" ]]; then
-        _e "Err: A site with the same already exists. Specify another one."
-        return 1
-    fi
-
-    # Exit if directory name contains spaces
-    if grep -q -E '[ ]' <<<"$DOCROOT"; then
-        _e "Don't use spaces in directory names."
-        return 1
-    fi
-
-    # Exit if DB already exists.
-    $MYSQLBIN -P${DBPORT} -h${DBHOST} \
-        -u ${DBUSER} -p${DBPASS} "$DOCROOT" \
-        -e exit > /dev/null 2>&1 && \
-    _e "Err: A database with the same name already exists." && \
+  # Exit if DB already exists.
+  $MYSQLBIN -P${DBPORT} -h${DBHOST} \
+    -u ${DBUSER} -p${DBPASS} "$DOCROOT" \
+    -e exit >/dev/null 2>&1 &&
+    _e "Err: A database with the same name already exists." &&
     return 1
 
-    if [[ ! -w "$SITESDIR" ]]; then
-        _e "\"${SITESDIR}\" is not writable or does not exist."
-        exit 1
-    fi
+  if [[ ! -w "$SITESDIR" ]]; then
+    _e "\"${SITESDIR}\" is not writable or does not exist."
+    exit 1
+  fi
 
-    if [[ -n "$NOTIFYBIN" ]]; then
-        $NOTIFYBIN -a WPSITE "${DOCROOT} is being created..."
-    fi
+  if [[ -n "$NOTIFYBIN" ]]; then
+    $NOTIFYBIN -a WPSITE "${DOCROOT} is being created..."
+  fi
 
-    # Create the site
-    $GIT clone "$WPSTARTERDIR" "${SITESDIR}/${DOCROOT}"
-    # Add post-merge hook to apply "composer wpstarter" after git pull
-    echo "#!/usr/bin/env bash
+  # Create the site
+  $GIT clone "$WPSTARTERDIR" "${SITESDIR}/${DOCROOT}"
+  # Add post-merge hook to apply "composer wpstarter" after git pull
+  echo "#!/usr/bin/env bash
 export PATH=\"/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin\"
-composer wpstarter" > "${SITESDIR}/${DOCROOT}/.git/hooks/post-merge"
-    chmod +x "${SITESDIR}/${DOCROOT}/.git/hooks/post-merge"
+composer wpstarter" >"${SITESDIR}/${DOCROOT}/.git/hooks/post-merge"
+  chmod +x "${SITESDIR}/${DOCROOT}/.git/hooks/post-merge"
 
-    $COMPOSERBIN --working-dir="${SITESDIR}/${DOCROOT}" install || exit
-    sub_install "$DOCROOT" # Most of the installation magic happens here
+  $COMPOSERBIN --working-dir="${SITESDIR}/${DOCROOT}" install || exit
+  sub_install "$DOCROOT" # Most of the installation magic happens here
 
-    if [[ $VALET ]]; then
-        (cd "${SITESDIR}/${DOCROOT}/public" && $VALET link "$DOCROOT" > /dev/null 2>&1)
-    fi
+  if [[ $VALET ]]; then
+    (cd "${SITESDIR}/${DOCROOT}/public" && $VALET link "$DOCROOT" >/dev/null 2>&1)
+  fi
 
-    _w "Site has been created in ${SITESDIR}/${DOCROOT}."
+  _w "Site has been created in ${SITESDIR}/${DOCROOT}."
 
-    if [[ -n "$NOTIFYBIN" ]]; then
-        $NOTIFYBIN -a WPSITE "${DOCROOT} is created."
-    fi
+  if [[ -n "$NOTIFYBIN" ]]; then
+    $NOTIFYBIN -a WPSITE "${DOCROOT} is created."
+  fi
 
-    if [[ $NOBROWSE ]]; then
-        return
-    else
-        openBrowser "$DOCROOT"
-    fi
-
+  if [[ $NOBROWSE ]]; then
     return
+  else
+    openBrowser "$DOCROOT"
+  fi
+
+  return
 }
 export -f sub_create
 
 function sub_lang() {
-    if [[ $SUBHELP ]]; then
-        _w "
+  if [[ $SUBHELP ]]; then
+    _w "
 Usage: ${progname} lang <site_name> <language_code>
         
        Install and activate language support for <site_name>.
@@ -1291,80 +1297,80 @@ Usage: ${progname} lang <site_name> <language_code>
        ro_RO ru_RU sah si_LK skr sk_SK sl_SI snd sq sr_RS sv_SE sw szl tah ta_IN
        ta_LK te th tl tr_TR tt_RU ug_CN uk ur uz_UZ vi zh_CN zh_HK zh_TW
 "
-        return
-    fi
-
-    LANG_ARR=(af ar ary as az azb bel bg_BG bn_BD bo bs_BA ca ceb ckb cs_CZ cy
-        da_DK de_AT de_CH de_CH_informal de_DE de_DE_formal dsb dzo el en_AU en_CA
-        en_GB en_NZ en_US en_ZA eo es_AR es_CL es_CO es_CR es_EC es_ES es_GT es_MX
-        es_PE es_PR es_UY es_VE et eu fa_AF fa_IR "fi" fr_BE fr_CA fr_FR fur gd gl_ES gu
-        haz he_IL hi_IN hr hsb hu_HU hy id_ID is_IS it_IT ja jv_ID kab ka_GE kk km kn
-        ko_KR lo lt_LT lv mk_MK ml_IN mn mr ms_MY my_MM nb_NO ne_NP nl_BE nl_NL
-        nl_NL_formal nn_NO oci pa_IN pl_PL ps pt_AO pt_BR pt_PT pt_PT_ao90 rhg ro_RO
-        ru_RU sah si_LK skr sk_SK sl_SI snd sq sr_RS sv_SE sw szl tah ta_IN ta_LK te th
-        tl tr_TR tt_RU ug_CN uk ur uz_UZ vi zh_CN zh_HK zh_TW)
-
-    DOCROOT=$1
-    WPLANG=$2
-
-    if [[ $DOCROOT == "last" ]]; then
-        DOCROOT="$(findLastSite)"
-    fi
-
-    # If number of arguments is 1 and current directory is a
-    # wpstarter installation, then use as $DOCROOT
-    if [[ $# == 1 ]]; then
-        fileExists=$(isWPStarter)
-        if [[ -n $fileExists ]]; then
-            DOCROOT=$(basename "$fileExists")
-            WPLANG=$1
-            if [[ $fileExists != "$SITESDIR"* ]]; then
-                SITESDIR=$(dirname "$fileExists")
-            fi
-        fi
-    elif [[ -z $DOCROOT ]]; then
-        _e "Err: Specify a site to install the language."
-        _e "See \"${progname} lang -h\" for help."
-        return 1
-    fi
-
-    # Exit if directory does not exist.
-    if [[ ! -d "${SITESDIR}/${DOCROOT}" ]]; then
-        _e "Err: Directory does not exist. See \"${progname} lang -h\" for help"
-        return 1
-    else
-        # Check if this is a WP installation.
-        if [[ ! -f "${SITESDIR}/${DOCROOT}/wpstarter.json" ]]; then
-            _e "Err: ${DOCROOT} is not a WP installation that is installed via wpstarter."
-            return 1
-        fi
-    fi
-
-    if [[ -n $WPLANG ]]; then
-        if [[ ! " ${LANG_ARR[*]} " =~ ${WPLANG} ]]; then
-            _e "Err: You entered a wrong language code."
-            return 1
-        else
-            _w "Installing language ${WPLANG}..."
-            $WP --skip-plugins --path="${SITESDIR}/${DOCROOT}/public/cms" \
-                language core install "$WPLANG" > /dev/null 2>&1
-            $WP --skip-plugins --path="${SITESDIR}/${DOCROOT}/public/cms" \
-                site switch-language "$WPLANG" > /dev/null 2>&1
-        fi
-    else
-        _e "You didn't specify a language code."
-        return 1
-    fi
-
-    _w ""
-    _w "Language ${WPLANG} installed for ${DOCROOT}."
     return
+  fi
+
+  LANG_ARR=(af ar ary as az azb bel bg_BG bn_BD bo bs_BA ca ceb ckb cs_CZ cy
+    da_DK de_AT de_CH de_CH_informal de_DE de_DE_formal dsb dzo el en_AU en_CA
+    en_GB en_NZ en_US en_ZA eo es_AR es_CL es_CO es_CR es_EC es_ES es_GT es_MX
+    es_PE es_PR es_UY es_VE et eu fa_AF fa_IR "fi" fr_BE fr_CA fr_FR fur gd gl_ES gu
+    haz he_IL hi_IN hr hsb hu_HU hy id_ID is_IS it_IT ja jv_ID kab ka_GE kk km kn
+    ko_KR lo lt_LT lv mk_MK ml_IN mn mr ms_MY my_MM nb_NO ne_NP nl_BE nl_NL
+    nl_NL_formal nn_NO oci pa_IN pl_PL ps pt_AO pt_BR pt_PT pt_PT_ao90 rhg ro_RO
+    ru_RU sah si_LK skr sk_SK sl_SI snd sq sr_RS sv_SE sw szl tah ta_IN ta_LK te th
+    tl tr_TR tt_RU ug_CN uk ur uz_UZ vi zh_CN zh_HK zh_TW)
+
+  DOCROOT=$1
+  WPLANG=$2
+
+  if [[ $DOCROOT == "last" ]]; then
+    DOCROOT="$(findLastSite)"
+  fi
+
+  # If number of arguments is 1 and current directory is a
+  # wpstarter installation, then use as $DOCROOT
+  if [[ $# == 1 ]]; then
+    fileExists=$(isWPStarter)
+    if [[ -n $fileExists ]]; then
+      DOCROOT=$(basename "$fileExists")
+      WPLANG=$1
+      if [[ $fileExists != "$SITESDIR"* ]]; then
+        SITESDIR=$(dirname "$fileExists")
+      fi
+    fi
+  elif [[ -z $DOCROOT ]]; then
+    _e "Err: Specify a site to install the language."
+    _e "See \"${progname} lang -h\" for help."
+    return 1
+  fi
+
+  # Exit if directory does not exist.
+  if [[ ! -d "${SITESDIR}/${DOCROOT}" ]]; then
+    _e "Err: Directory does not exist. See \"${progname} lang -h\" for help"
+    return 1
+  else
+    # Check if this is a WP installation.
+    if [[ ! -f "${SITESDIR}/${DOCROOT}/wpstarter.json" ]]; then
+      _e "Err: ${DOCROOT} is not a WP installation that is installed via wpstarter."
+      return 1
+    fi
+  fi
+
+  if [[ -n $WPLANG ]]; then
+    if [[ ! " ${LANG_ARR[*]} " =~ ${WPLANG} ]]; then
+      _e "Err: You entered a wrong language code."
+      return 1
+    else
+      _w "Installing language ${WPLANG}..."
+      $WP --skip-plugins --path="${SITESDIR}/${DOCROOT}/public/cms" \
+        language core install "$WPLANG" >/dev/null 2>&1
+      $WP --skip-plugins --path="${SITESDIR}/${DOCROOT}/public/cms" \
+        site switch-language "$WPLANG" >/dev/null 2>&1
+    fi
+  else
+    _e "You didn't specify a language code."
+    return 1
+  fi
+
+  _w ""
+  _w "Language ${WPLANG} installed for ${DOCROOT}."
+  return
 }
 export -f sub_lang
 
 function sub_quick() {
-    if [[ $SUBHELP ]]; then
-        _w "
+  if [[ $SUBHELP ]]; then
+    _w "
 Usage: ${progname} quick [site_name] [-n|--no-browse] [--with-plugin plugin_slug]
         [--with-theme theme_slug]
 
@@ -1373,43 +1379,43 @@ Usage: ${progname} quick [site_name] [-n|--no-browse] [--with-plugin plugin_slug
        name. You can create the boilerplate backup using \"${progname}
        boilerplate\" if it does not exist.
 "
-        return
-    fi
-
-    DOCROOT="$1"
-    if [[ -z $DOCROOT ]]; then
-        DOCROOT=$RANDOM
-    fi
-
-    # "last" keyword is reserved
-    if [[ $DOCROOT == "last" ]]; then
-        DOCROOT="last_site"
-    fi
-
-    if [[ -n "$NOTIFYBIN" ]]; then
-        $NOTIFYBIN -a WPSITE "Site ${DOCROOT} is being created." "Please wait..."
-    fi
-
-    $progname restore boiler $DOCROOT -n
-
-    if [[ -n "$INSTALL_PLUGIN" ]]; then
-        $progname install-plugin "$DOCROOT" "$INSTALL_PLUGIN"
-    fi
-
-    if [[ -n "$INSTALL_THEME" ]]; then
-        $progname install-theme "$DOCROOT" "$INSTALL_THEME"
-    fi
-
-    if [[ ! $NOBROWSE ]]; then
-        $progname admin "$DOCROOT"
-        return
-    fi
-
-    if [[ -n "$NOTIFYBIN" ]]; then
-        $NOTIFYBIN -a WPSITE "Site ${DOCROOT} created." "Use \"${progname} last\" to open the dashboard."
-    fi
-
     return
+  fi
+
+  DOCROOT="$1"
+  if [[ -z $DOCROOT ]]; then
+    DOCROOT=$RANDOM
+  fi
+
+  # "last" keyword is reserved
+  if [[ $DOCROOT == "last" ]]; then
+    DOCROOT="last_site"
+  fi
+
+  if [[ -n "$NOTIFYBIN" ]]; then
+    $NOTIFYBIN -a WPSITE "Site ${DOCROOT} is being created." "Please wait..."
+  fi
+
+  $progname restore boiler $DOCROOT -n
+
+  if [[ -n "$INSTALL_PLUGIN" ]]; then
+    $progname install-plugin "$DOCROOT" "$INSTALL_PLUGIN"
+  fi
+
+  if [[ -n "$INSTALL_THEME" ]]; then
+    $progname install-theme "$DOCROOT" "$INSTALL_THEME"
+  fi
+
+  if [[ ! $NOBROWSE ]]; then
+    $progname admin "$DOCROOT"
+    return
+  fi
+
+  if [[ -n "$NOTIFYBIN" ]]; then
+    $NOTIFYBIN -a WPSITE "Site ${DOCROOT} created." "Use \"${progname} last\" to open the dashboard."
+  fi
+
+  return
 }
 export -f sub_quick
 
@@ -1419,75 +1425,75 @@ export -f sub_quick
 #   "last" or a site name
 #-------------------------------------------
 function sub_admin() {
-    if [[ $SUBHELP ]]; then
-        _w "
+  if [[ $SUBHELP ]]; then
+    _w "
 Usage: ${progname} admin <site_name>
 
        Open specified site's dashboard in browser.
        It will be searched in \"${SITESDIR}\".
 "
-        return
-    fi
-
-    DOCROOT="$1"
-
-    if [[ $DOCROOT == "last" ]]; then
-        DOCROOT="$(findLastSite)"
-    fi
-
-    # If number of arguments is 0 and current directory is a
-    # wpstarter installation, then use as $DOCROOT
-    if [[ $# == 0 ]]; then
-        fileExists=$(isWPStarter)
-        if [[ -n $fileExists ]]; then
-            DOCROOT=$(basename "$fileExists")
-            if [[ $fileExists != "$SITESDIR"* ]]; then
-                SITESDIR=$(dirname "$fileExists")
-            fi
-        fi
-    elif [[ -z $DOCROOT ]]; then
-        _e "Err: Specify a directory name to open."
-        _e "See ${progname} admin -h for help."
-        return 1
-    fi
-
-    # Exit if directory does not exist.
-    if [[ ! -d "${SITESDIR}/${DOCROOT}" ]]; then
-        _e "Err: Directory does not exist. It was searched in \"${SITESDIR}\"."
-        return 1
-    fi
-
-    # Check if this is a wpstarter project
-    if [[ ! -f "${SITESDIR}/${DOCROOT}/wpstarter.json" ]]; then
-        _e "This may not be a wpstarter project. Aborting..."
-        return 1
-    fi
-
-    openBrowser "$DOCROOT"
     return
+  fi
+
+  DOCROOT="$1"
+
+  if [[ $DOCROOT == "last" ]]; then
+    DOCROOT="$(findLastSite)"
+  fi
+
+  # If number of arguments is 0 and current directory is a
+  # wpstarter installation, then use as $DOCROOT
+  if [[ $# == 0 ]]; then
+    fileExists=$(isWPStarter)
+    if [[ -n $fileExists ]]; then
+      DOCROOT=$(basename "$fileExists")
+      if [[ $fileExists != "$SITESDIR"* ]]; then
+        SITESDIR=$(dirname "$fileExists")
+      fi
+    fi
+  elif [[ -z $DOCROOT ]]; then
+    _e "Err: Specify a directory name to open."
+    _e "See ${progname} admin -h for help."
+    return 1
+  fi
+
+  # Exit if directory does not exist.
+  if [[ ! -d "${SITESDIR}/${DOCROOT}" ]]; then
+    _e "Err: Directory does not exist. It was searched in \"${SITESDIR}\"."
+    return 1
+  fi
+
+  # Check if this is a wpstarter project
+  if [[ ! -f "${SITESDIR}/${DOCROOT}/wpstarter.json" ]]; then
+    _e "This may not be a wpstarter project. Aborting..."
+    return 1
+  fi
+
+  openBrowser "$DOCROOT"
+  return
 }
 export -f sub_admin
 
 function sub_last() {
-    if [[ $SUBHELP ]]; then
-        _w "
+  if [[ $SUBHELP ]]; then
+    _w "
 Usage: ${progname} last
 
        Open the most recently created site's dashboard in browser.
        It will be searched in \"${SITESDIR}\".
 "
-        return
-    fi
-
-    lastSite="$(findLastSite)"
-
-    if [[ -n $lastSite ]]; then
-        openBrowser "$lastSite"
-    else
-        _w "There are no wpstarter based WordPress installations in ${SITESDIR}."
-    fi
-
     return
+  fi
+
+  lastSite="$(findLastSite)"
+
+  if [[ -n $lastSite ]]; then
+    openBrowser "$lastSite"
+  else
+    _w "There are no wpstarter based WordPress installations in ${SITESDIR}."
+  fi
+
+  return
 }
 export -f sub_last
 
@@ -1498,50 +1504,50 @@ export -f sub_last
 #   Site name
 #------------------------------------------------------
 function sub_fm() {
-    if [[ $SUBHELP ]]; then
-        _w "
+  if [[ $SUBHELP ]]; then
+    _w "
 Usage: ${progname} fm <site_name>
 
        Open site root directory in file manager.
        Sites will be searched in \"${SITESDIR}\".
 "
-        return
-    fi
-
-    FM=$(command -v ranger)
-    if [[ ! $FM ]]; then
-        FM="xdg-open"
-    fi
-
-    DOCROOT=$1
-
-    if [[ $DOCROOT == "last" ]]; then
-        DOCROOT="$(findLastSite)"
-    fi
-
-    # If number of arguments is 0 and current directory is a
-    # wpstarter installation, then use as $DOCROOT
-    if [[ $# == 0 ]]; then
-        fileExists=$(isWPStarter)
-        if [[ -n $fileExists ]]; then
-            DOCROOT=$(basename "$fileExists")
-            if [[ $fileExists != "$SITESDIR"* ]]; then
-                SITESDIR=$(dirname "$fileExists")
-            fi
-        fi
-    elif [[ -z $DOCROOT ]]; then
-        _e "Err: Specify a directory name to browse with the file manager."
-        _e "See ${progname} fm -h for help."
-        return 1
-    fi
-
-    if [[ -d "${SITESDIR}/${DOCROOT}" ]]; then
-        $FM "${SITESDIR}/${DOCROOT}/" && return
-    else
-        _e "Site \"${DOCROOT}\" does not exist."
-    fi
-
     return
+  fi
+
+  FM=$(command -v ranger)
+  if [[ ! $FM ]]; then
+    FM="xdg-open"
+  fi
+
+  DOCROOT=$1
+
+  if [[ $DOCROOT == "last" ]]; then
+    DOCROOT="$(findLastSite)"
+  fi
+
+  # If number of arguments is 0 and current directory is a
+  # wpstarter installation, then use as $DOCROOT
+  if [[ $# == 0 ]]; then
+    fileExists=$(isWPStarter)
+    if [[ -n $fileExists ]]; then
+      DOCROOT=$(basename "$fileExists")
+      if [[ $fileExists != "$SITESDIR"* ]]; then
+        SITESDIR=$(dirname "$fileExists")
+      fi
+    fi
+  elif [[ -z $DOCROOT ]]; then
+    _e "Err: Specify a directory name to browse with the file manager."
+    _e "See ${progname} fm -h for help."
+    return 1
+  fi
+
+  if [[ -d "${SITESDIR}/${DOCROOT}" ]]; then
+    $FM "${SITESDIR}/${DOCROOT}/" && return
+  else
+    _e "Site \"${DOCROOT}\" does not exist."
+  fi
+
+  return
 }
 export -f sub_fm
 
@@ -1549,8 +1555,8 @@ export -f sub_fm
 # Clone tricarte/wpready3 to be used as source repository
 #--------------------------------------------------------
 function sub_clone-repo() {
-    if [[ $SUBHELP ]]; then
-        _w "
+  if [[ $SUBHELP ]]; then
+    _w "
 Usage: ${progname} clone-repo
 
        Download wpstarter source repository.
@@ -1561,252 +1567,252 @@ Usage: ${progname} clone-repo
        If not, the script will use its own settings defined in
        ${HOME}/.wpsiterc.
 "
-        return
-    fi
+    return
+  fi
 
-    if [[ -d "$WPSTARTERDIR" ]]; then
-        _e "\"${purple}${WPSTARTERDIR}${normal}\" already exists."
-        exit 1
-    fi
+  if [[ -d "$WPSTARTERDIR" ]]; then
+    _e "\"${purple}${WPSTARTERDIR}${normal}\" already exists."
+    exit 1
+  fi
 
-    if ! ping -c1 8.8.8.8 > /dev/null 2>&1; then
-        _e "Check your internet connection."
-        exit 1
-    fi
+  if ! ping -c1 8.8.8.8 >/dev/null 2>&1; then
+    _e "Check your internet connection."
+    exit 1
+  fi
 
-    $GIT clone https://github.com/tricarte/wpready3 "$WPSTARTERDIR"
-    # Add post-commit hook to run 'composer wpstarter'
-    echo "#!/usr/bin/env bash
+  $GIT clone https://github.com/tricarte/wpready3 "$WPSTARTERDIR"
+  # Add post-commit hook to run 'composer wpstarter'
+  echo "#!/usr/bin/env bash
     export PATH=\"/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin\"
-    composer wpstarter" > "${WPSTARTERDIR}/.git/hooks/post-commit"
-    chmod +x "${WPSTARTERDIR}/.git/hooks/post-commit"
-    _w "
+    composer wpstarter" >"${WPSTARTERDIR}/.git/hooks/post-commit"
+  chmod +x "${WPSTARTERDIR}/.git/hooks/post-commit"
+  _w "
 \"${purple}${WPSTARTERREPO}${normal}\" has been cloned to \"${purple}${WPSTARTERDIR}${normal}\".
 Now you can use \"${progname} create\" to create a new site."
 
-    return
+  return
 }
 export -f sub_clone-repo
 
 function sub_install-theme() {
-    if [[ $SUBHELP ]]; then
-        _w "
+  if [[ $SUBHELP ]]; then
+    _w "
 Usage: ${progname} install-theme <site> <theme-slug>
 
        Install theme to the specified site and activate it.
 "
-        return
-    fi
-
-    DOCROOT=$1
-    THEME_NAME=$2
-
-    if [[ $DOCROOT == "last" ]]; then
-        DOCROOT="$(findLastSite)"
-    fi
-
-    # If number of arguments is 1 and current directory is a
-    # wpstarter installation, then use as $DOCROOT
-    if [[ $# == 1 ]]; then
-        fileExists=$(isWPStarter)
-        if [[ -n $fileExists ]]; then
-            DOCROOT=$(basename "$fileExists")
-            THEME_NAME=$1
-            if [[ $fileExists != "$SITESDIR"* ]]; then
-                SITESDIR=$(dirname "$fileExists")
-            fi
-        fi
-    elif [[ -z $DOCROOT ]]; then
-        _e "Err: Specify a site to install the theme."
-        _e "See \"${progname} install-theme -h\" for help."
-        return 1
-    fi
-
-    if [[ ! -d "${SITESDIR}/${DOCROOT}" ]]; then
-        _e "Err: \"${DOCROOT}\" does not exist."
-        return 1
-    fi
-
-    if [[ -z $THEME_NAME ]]; then
-        echo "Err: You didn't specify any theme name to install."
-        exit 1
-    fi
-
-    $WP theme install "$THEME_NAME" --activate \
-        --skip-plugins --path="${SITESDIR}/${DOCROOT}/public/cms"
-
     return
+  fi
+
+  DOCROOT=$1
+  THEME_NAME=$2
+
+  if [[ $DOCROOT == "last" ]]; then
+    DOCROOT="$(findLastSite)"
+  fi
+
+  # If number of arguments is 1 and current directory is a
+  # wpstarter installation, then use as $DOCROOT
+  if [[ $# == 1 ]]; then
+    fileExists=$(isWPStarter)
+    if [[ -n $fileExists ]]; then
+      DOCROOT=$(basename "$fileExists")
+      THEME_NAME=$1
+      if [[ $fileExists != "$SITESDIR"* ]]; then
+        SITESDIR=$(dirname "$fileExists")
+      fi
+    fi
+  elif [[ -z $DOCROOT ]]; then
+    _e "Err: Specify a site to install the theme."
+    _e "See \"${progname} install-theme -h\" for help."
+    return 1
+  fi
+
+  if [[ ! -d "${SITESDIR}/${DOCROOT}" ]]; then
+    _e "Err: \"${DOCROOT}\" does not exist."
+    return 1
+  fi
+
+  if [[ -z $THEME_NAME ]]; then
+    echo "Err: You didn't specify any theme name to install."
+    exit 1
+  fi
+
+  $WP theme install "$THEME_NAME" --activate \
+    --skip-plugins --path="${SITESDIR}/${DOCROOT}/public/cms"
+
+  return
 }
 export -f sub_install-theme
 
 function sub_install-plugin() {
-    if [[ $SUBHELP ]]; then
-        _w "
+  if [[ $SUBHELP ]]; then
+    _w "
 Usage: ${progname} install-plugin <site> <plugin-slug>
 
        Install plugin to the specified site and activate it.
 "
-        return
-    fi
-
-    DOCROOT=$1
-    PLUGIN_NAME=$2
-
-    if [[ $DOCROOT == "last" ]]; then
-        DOCROOT="$(findLastSite)"
-    fi
-
-    # If number of arguments is 1 and current directory is a
-    # wpstarter installation, then use as $DOCROOT
-    if [[ $# == 1 ]]; then
-        fileExists=$(isWPStarter)
-        if [[ -n $fileExists ]]; then
-            DOCROOT=$(basename "$fileExists")
-            PLUGIN_NAME=$1
-            if [[ $fileExists != "$SITESDIR"* ]]; then
-                SITESDIR=$(dirname "$fileExists")
-            fi
-        fi
-    elif [[ -z $DOCROOT ]]; then
-        _e "Err: Specify a site to install the plugin."
-        _e "See \"${progname} install-plugin -h\" for help."
-        return 1
-    fi
-
-    if [[ ! -d "$SITESDIR/$DOCROOT" ]]; then
-        _e "Err: \"${DOCROOT}\" does not exist."
-        return 1
-    fi
-
-    if [[ -z $PLUGIN_NAME ]]; then
-        echo "Err: You didn't specify any plugin name to install."
-        exit 1
-    fi
-
-    $WP plugin install "$PLUGIN_NAME" --activate \
-        --skip-plugins --path="${SITESDIR}/${DOCROOT}/public/cms"
-
     return
+  fi
+
+  DOCROOT=$1
+  PLUGIN_NAME=$2
+
+  if [[ $DOCROOT == "last" ]]; then
+    DOCROOT="$(findLastSite)"
+  fi
+
+  # If number of arguments is 1 and current directory is a
+  # wpstarter installation, then use as $DOCROOT
+  if [[ $# == 1 ]]; then
+    fileExists=$(isWPStarter)
+    if [[ -n $fileExists ]]; then
+      DOCROOT=$(basename "$fileExists")
+      PLUGIN_NAME=$1
+      if [[ $fileExists != "$SITESDIR"* ]]; then
+        SITESDIR=$(dirname "$fileExists")
+      fi
+    fi
+  elif [[ -z $DOCROOT ]]; then
+    _e "Err: Specify a site to install the plugin."
+    _e "See \"${progname} install-plugin -h\" for help."
+    return 1
+  fi
+
+  if [[ ! -d "$SITESDIR/$DOCROOT" ]]; then
+    _e "Err: \"${DOCROOT}\" does not exist."
+    return 1
+  fi
+
+  if [[ -z $PLUGIN_NAME ]]; then
+    echo "Err: You didn't specify any plugin name to install."
+    exit 1
+  fi
+
+  $WP plugin install "$PLUGIN_NAME" --activate \
+    --skip-plugins --path="${SITESDIR}/${DOCROOT}/public/cms"
+
+  return
 }
 export -f sub_install-plugin
 
 function sub_woo() {
-    if [[ $SUBHELP ]]; then
-        _w "
+  if [[ $SUBHELP ]]; then
+    _w "
 Usage: ${progname} woo
 
        Do a quick WooCommerce installation with StoreFront theme.
 "
-        return
-    fi
-
-    DOCROOT=$RANDOM
-
-    $progname quick -n --with-plugin woocommerce --with-theme storefront
-
     return
+  fi
+
+  DOCROOT=$RANDOM
+
+  $progname quick -n --with-plugin woocommerce --with-theme storefront
+
+  return
 }
 export -f sub_woo
 
 function sub_settings() {
-    if [[ $SUBHELP ]]; then
-        _w "
+  if [[ $SUBHELP ]]; then
+    _w "
 Usage: ${progname} settings <site_name>
 
        Interactively change necessary WP settings
        which are generically set at the site installation.
 "
-        return
+    return
+  fi
+
+  DOCROOT=$1
+
+  # If number of arguments is 0 and current directory is a
+  # wpstarter installation, then use as $DOCROOT
+  if [[ $# == 0 ]]; then
+    fileExists=$(isWPStarter)
+    if [[ -n $fileExists ]]; then
+      DOCROOT=$(basename "$fileExists")
+      if [[ $fileExists != "$SITESDIR"* ]]; then
+        SITESDIR=$(dirname "$fileExists")
+      fi
     fi
+  elif [[ -z $DOCROOT ]]; then
+    _e "Err: Specify a directory name. The site will be searched in \"${SITESDIR}\"."
+    _e "See \"${progname} settings -h\" for help."
+    return 1
+  fi
 
-    DOCROOT=$1
+  if [[ ! -d "$SITESDIR/$DOCROOT" ]]; then
+    _e "Err: $DOCROOT does not exist in \"${SITESDIR}\"."
+    return 1
+  fi
 
-    # If number of arguments is 0 and current directory is a
-    # wpstarter installation, then use as $DOCROOT
-    if [[ $# == 0 ]]; then
-        fileExists=$(isWPStarter)
-        if [[ -n $fileExists ]]; then
-            DOCROOT=$(basename "$fileExists")
-            if [[ $fileExists != "$SITESDIR"* ]]; then
-                SITESDIR=$(dirname "$fileExists")
-            fi
-        fi
-    elif [[ -z $DOCROOT ]]; then
-        _e "Err: Specify a directory name. The site will be searched in \"${SITESDIR}\"."
-        _e "See \"${progname} settings -h\" for help."
-        return 1
-    fi
+  if [[ ! -f "${SITESDIR}/${DOCROOT}/.env" ]] && [[ ! -f "${SITESDIR}/${DOCROOT}/wpstarter.json" ]]; then
+    _e "Err: This is not a wpstarter based WordPress installation."
+    return 1
+  fi
 
-    if [[ ! -d "$SITESDIR/$DOCROOT" ]]; then
-        _e "Err: $DOCROOT does not exist in \"${SITESDIR}\"."
-        return 1
-    fi
+  # Another option is to use 'wp db prefix' but this will be faster.
+  tablePrefix=$(grep DB_TABLE_PREFIX "${SITESDIR}/${DOCROOT}/.env" | tr -d ' ')
+  tablePrefix=${tablePrefix#*=}
 
-    if [[ ! -f "${SITESDIR}/${DOCROOT}/.env" ]] && [[ ! -f "${SITESDIR}/${DOCROOT}/wpstarter.json" ]]; then
-        _e "Err: This is not a wpstarter based WordPress installation."
-        return 1
-    fi
-
-    # Another option is to use 'wp db prefix' but this will be faster.
-    tablePrefix=$(grep DB_TABLE_PREFIX "${SITESDIR}/${DOCROOT}/.env" | tr -d ' ')
-    tablePrefix=${tablePrefix#*=}
-
+  if [[ -z $tablePrefix ]]; then
+    tablePrefix=$(
+      $WP --skip-plugins \
+        --path="${SITESDIR}/${DOCROOT}/public/cms" db prefix
+    )
     if [[ -z $tablePrefix ]]; then
-        tablePrefix=$(
-        $WP --skip-plugins \
-            --path="${SITESDIR}/${DOCROOT}/public/cms" db prefix
-        )
-        if [[ -z $tablePrefix ]]; then
-            _e "Cannot determine WP table prefix."
-            return 1
-        fi
+      _e "Cannot determine WP table prefix."
+      return 1
     fi
+  fi
 
-    # Current site settings
-    if [ -t 0 ]; then
-        _w "Getting current site and user settings..."
-        _w ""
-    fi
-    blogSettings=$(
+  # Current site settings
+  if [ -t 0 ]; then
+    _w "Getting current site and user settings..."
+    _w ""
+  fi
+  blogSettings=$(
     $WP --skip-plugins \
-        --path="${SITESDIR}/${DOCROOT}/public/cms" \
-        db query \
-        'select option_value from '"${tablePrefix}"'options where option_name IN ("blogname", "blogdescription")' \
-        --skip-column-names
-    )
-    curBlogname=$(head -n1 <<<"$blogSettings")
-    curTagline=$(tail -n1 <<<"$blogSettings")
+      --path="${SITESDIR}/${DOCROOT}/public/cms" \
+      db query \
+      'select option_value from '"${tablePrefix}"'options where option_name IN ("blogname", "blogdescription")' \
+      --skip-column-names
+  )
+  curBlogname=$(head -n1 <<<"$blogSettings")
+  curTagline=$(tail -n1 <<<"$blogSettings")
 
-    userSettings=$(
+  userSettings=$(
     $WP --skip-plugins --path="${SITESDIR}/${DOCROOT}/public/cms" user \
-        get 1 --fields=user_login,user_nicename,display_name,user_email --format=csv
-    )
-    curAdminUsername=$(grep user_login <<<"$userSettings")
-    curAdminUsername=${curAdminUsername##*,}
-    curAdminNicename=$(grep user_nicename <<<"$userSettings")
-    curAdminNicename=${curAdminNicename##*,}
-    curAdminDisplayName=$(grep display_name <<<"$userSettings")
-    curAdminDisplayName=${curAdminDisplayName##*,}
-    curAdminEmail=$(grep user_email <<<"$userSettings")
-    curAdminEmail=${curAdminEmail##*,}
+      get 1 --fields=user_login,user_nicename,display_name,user_email --format=csv
+  )
+  curAdminUsername=$(grep user_login <<<"$userSettings")
+  curAdminUsername=${curAdminUsername##*,}
+  curAdminNicename=$(grep user_nicename <<<"$userSettings")
+  curAdminNicename=${curAdminNicename##*,}
+  curAdminDisplayName=$(grep display_name <<<"$userSettings")
+  curAdminDisplayName=${curAdminDisplayName##*,}
+  curAdminEmail=$(grep user_email <<<"$userSettings")
+  curAdminEmail=${curAdminEmail##*,}
 
-    # Get user meta values
-    userMeta=$(
+  # Get user meta values
+  userMeta=$(
     $WP --skip-plugins \
-        --path="${SITESDIR}/${DOCROOT}/public/cms" user meta list 1 --format=csv
-    )
+      --path="${SITESDIR}/${DOCROOT}/public/cms" user meta list 1 --format=csv
+  )
 
-    curAdminFirstName=$(grep first_name <<<"$userMeta")
-    curAdminFirstName=${curAdminFirstName##*,}
-    curAdminLastName=$(grep last_name <<<"$userMeta")
-    curAdminLastName=${curAdminLastName##*,}
+  curAdminFirstName=$(grep first_name <<<"$userMeta")
+  curAdminFirstName=${curAdminFirstName##*,}
+  curAdminLastName=$(grep last_name <<<"$userMeta")
+  curAdminLastName=${curAdminLastName##*,}
 
-    # nickname is required
-    curAdminNickname=$(grep nickname <<<"$userMeta")
-    curAdminNickname=${curAdminNickname##*,}
+  # nickname is required
+  curAdminNickname=$(grep nickname <<<"$userMeta")
+  curAdminNickname=${curAdminNickname##*,}
 
-    if [ -t 0 ]; then
-        _w "\
+  if [ -t 0 ]; then
+    _w "\
 ${red}Site Title${normal}:            ${curBlogname}
 ${red}Tagline${normal}:               ${curTagline}
 
@@ -1821,126 +1827,126 @@ ${red}Display Name${normal}:          ${curAdminDisplayName}
 ${red}Email${normal}:                 ${curAdminEmail}
 
 "
-    fi
+  fi
 
-    read -rp "Site Title (blogname) (Leave empty to use the current value): " \
-        -e BLOGNAME
-    read -rp "Tagline (blogdescription) (Leave empty to use the current value): " \
-        -e BLOGDESCRIPTION
+  read -rp "Site Title (blogname) (Leave empty to use the current value): " \
+    -e BLOGNAME
+  read -rp "Tagline (blogdescription) (Leave empty to use the current value): " \
+    -e BLOGDESCRIPTION
 
-    if [ -t 0 ]; then
-        _w ""
-        _w "Admin User"
-    fi
-    read -rp "First Name (Leave empty to use the current value): " -e ADMINFIRSTNAME
-    read -rp "Last Name (Leave empty to use the current value): " -e ADMINLASTNAME
+  if [ -t 0 ]; then
+    _w ""
+    _w "Admin User"
+  fi
+  read -rp "First Name (Leave empty to use the current value): " -e ADMINFIRSTNAME
+  read -rp "Last Name (Leave empty to use the current value): " -e ADMINLASTNAME
 
-    if [ -t 0 ]; then
-        _w "
+  if [ -t 0 ]; then
+    _w "
 Nickname gives an option to set display name
 to something other than login name or real name. You don't have to specify one."
-    fi
-    read -rp "Nick Name (Leave empty to use the current value): " -e ADMINNICKNAME
+  fi
+  read -rp "Nick Name (Leave empty to use the current value): " -e ADMINNICKNAME
 
-    if [ -t 0 ]; then
-        _w "
+  if [ -t 0 ]; then
+    _w "
 Nicename will be used as author slug in author archive URLs.
 It's a good idea to set it to something other than login name.
 Current nice name: ${red}${curAdminNicename}${normal}"
-    fi
-    read -rp "Nicename (Leave empty to use the current value): " -e ADMINNICENAME
+  fi
+  read -rp "Nicename (Leave empty to use the current value): " -e ADMINNICENAME
 
-    if [ -t 0 ]; then
-        _w "
+  if [ -t 0 ]; then
+    _w "
 Display name is used in author archive pages as title such as \"Author: DISPLAY_NAME\"."
-    fi
-    read -rp "Display Name (Leave empty to use the current value): " \
-        -e ADMINDISPLAYNAME
+  fi
+  read -rp "Display Name (Leave empty to use the current value): " \
+    -e ADMINDISPLAYNAME
 
-    read -rp "Email (Leave empty to use the current value): " -e ADMINEMAIL
-    
-    VALUES=""
+  read -rp "Email (Leave empty to use the current value): " -e ADMINEMAIL
 
-    if [[ -n $BLOGNAME ]]; then          VALUES+="${red}Site Title${normal}:              ${BLOGNAME}\n"; fi
-    if [[ -n $BLOGDESCRIPTION ]]; then   VALUES+="${red}Tagline${normal}:                 ${BLOGDESCRIPTION}\n"; fi
-    if [[ -n $ADMINFIRSTNAME ]]; then    VALUES+="${red}First Name${normal}:              ${ADMINFIRSTNAME}\n"; fi
-    if [[ -n $ADMINLASTNAME ]]; then     VALUES+="${red}Last Name${normal}:               ${ADMINLASTNAME}\n"; fi
-    if [[ -n $ADMINNICKNAME ]]; then     VALUES+="${red}Nickname${normal}:                ${ADMINNICKNAME}\n"; fi
-    if [[ -n $ADMINNICENAME ]]; then     VALUES+="${red}Nicename${normal}:                ${ADMINNICENAME}\n"; fi
-    if [[ -n $ADMINDISPLAYNAME ]]; then  VALUES+="${red}Display Name${normal}:            ${ADMINDISPLAYNAME}\n"; fi
-    if [[ -n $ADMINEMAIL ]]; then        VALUES+="${red}Email${normal}:                   ${ADMINEMAIL}\n"; fi
+  VALUES=""
 
-    if [[ -z $VALUES ]]; then
-        _w "\
+  if [[ -n $BLOGNAME ]]; then VALUES+="${red}Site Title${normal}:              ${BLOGNAME}\n"; fi
+  if [[ -n $BLOGDESCRIPTION ]]; then VALUES+="${red}Tagline${normal}:                 ${BLOGDESCRIPTION}\n"; fi
+  if [[ -n $ADMINFIRSTNAME ]]; then VALUES+="${red}First Name${normal}:              ${ADMINFIRSTNAME}\n"; fi
+  if [[ -n $ADMINLASTNAME ]]; then VALUES+="${red}Last Name${normal}:               ${ADMINLASTNAME}\n"; fi
+  if [[ -n $ADMINNICKNAME ]]; then VALUES+="${red}Nickname${normal}:                ${ADMINNICKNAME}\n"; fi
+  if [[ -n $ADMINNICENAME ]]; then VALUES+="${red}Nicename${normal}:                ${ADMINNICENAME}\n"; fi
+  if [[ -n $ADMINDISPLAYNAME ]]; then VALUES+="${red}Display Name${normal}:            ${ADMINDISPLAYNAME}\n"; fi
+  if [[ -n $ADMINEMAIL ]]; then VALUES+="${red}Email${normal}:                   ${ADMINEMAIL}\n"; fi
+
+  if [[ -z $VALUES ]]; then
+    _w "\
 No settings changed.
 Exiting without any changes."
-        exit
-    fi
+    exit
+  fi
 
-    if [ -t 0 ]; then
-        _w "
+  if [ -t 0 ]; then
+    _w "
 ####################
 #  Entered values  #
 ####################"
-        echo -e "$VALUES"
-    fi
-    
-    if [ -t 0 ]; then
-        read -rp "Apply new settings?  (y/n) (Default No): " -e ANSWER
-        if [[ ! $ANSWER =~ ^[Yy]$ ]]; then
-            _w "New settings discarded."
-            return 1
-        fi
-    fi
+    echo -e "$VALUES"
+  fi
 
-    _w "Applying new settings..."
-
-    if [[ -n $BLOGNAME ]] && [[ $BLOGNAME != "$curBlogname" ]]; then
-        $WP --skip-plugins --path="${SITESDIR}/${DOCROOT}/public/cms" \
-            option update blogname "$BLOGNAME" --quiet
+  if [ -t 0 ]; then
+    read -rp "Apply new settings?  (y/n) (Default No): " -e ANSWER
+    if [[ ! $ANSWER =~ ^[Yy]$ ]]; then
+      _w "New settings discarded."
+      return 1
     fi
+  fi
 
-    if [[ -n $BLOGDESCRIPTION ]] && [[ $BLOGDESCRIPTION != "$curTagline" ]]; then
-        $WP --skip-plugins --path="${SITESDIR}/${DOCROOT}/public/cms" \
-            option update blogdescription "$BLOGDESCRIPTION" --quiet
-    fi
+  _w "Applying new settings..."
 
-    if [[ -n $ADMINFIRSTNAME ]] && [[ $ADMINFIRSTNAME != "$curAdminFirstName" ]]; then
-        $WP --skip-plugins --path="${SITESDIR}/${DOCROOT}/public/cms" \
-            user meta update 1 first_name "$ADMINFIRSTNAME" --quiet
-    fi
-
-    if [[ -n $ADMINLASTNAME ]] && [[ $ADMINLASTNAME != "$curAdminLastName" ]]; then
-        $WP --skip-plugins --path="${SITESDIR}/${DOCROOT}/public/cms" \
-            user meta update 1 last_name "$ADMINLASTNAME" --quiet
-    fi
-
-    if [[ -n $ADMINNICKNAME ]] && [[ $ADMINNICKNAME != "$curAdminNickname" ]]; then
-        $WP --skip-plugins --path="${SITESDIR}/${DOCROOT}/public/cms" \
-            user meta update 1 nickname "$ADMINNICKNAME" --quiet
-    fi
-
-    if [[ -n $ADMINNICENAME ]] && [[ $ADMINNICENAME != "$curAdminNicename" ]]; then
-        $WP --skip-plugins --path="${SITESDIR}/${DOCROOT}/public/cms" \
-            user update 1 --user_nicename="${ADMINNICENAME}" --quiet
-    fi
-
-    if [[ -n $ADMINDISPLAYNAME ]] && [[ $ADMINDISPLAYNAME != "$curAdminDisplayName" ]]; then
-        $WP --skip-plugins --path="${SITESDIR}/${DOCROOT}/public/cms" \
-            user update 1 --display_name="${ADMINDISPLAYNAME}" --quiet
-    fi
-
-    if [[ -n $ADMINEMAIL ]] && [[ $ADMINEMAIL != "$curAdminEmail" ]]; then
-        $WP --skip-plugins --path="${SITESDIR}/${DOCROOT}/public/cms" \
-            user update 1 --user_email="${ADMINEMAIL}" --skip-email --quiet
-    fi
-
+  if [[ -n $BLOGNAME ]] && [[ $BLOGNAME != "$curBlogname" ]]; then
     $WP --skip-plugins --path="${SITESDIR}/${DOCROOT}/public/cms" \
-        cache flush --quiet > /dev/null 2>&1
+      option update blogname "$BLOGNAME" --quiet
+  fi
 
-    _w "New settings applied."
+  if [[ -n $BLOGDESCRIPTION ]] && [[ $BLOGDESCRIPTION != "$curTagline" ]]; then
+    $WP --skip-plugins --path="${SITESDIR}/${DOCROOT}/public/cms" \
+      option update blogdescription "$BLOGDESCRIPTION" --quiet
+  fi
 
-    return
+  if [[ -n $ADMINFIRSTNAME ]] && [[ $ADMINFIRSTNAME != "$curAdminFirstName" ]]; then
+    $WP --skip-plugins --path="${SITESDIR}/${DOCROOT}/public/cms" \
+      user meta update 1 first_name "$ADMINFIRSTNAME" --quiet
+  fi
+
+  if [[ -n $ADMINLASTNAME ]] && [[ $ADMINLASTNAME != "$curAdminLastName" ]]; then
+    $WP --skip-plugins --path="${SITESDIR}/${DOCROOT}/public/cms" \
+      user meta update 1 last_name "$ADMINLASTNAME" --quiet
+  fi
+
+  if [[ -n $ADMINNICKNAME ]] && [[ $ADMINNICKNAME != "$curAdminNickname" ]]; then
+    $WP --skip-plugins --path="${SITESDIR}/${DOCROOT}/public/cms" \
+      user meta update 1 nickname "$ADMINNICKNAME" --quiet
+  fi
+
+  if [[ -n $ADMINNICENAME ]] && [[ $ADMINNICENAME != "$curAdminNicename" ]]; then
+    $WP --skip-plugins --path="${SITESDIR}/${DOCROOT}/public/cms" \
+      user update 1 --user_nicename="${ADMINNICENAME}" --quiet
+  fi
+
+  if [[ -n $ADMINDISPLAYNAME ]] && [[ $ADMINDISPLAYNAME != "$curAdminDisplayName" ]]; then
+    $WP --skip-plugins --path="${SITESDIR}/${DOCROOT}/public/cms" \
+      user update 1 --display_name="${ADMINDISPLAYNAME}" --quiet
+  fi
+
+  if [[ -n $ADMINEMAIL ]] && [[ $ADMINEMAIL != "$curAdminEmail" ]]; then
+    $WP --skip-plugins --path="${SITESDIR}/${DOCROOT}/public/cms" \
+      user update 1 --user_email="${ADMINEMAIL}" --skip-email --quiet
+  fi
+
+  $WP --skip-plugins --path="${SITESDIR}/${DOCROOT}/public/cms" \
+    cache flush --quiet >/dev/null 2>&1
+
+  _w "New settings applied."
+
+  return
 }
 export -f sub_settings
 
@@ -1951,74 +1957,74 @@ export -f sub_settings
 #   Site name
 #------------------------------------------------------
 function sub_flush-env() {
-    if [[ $SUBHELP ]]; then
-            _w "
+  if [[ $SUBHELP ]]; then
+    _w "
 Usage: ${progname} flush-env <site_name>
             
        Delete and rebuild .env.cached.php file of a site.
 "
-            return
-    fi
-
-    DOCROOT="$1"
-
-    # If number of arguments is 0 and current directory is
-    # a wpstarter installation, then use as $DOCROOT
-    if [[ $# == 0 ]]; then
-        fileExists=$(isWPStarter)
-        if [[ -n $fileExists ]]; then
-            DOCROOT=$(basename "$fileExists")
-            if [[ $fileExists != "$SITESDIR"* ]]; then
-                SITESDIR=$(dirname "$fileExists")
-            fi
-        fi
-    fi
-
-    if [[ ! -d "${SITESDIR}/${DOCROOT}" ]]; then
-        _e "Err: \"${DOCROOT}\" does not exist."
-        return 1
-    fi
-
-    if [[ -f "${SITESDIR}/${DOCROOT}/.env.cached.php" ]]; then
-        rm -f "${SITESDIR}/${DOCROOT}/.env.cached.php"
-        $WP --skip-plugins --skip-packages \
-            --path="${SITESDIR}/${DOCROOT}/public/cms" > /dev/null 2>&1
-        if [[ ! -f "${SITESDIR}/${DOCROOT}/.env.cached.php" ]]; then
-            _e ".env.cached.php file could not be created."
-        fi
-    fi
-
     return
+  fi
+
+  DOCROOT="$1"
+
+  # If number of arguments is 0 and current directory is
+  # a wpstarter installation, then use as $DOCROOT
+  if [[ $# == 0 ]]; then
+    fileExists=$(isWPStarter)
+    if [[ -n $fileExists ]]; then
+      DOCROOT=$(basename "$fileExists")
+      if [[ $fileExists != "$SITESDIR"* ]]; then
+        SITESDIR=$(dirname "$fileExists")
+      fi
+    fi
+  fi
+
+  if [[ ! -d "${SITESDIR}/${DOCROOT}" ]]; then
+    _e "Err: \"${DOCROOT}\" does not exist."
+    return 1
+  fi
+
+  if [[ -f "${SITESDIR}/${DOCROOT}/.env.cached.php" ]]; then
+    rm -f "${SITESDIR}/${DOCROOT}/.env.cached.php"
+    $WP --skip-plugins --skip-packages \
+      --path="${SITESDIR}/${DOCROOT}/public/cms" >/dev/null 2>&1
+    if [[ ! -f "${SITESDIR}/${DOCROOT}/.env.cached.php" ]]; then
+      _e ".env.cached.php file could not be created."
+    fi
+  fi
+
+  return
 }
 export -f sub_flush-env
 
 function sub_testdb() {
-    if [[ $SUBHELP ]]; then
-            _w "
+  if [[ $SUBHELP ]]; then
+    _w "
 Usage: ${progname} testdb
 
        Make a connection to DB to test user credentials stored in \"~/.wpsiterc\".
 "
-            return
-    fi
-
-    if checkDBCredentials; then
-        _w "DB credentials in ${HOME}/.wpsiterc are correct."
-    else
-        _e "Cannot connect to database using specified credentials"
-        _e "in ${HOME}/.wpsiterc."
-    fi
-
-    if checkDBCredentials wpstarter; then
-        _w "DB credentials in ${WPSTARTERDIR}/custom-templates/.env.example are correct."
-    else
-        _w ""
-        _e "Cannot connect to database using specified credentials in"
-        _e "${WPSTARTERDIR}/custom-templates/.env.example."
-        _e "Edit DB credentials in this file accordingly and commit your changes."
-    fi
-
     return
+  fi
+
+  if checkDBCredentials; then
+    _w "DB credentials in ${HOME}/.wpsiterc are correct."
+  else
+    _e "Cannot connect to database using specified credentials"
+    _e "in ${HOME}/.wpsiterc."
+  fi
+
+  if checkDBCredentials wpstarter; then
+    _w "DB credentials in ${WPSTARTERDIR}/custom-templates/.env.example are correct."
+  else
+    _w ""
+    _e "Cannot connect to database using specified credentials in"
+    _e "${WPSTARTERDIR}/custom-templates/.env.example."
+    _e "Edit DB credentials in this file accordingly and commit your changes."
+  fi
+
+  return
 }
 export -f sub_testdb
 
@@ -2029,292 +2035,297 @@ export -f sub_testdb
 #   Site name
 #------------------------------------------------------
 function sub_install() {
-	DOCROOT="$1"
+  DOCROOT="$1"
 
-    # Use $PWD if a directory (site) is not given.
-    # This is only possible when you install a tricarte/wpready3 site
-    # through one of its composer scripts defined in composer.json like this:
-    # "scripts": {
-    #     "installwp": [
-    #         "wpsite install"
-    #     ]
-    # }
-	if [[ -z $DOCROOT ]]; then
-	    if [[ -f "${PWD}/wpstarter.json" ]]; then
-            SITESDIR=$(dirname "$PWD")
-            DOCROOT=$(basename "$PWD")
-            if [[ ! -f "${SITESDIR}/${DOCROOT}/.env" ]]; then
-                $COMPOSERBIN --working-dir="${SITESDIR}/${DOCROOT}" install || exit
-            fi
-        else
-            _e "This directory is not a wpstarter based project."
-            exit 1
-        fi
+  # Use $PWD if a directory (site) is not given.
+  # This is only possible when you install a tricarte/wpready3 site
+  # through one of its composer scripts defined in composer.json like this:
+  # "scripts": {
+  #     "installwp": [
+  #         "wpsite install"
+  #     ]
+  # }
+  if [[ -z $DOCROOT ]]; then
+    if [[ -f "${PWD}/wpstarter.json" ]]; then
+      SITESDIR=$(dirname "$PWD")
+      DOCROOT=$(basename "$PWD")
+      if [[ ! -f "${SITESDIR}/${DOCROOT}/.env" ]]; then
+        $COMPOSERBIN --working-dir="${SITESDIR}/${DOCROOT}" install || exit
+      fi
+    else
+      _e "This directory is not a wpstarter based project."
+      exit 1
+    fi
+  fi
+
+  # wpstarter copies custom-templates/.env.example to the root at installation.
+  # So don't git add the .env.example file at the project root.
+  if [[ ! -f "${SITESDIR}/${DOCROOT}/.env" ]]; then
+    cp "${SITESDIR}/${DOCROOT}/custom-templates/.env.example" \
+      "${SITESDIR}/${DOCROOT}/.env" || exit
+    # SITENAME=${PWD##*/}
+    SITENAME=$DOCROOT
+    if grep directory-basename "${SITESDIR}/${DOCROOT}/.env" >/dev/null 2>&1; then
+      replace -s directory-basename "$DOCROOT" -- "${SITESDIR}/${DOCROOT}/.env"
+    fi
+  fi
+
+  # If db credentials in wpstarter repo does not work
+  # use those set in ~/.wpsiterc instead.
+  if ! checkDBCredentials wpstarter; then
+    sed -i -e "/^DB_USER=/c\DB_USER=${DBUSER}" "${SITESDIR}/${DOCROOT}/.env"
+    sed -i -e "/^DB_PASSWORD=/c\DB_PASSWORD=${DBPASS}" "${SITESDIR}/${DOCROOT}/.env"
+  fi
+
+  if [[ $PRODUCTION ]]; then
+    ADMIN_USER="${DOCROOT}"-"${RANDOM}"
+    ADMIN_PASS="$(
+      date +%s | sha256sum | base64 | head -c 13
+      echo
+    )"
+
+    eval "$(grep DB_USER "${SITESDIR}/${DOCROOT}/.env" | tr -d ' ')"
+    eval "$(grep DB_PASSWORD "${SITESDIR}/${DOCROOT}/.env" | tr -d ' ')"
+
+    # Create separate db user and password, change .env file.
+    NEW_DB_USER="${DOCROOT}-${RANDOM}"
+    NEW_DB_PASSWORD="$(
+      date +%s%N | sha256sum | base64 | head -c 13
+      echo
+    )"
+    $MYSQLBIN -u $DB_USER \
+      -p${DB_PASSWORD} \
+      -e"CREATE USER '${NEW_DB_USER}'@'127.0.0.1' IDENTIFIED BY '${NEW_DB_PASSWORD}';"
+    $MYSQLBIN -u $DB_USER \
+      -p${DB_PASSWORD} \
+      -e"GRANT ALL PRIVILEGES ON \`${DOCROOT}\`.* TO '${NEW_DB_USER}'@'127.0.0.1';"
+    $MYSQLBIN -u $DB_USER -p${DB_PASSWORD} -e"FLUSH PRIVILEGES;"
+
+    # Now change .env with new values
+    replace -s DB_USER=$DB_USER "DB_USER=${NEW_DB_USER}" -- \
+      "${SITESDIR}/${DOCROOT}/.env"
+    replace -s DB_PASSWORD=$DB_PASSWORD "DB_PASSWORD=${NEW_DB_PASSWORD}" -- \
+      "${SITESDIR}/${DOCROOT}/.env"
+  else
+    ADMIN_USER="usr${DOCROOT}"
+    ADMIN_PASS="pss${DOCROOT}"
+
+    # This is a dev environment, so enable passwordless auto login
+    replace -s auto-login-user-name "$ADMIN_USER" -- \
+      "${SITESDIR}/${DOCROOT}/.env"
+  fi
+
+  if [[ $PRODUCTION ]]; then
+    # If the given site name does not contain dot, indicating it's a not real
+    # production domain name, append '.test' to WP_HOME if --production is given
+    # and disable https.
+    # Because we think an https enabled local test is not necessary.
+    if [[ $DOCROOT =~ \. ]]; then
+      replace -s wp-home "https://${DOCROOT}" -- "${SITESDIR}/${DOCROOT}/.env"
+      URL="$DOCROOT"
+    else
+      replace -s wp-home "http://${DOCROOT}.test" -- "${SITESDIR}/${DOCROOT}/.env"
+      URL="${DOCROOT}.test"
+    fi
+  else
+    replace -s wp-home "http://${DOCROOT}.test" -- "${SITESDIR}/${DOCROOT}/.env"
+    URL="${DOCROOT}.test"
+  fi
+
+  # FIXME
+  # is-installed uses the database name setting in .env to connect to db
+  # but at this point this database is not created so it gives error
+  # so it can't connect to db to perform the wp command
+  # if  $WP --skip-plugins --path="$SITESDIR/$DOCROOT/public/cms" core is-installed; then
+  #     _w "WordPress is already installed."
+  #     exit
+  # fi
+
+  $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins db create
+
+  $WP --path="${SITESDIR}/${DOCROOT}/public/cms" core install \
+    --url="${URL}" \
+    --title="${DOCROOT}" \
+    --admin_user="${ADMIN_USER}" \
+    --admin_password="${ADMIN_PASS}" \
+    --admin_email=info@example.com \
+    --skip-email --skip-plugins
+
+  # If this is production, change fs permissions accordingly.
+  # Make content directory group owned by www-data
+  if [[ $PRODUCTION ]]; then
+    if [[ -d "${SITESDIR}/${DOCROOT}/public/content" ]]; then
+      # chmod -R o+w "/home/$(whoami)/sites/$SITENAME/public/content"
+      if id -nG | grep www-data >/dev/null 2>&1; then
+        chown -R "$(whoami)":www-data "${SITESDIR}/${DOCROOT}/public/content"
+      else
+        _e "www-data group does not exist or \"${USER}\" is not a member of it."
+      fi
+    fi
+  fi
+
+  $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
+    user update 1 --display_name="John Doe" \
+    --user_nicename="john-doe" --nickname="Editor"
+
+  if [[ ! $BARE ]]; then
+    $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
+      option update permalink_structure "/%category%/%postname%/"
+
+    $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
+      term update category 1 --slug=general --name=General
+
+    $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
+      post create --post_title="Front Page" \
+      --post_type=page --post_status=publish --post_author=1
+
+    $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
+      post create --post_title="Blog Page" \
+      --post_type=page --post_status=publish --post_author=1
+
+    $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
+      --skip-plugins option update page_on_front 2
+
+    $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
+      --skip-plugins option update page_for_posts 5
+
+    $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
+      --skip-plugins option update show_on_front "page"
+
+    $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
+      --skip-plugins option update timezone_string "Europe/Istanbul"
+
+    $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
+      --skip-plugins option update blogdescription "WP Test Site" # Tagline
+
+    $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
+      --skip-plugins option update ping_sites ""
+
+    $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
+      --skip-plugins option update rss_use_excerpt 1
+
+    # Disable comments
+    $WP --path="${SITESDIR}/${DOCROOT}/public/cms" \
+      --skip-plugins option update default_pingback_flag 0
+
+    $WP --path="${SITESDIR}/${DOCROOT}/public/cms" \
+      --skip-plugins option update default_ping_status 0
+
+    $WP --path="${SITESDIR}/${DOCROOT}/public/cms" \
+      --skip-plugins option update default_comment_status 0
+
+    $WP --path="${SITESDIR}/${DOCROOT}/public/cms" \
+      --skip-plugins option update comment_registration 1
+
+    $WP --path="${SITESDIR}/${DOCROOT}/public/cms" \
+      --skip-plugins option update close_comments_for_old_posts 1
+
+    $WP --path="${SITESDIR}/${DOCROOT}/public/cms" \
+      --skip-plugins plugin activate \
+      safe-svg \
+      custom-post-type-permalinks \
+      duplicate-post \
+      pre-publish-checklist \
+      widget-shortcode \
+      passwords-evolved \
+      admin-menu-search \
+      rest-api-toolbox \
+      icon-block \
+      rollback-update-failure \
+      reveal-ids-for-wp-admin-25 \
+      clarity-ad-blocker \
+      apcu-manager \
+      surge \
+      fluent-smtp \
+      log-http-requests \
+      create-block-theme \
+      async-javascript \
+      reusable-blocks-extended \
+      gutenberg
+
+    if [[ ! $PRODUCTION ]]; then
+      $WP --path="${SITESDIR}/${DOCROOT}/public/cms" \
+        --skip-plugins plugin activate \
+        query-monitor \
+        custom-post-type-ui \
+        bulk-delete \
+        better-search-replace \
+        wayfinder \
+        block-xray-attributes \
+        wpready-playground \
+        show-hooks \
+        wp-mailhog-smtp \
+        rewrite-rules-inspector
     fi
 
-	# wpstarter copies custom-templates/.env.example to the root at installation.
-	# So don't git add the .env.example file at the project root.
-	if [[ ! -f "${SITESDIR}/${DOCROOT}/.env" ]]; then
-		cp "${SITESDIR}/${DOCROOT}/custom-templates/.env.example" \
-		    "${SITESDIR}/${DOCROOT}/.env" || exit
-		# SITENAME=${PWD##*/}
-		SITENAME=$DOCROOT
-		if grep directory-basename "${SITESDIR}/${DOCROOT}/.env" > /dev/null 2>&1; then
-            replace -s directory-basename "$DOCROOT" -- "${SITESDIR}/${DOCROOT}/.env"
-        fi
-	fi
+    $WP --path="${SITESDIR}/${DOCROOT}/public/cms" \
+      --skip-plugins option update rest-api-toolbox-settings-core \
+      --format=json '{"require-authentication|\/wp\/v2\/posts":"1","require-authentication|''\/wp\/v2\/pages":"1","require-authentication|\/wp\/v2\/users":"1",''"require-authentication|\/wp\/v2\/media":"1","require-authentication|\/wp\/v2\/categories":"1",''"require-authentication|\/wp\/v2\/tags":"1","require-authentication|\/wp\/v2\/comments":"1",''"require-authentication|\/wp\/v2\/taxonomies":"1","require-authentication|\/wp\/v2\/types":"1",''"require-authentication|\/wp\/v2\/statuses":"1","require-authentication|\/wp\/v2\/settings":"1"}'
 
-    # If db credentials in wpstarter repo does not work
-    # use those set in ~/.wpsiterc instead.
-    if ! checkDBCredentials wpstarter; then
-        sed -i -e "/^DB_USER=/c\DB_USER=${DBUSER}" "${SITESDIR}/${DOCROOT}/.env"
-        sed -i -e "/^DB_PASSWORD=/c\DB_PASSWORD=${DBPASS}" "${SITESDIR}/${DOCROOT}/.env"
+    $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
+      user meta update 1 \
+      dismissed_wp_pointers "custom-post-type-permalinks-settings"
+
+    CPTP_VERSION=$(
+      $WP --path="${SITESDIR}/${DOCROOT}/public/cms" \
+        --skip-plugins plugin get custom-post-type-permalinks \
+        --format=table --field=version
+    )
+    $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
+      option update cptp_permalink_checked "$CPTP_VERSION" --autoload=yes
+
+    # APCU Manager options
+    $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
+      option update apcm_adminbar 0
+    $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
+      option update apcm_earlyloading 1
+    $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
+      option update apcm_analytics 0
+    $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
+      option update apcm_gc 0
+
+    # Async-JavaScript options
+    $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
+      option update aj_enabled 1
+    $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
+      option update aj_method defer
+    $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
+      option update aj_enabled_logged 1
+    $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
+      option update aj_jquery exclude
+
+    $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins rewrite flush
+
+    # Install sample images
+    if [[ ! $PRODUCTION ]]; then
+      $WP --path="${SITESDIR}/${DOCROOT}/public/cms" \
+        --skip-plugins media import "${SITESDIR}/${DOCROOT}"/sample-images/* \
+        --user="usr${DOCROOT}"
     fi
 
-	if [[ $PRODUCTION ]]; then
-		ADMIN_USER="${DOCROOT}"-"${RANDOM}"
-		ADMIN_PASS="$(date +%s | sha256sum | base64 | head -c 13 ; echo)"
-
-		eval "$(grep DB_USER "${SITESDIR}/${DOCROOT}/.env" | tr -d ' ')"
-		eval "$(grep DB_PASSWORD "${SITESDIR}/${DOCROOT}/.env" | tr -d ' ')"
-
-		# Create separate db user and password, change .env file.
-		NEW_DB_USER="${DOCROOT}-${RANDOM}"
-		NEW_DB_PASSWORD="$(date +%s%N | sha256sum | base64 | head -c 13 ; echo)"
-		$MYSQLBIN -u $DB_USER \
-		    -p${DB_PASSWORD} \
-		    -e"CREATE USER '${NEW_DB_USER}'@'127.0.0.1' IDENTIFIED BY '${NEW_DB_PASSWORD}';"
-		$MYSQLBIN -u $DB_USER \
-		    -p${DB_PASSWORD} \
-		    -e"GRANT ALL PRIVILEGES ON \`${DOCROOT}\`.* TO '${NEW_DB_USER}'@'127.0.0.1';"
-		$MYSQLBIN -u $DB_USER -p${DB_PASSWORD} -e"FLUSH PRIVILEGES;"
-
-		# Now change .env with new values
-		replace -s DB_USER=$DB_USER "DB_USER=${NEW_DB_USER}" -- \
-		    "${SITESDIR}/${DOCROOT}/.env"
-		replace -s DB_PASSWORD=$DB_PASSWORD "DB_PASSWORD=${NEW_DB_PASSWORD}" -- \
-		    "${SITESDIR}/${DOCROOT}/.env"
-	else
-		ADMIN_USER="usr${DOCROOT}"
-		ADMIN_PASS="pss${DOCROOT}"
-	fi
-
-	if [[ $PRODUCTION ]]; then
-        # If the given site name does not contain dot, indicating it's a not real
-        # production domain name, append '.test' to WP_HOME if --production is given
-        # and disable https.
-        # Because we think an https enabled local test is not necessary.
-        if [[ $DOCROOT =~ \. ]]; then
-            replace -s wp-home "https://${DOCROOT}" -- "${SITESDIR}/${DOCROOT}/.env"
-            URL="$DOCROOT"
-        else
-            replace -s wp-home "http://${DOCROOT}.test" -- "${SITESDIR}/${DOCROOT}/.env"
-            URL="${DOCROOT}.test"
-        fi
-	else
-		replace -s wp-home "http://${DOCROOT}.test" -- "${SITESDIR}/${DOCROOT}/.env"
-		URL="${DOCROOT}.test"
-	fi
-
-    # FIXME
-    # is-installed uses the database name setting in .env to connect to db
-    # but at this point this database is not created so it gives error
-    # so it can't connect to db to perform the wp command
-    # if  $WP --skip-plugins --path="$SITESDIR/$DOCROOT/public/cms" core is-installed; then
-    #     _w "WordPress is already installed."
-    #     exit
-    # fi
-
-	$WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins db create
-
-	$WP --path="${SITESDIR}/${DOCROOT}/public/cms" core install \
-		--url="${URL}" \
-		--title="${DOCROOT}"  \
-		--admin_user="${ADMIN_USER}" \
-		--admin_password="${ADMIN_PASS}"  \
-		--admin_email=info@example.com  \
-		--skip-email --skip-plugins
-
-	# If this is production, change fs permissions accordingly.
-	# Make content directory group owned by www-data
-	if [[ $PRODUCTION ]]; then
-		if [[ -d "${SITESDIR}/${DOCROOT}/public/content" ]]; then
-			# chmod -R o+w "/home/$(whoami)/sites/$SITENAME/public/content"
-            if id -nG | grep www-data > /dev/null 2>&1; then
-                chown -R "$(whoami)":www-data "${SITESDIR}/${DOCROOT}/public/content"
-            else
-                _e "www-data group does not exist or \"${USER}\" is not a member of it."
-            fi
-		fi
-	fi
-
-	$WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
-	    user update 1 --display_name="John Doe" \
-	    --user_nicename="john-doe" --nickname="Editor"
-
-	if [[ ! $BARE ]]; then
-        $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
-            option update permalink_structure "/%category%/%postname%/"
-
-        $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
-            term update category 1 --slug=general --name=General
-
-        $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
-            post create --post_title="Front Page" \
-            --post_type=page --post_status=publish --post_author=1
-
-        $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
-            post create --post_title="Blog Page" \
-            --post_type=page --post_status=publish --post_author=1
-
-        $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
-            --skip-plugins option update page_on_front 2
-
-        $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
-            --skip-plugins option update page_for_posts 5
-
-        $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
-            --skip-plugins option update show_on_front "page"
-
-        $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
-            --skip-plugins option update timezone_string "Europe/Istanbul"
-
-        $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
-            --skip-plugins option update blogdescription "WP Test Site" # Tagline
-
-        $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
-            --skip-plugins option update ping_sites ""
-
-        $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
-            --skip-plugins option update rss_use_excerpt 1
-
-        # Disable comments
-        $WP --path="${SITESDIR}/${DOCROOT}/public/cms" \
-            --skip-plugins option update default_pingback_flag 0
-
-        $WP --path="${SITESDIR}/${DOCROOT}/public/cms" \
-            --skip-plugins option update default_ping_status 0
-
-        $WP --path="${SITESDIR}/${DOCROOT}/public/cms" \
-            --skip-plugins option update default_comment_status 0
-
-        $WP --path="${SITESDIR}/${DOCROOT}/public/cms" \
-            --skip-plugins option update comment_registration 1
-
-        $WP --path="${SITESDIR}/${DOCROOT}/public/cms" \
-            --skip-plugins option update close_comments_for_old_posts 1
-
-        $WP --path="${SITESDIR}/${DOCROOT}/public/cms" \
-            --skip-plugins plugin activate \
-            safe-svg \
-            custom-post-type-permalinks \
-            duplicate-post \
-            pre-publish-checklist \
-            widget-shortcode \
-            passwords-evolved \
-            admin-menu-search \
-            rest-api-toolbox \
-            icon-block \
-            rollback-update-failure \
-            reveal-ids-for-wp-admin-25 \
-            clarity-ad-blocker \
-            apcu-manager \
-            surge \
-            fluent-smtp \
-            log-http-requests \
-            create-block-theme \
-            async-javascript \
-            reusable-blocks-extended \
-            gutenberg
-
-        if [[ ! $PRODUCTION ]]; then
-            $WP --path="${SITESDIR}/${DOCROOT}/public/cms" \
-                --skip-plugins plugin activate \
-                query-monitor \
-                custom-post-type-ui \
-                bulk-delete \
-                better-search-replace \
-                wayfinder \
-                block-xray-attributes \
-                wpready-playground \
-                show-hooks \
-                wp-mailhog-smtp \
-                rewrite-rules-inspector
-        fi
-
-        $WP --path="${SITESDIR}/${DOCROOT}/public/cms" \
-            --skip-plugins option update rest-api-toolbox-settings-core \
-        --format=json '{"require-authentication|\/wp\/v2\/posts":"1","require-authentication|'\
-'\/wp\/v2\/pages":"1","require-authentication|\/wp\/v2\/users":"1",'\
-'"require-authentication|\/wp\/v2\/media":"1","require-authentication|\/wp\/v2\/categories":"1",'\
-'"require-authentication|\/wp\/v2\/tags":"1","require-authentication|\/wp\/v2\/comments":"1",'\
-'"require-authentication|\/wp\/v2\/taxonomies":"1","require-authentication|\/wp\/v2\/types":"1",'\
-'"require-authentication|\/wp\/v2\/statuses":"1","require-authentication|\/wp\/v2\/settings":"1"}'
-
-        $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
-            user meta update 1 \
-            dismissed_wp_pointers "custom-post-type-permalinks-settings"
-
-        CPTP_VERSION=$(
-        $WP --path="${SITESDIR}/${DOCROOT}/public/cms" \
-            --skip-plugins plugin get custom-post-type-permalinks \
-            --format=table --field=version
-        )
-        $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
-            option update cptp_permalink_checked "$CPTP_VERSION" --autoload=yes
-
-        # APCU Manager options
-        $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
-            option update apcm_adminbar 0
-        $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
-            option update apcm_earlyloading 1
-        $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
-            option update apcm_analytics 0
-        $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
-            option update apcm_gc 0
-
-        # Async-JavaScript options
-        $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
-            option update aj_enabled 1
-        $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
-            option update aj_method defer
-        $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
-            option update aj_enabled_logged 1
-        $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
-            option update aj_jquery exclude
-
-        $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins rewrite flush
-
-        # Install sample images
-        if [[ ! $PRODUCTION ]]; then
-            $WP --path="${SITESDIR}/${DOCROOT}/public/cms" \
-                --skip-plugins media import "${SITESDIR}/${DOCROOT}"/sample-images/* \
-                --user="usr${DOCROOT}"
-        fi
-
-        # Create link to adminer that can be accessible from http://site/adminer
-        if [[ ! $PRODUCTION ]]; then
-            if [[ -d "${SITESDIR}/${DOCROOT}/vendor/dg/adminer-custom" ]]; then
-                ln -rs "${SITESDIR}/${DOCROOT}/vendor/dg/adminer-custom/" \
-                    "${SITESDIR}/${DOCROOT}/public/adminer"
-            fi
-        fi
+    # Create link to adminer that can be accessible from http://site/adminer
+    if [[ ! $PRODUCTION ]]; then
+      if [[ -d "${SITESDIR}/${DOCROOT}/vendor/dg/adminer-custom" ]]; then
+        ln -rs "${SITESDIR}/${DOCROOT}/vendor/dg/adminer-custom/" \
+          "${SITESDIR}/${DOCROOT}/public/adminer"
+      fi
     fi
+  fi
 
-    if [[ $PRODUCTION ]]; then
-        $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
-            plugin activate patchstack
-        # Convert environment settings to production
-        ( cd "${SITESDIR}/${DOCROOT}" && $progname env --production )
-    fi
+  if [[ $PRODUCTION ]]; then
+    $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
+      plugin activate patchstack
+    # Convert environment settings to production
+    (cd "${SITESDIR}/${DOCROOT}" && $progname env --production)
+  fi
 
-	# FIXME: Inform about DB credentials
-	_w ""
-	_w "WordPress installation finished."
-    _w ""
-    _w "WP Admin Username: ${ADMIN_USER}"
-    _w "WP Admin Password: ${ADMIN_PASS}"
-    _w ""
+  # FIXME: Inform about DB credentials
+  _w ""
+  _w "WordPress installation finished."
+  _w ""
+  _w "WP Admin Username: ${ADMIN_USER}"
+  _w "WP Admin Password: ${ADMIN_PASS}"
+  _w ""
 }
 export -f sub_install
 
@@ -2327,91 +2338,93 @@ export -f sub_install
 #       --development
 #------------------------------------------------------
 function sub_env() {
-    if [[ $SUBHELP ]]; then
-            _w "
+  if [[ $SUBHELP ]]; then
+    _w "
 Usage: ${progname} env <site_name> [--production|--development]
 
        Set WP environment to development or production."
-       return
-    fi
-
-    DOCROOT="$1"
-
-    if [[ ! $PRODUCTION ]] && [[ ! $DEVELOPMENT ]]; then
-        _e "You didn't specify an environment."
-        _e "See \"${progname} env --help\" for help."
-        exit 1
-    fi
-
-    if [[ $DOCROOT == "last" ]]; then
-        DOCROOT="$(findLastSite)"
-    fi
-
-    # If number of arguments is 0 and current directory is
-    # a wpstarter installation, then use as $DOCROOT
-    if [[ $# == 0 ]]; then
-        fileExists=$(isWPStarter)
-        if [[ -n $fileExists ]]; then
-            DOCROOT=$(basename "$fileExists")
-            if [[ $fileExists != "${SITESDIR}"* ]]; then
-                SITESDIR=$(dirname "$fileExists")
-            fi
-        fi
-    fi
-
-    if [[ ! -d "${SITESDIR}/${DOCROOT}" ]]; then
-        _e "Err: \"${DOCROOT}\" does not exist."
-        return 1
-    fi
-
-    if [[ ! -f "${SITESDIR}/${DOCROOT}/.env" ]]; then
-        _e "This does not seem to be a wpstarter based site."
-        exit 1
-    fi
-
-    if [[ $PRODUCTION ]]; then
-        sed -i -E -e 's/^ *?#? *?WP_ENV=(development|production)/WP_ENV=production/' \
-            -e 's/^ *?#? *?WP_CACHE=(true|false)/WP_CACHE=true/' \
-            -e 's/^ *?#? *?WP_ENVIRONMENT_TYPE=(development|production)/WP_ENVIRONMENT_TYPE=production/' \
-            -e 's/^ *?#? *?WP_DEBUG=(true|false)/WP_DEBUG=false/' \
-            -e 's/^ *?#? *?WP_DEBUG_DISPLAY=(true|false)/WP_DEBUG_DISPLAY=false/' \
-            -e 's/^ *?#? *?SAVEQUERIES=(true|false)/SAVEQUERIES=false/' \
-            -e 's/^ *?#? *?DISALLOW_FILE_EDIT=(true|false)/DISALLOW_FILE_EDIT=true/' \
-            -e 's/^ *?#? *?DISALLOW_UNFILTERED_HTML=(true|false)/DISALLOW_UNFILTERED_HTML=true/' \
-            -e 's/^ *?#? *?ALLOW_UNFILTERED_UPLOADS=(false|true)/ALLOW_UNFILTERED_UPLOADS=false/' \
-            -e 's/^ *?#? *?WP_HTTP_BLOCK_EXTERNAL=(true|false)/WP_HTTP_BLOCK_EXTERNAL=true/' \
-            -e 's/^ *?#? *?FS_CHMOD_DIR=2775/FS_CHMOD_DIR=2775/' \
-            -e 's/^ *?#? *?FS_CHMOD_FILE=2664/FS_CHMOD_FILE=2664/' \
-            -e 's/^ *?#? *?FS_METHOD=direct/FS_METHOD=direct/' \
-            -e 's/^ *?#? *?DISABLE_WP_CRON=(true|false)/DISABLE_WP_CRON=true/' \
-            -e 's/^ *?#? *?WP_MEMORY_LIMIT=64M/WP_MEMORY_LIMIT=64M/' \
-            -e 's/^ *?#? *?WP_MAX_MEMORY_LIMIT=128M/WP_MAX_MEMORY_LIMIT=128M/' \
-            "${SITESDIR}/${DOCROOT}/.env"
-    fi
-
-    if [[ ! $PRODUCTION ]] && [[ $DEVELOPMENT ]]; then
-        sed -i -E -e 's/^ *?#? *?WP_ENV=(development|production)/WP_ENV=development/' \
-            -e 's/^ *?#? *?WP_CACHE=(true|false)/WP_CACHE=true/' \
-            -e 's/^ *?#? *?WP_ENVIRONMENT_TYPE=(development|production)/WP_ENVIRONMENT_TYPE=development/' \
-            -e 's/^ *?#? *?WP_DEBUG=(true|false)/WP_DEBUG=true/' \
-            -e 's/^ *?#? *?WP_DEBUG_DISPLAY=(true|false)/WP_DEBUG_DISPLAY=true/' \
-            -e 's/^ *?#? *?SAVEQUERIES=(true|false)/SAVEQUERIES=true/' \
-            -e 's/^ *?#? *?DISALLOW_FILE_EDIT=(true|false)/DISALLOW_FILE_EDIT=false/' \
-            -e 's/^ *?#? *?DISALLOW_UNFILTERED_HTML=(true|false)/DISALLOW_UNFILTERED_HTML=true/' \
-            -e 's/^ *?#? *?ALLOW_UNFILTERED_UPLOADS=(false|true)/ALLOW_UNFILTERED_UPLOADS=true/' \
-            -e 's/^ *?#? *?WP_HTTP_BLOCK_EXTERNAL=(true|false)/WP_HTTP_BLOCK_EXTERNAL=false/' \
-            -e 's/^ *?#? *?FS_CHMOD_DIR=2775/FS_CHMOD_DIR=2775/' \
-            -e 's/^ *?#? *?FS_CHMOD_FILE=2664/FS_CHMOD_FILE=2664/' \
-            -e 's/^ *?#? *?FS_METHOD=direct/FS_METHOD=direct/' \
-            -e 's/^ *?#? *?DISABLE_WP_CRON=(true|false)/DISABLE_WP_CRON=true/' \
-            -e 's/^ *?#? *?WP_MEMORY_LIMIT=64M/WP_MEMORY_LIMIT=64M/' \
-            -e 's/^ *?#? *?WP_MAX_MEMORY_LIMIT=128M/WP_MAX_MEMORY_LIMIT=128M/' \
-            "${SITESDIR}/${DOCROOT}/.env"
-    fi
-
-    $progname flush-env "$DOCROOT"
-
     return
+  fi
+
+  DOCROOT="$1"
+
+  if [[ ! $PRODUCTION ]] && [[ ! $DEVELOPMENT ]]; then
+    _e "You didn't specify an environment."
+    _e "See \"${progname} env --help\" for help."
+    exit 1
+  fi
+
+  if [[ $DOCROOT == "last" ]]; then
+    DOCROOT="$(findLastSite)"
+  fi
+
+  # If number of arguments is 0 and current directory is
+  # a wpstarter installation, then use as $DOCROOT
+  if [[ $# == 0 ]]; then
+    fileExists=$(isWPStarter)
+    if [[ -n $fileExists ]]; then
+      DOCROOT=$(basename "$fileExists")
+      if [[ $fileExists != "${SITESDIR}"* ]]; then
+        SITESDIR=$(dirname "$fileExists")
+      fi
+    fi
+  fi
+
+  if [[ ! -d "${SITESDIR}/${DOCROOT}" ]]; then
+    _e "Err: \"${DOCROOT}\" does not exist."
+    return 1
+  fi
+
+  if [[ ! -f "${SITESDIR}/${DOCROOT}/.env" ]]; then
+    _e "This does not seem to be a wpstarter based site."
+    exit 1
+  fi
+
+  if [[ $PRODUCTION ]]; then
+    sed -i -E -e 's/^ *?#? *?WP_ENV=(development|production)/WP_ENV=production/' \
+      -e 's/^ *?#? *?WP_CACHE=(true|false)/WP_CACHE=true/' \
+      -e 's/^ *?#? *?WP_ENVIRONMENT_TYPE=(development|production)/WP_ENVIRONMENT_TYPE=production/' \
+      -e 's/^ *?#? *?WP_DEBUG=(true|false)/WP_DEBUG=false/' \
+      -e 's/^ *?#? *?WP_DEBUG_DISPLAY=(true|false)/WP_DEBUG_DISPLAY=false/' \
+      -e 's/^ *?#? *?SAVEQUERIES=(true|false)/SAVEQUERIES=false/' \
+      -e 's/^ *?#? *?DISALLOW_FILE_EDIT=(true|false)/DISALLOW_FILE_EDIT=true/' \
+      -e 's/^ *?#? *?DISALLOW_UNFILTERED_HTML=(true|false)/DISALLOW_UNFILTERED_HTML=true/' \
+      -e 's/^ *?#? *?ALLOW_UNFILTERED_UPLOADS=(false|true)/ALLOW_UNFILTERED_UPLOADS=false/' \
+      -e 's/^ *?#? *?WP_HTTP_BLOCK_EXTERNAL=(true|false)/WP_HTTP_BLOCK_EXTERNAL=true/' \
+      -e 's/^ *?#? *?FS_CHMOD_DIR=2775/FS_CHMOD_DIR=2775/' \
+      -e 's/^ *?#? *?FS_CHMOD_FILE=2664/FS_CHMOD_FILE=2664/' \
+      -e 's/^ *?#? *?FS_METHOD=direct/FS_METHOD=direct/' \
+      -e 's/^ *?#? *?DISABLE_WP_CRON=(true|false)/DISABLE_WP_CRON=true/' \
+      -e 's/^ *?#? *?WP_MEMORY_LIMIT=64M/WP_MEMORY_LIMIT=64M/' \
+      -e 's/^ *?#? *?WP_MAX_MEMORY_LIMIT=128M/WP_MAX_MEMORY_LIMIT=128M/' \
+      -e 's/^ *?#? *?AUTO_LOGIN_USER/#AUTO_LOGIN_USER/' \
+      "${SITESDIR}/${DOCROOT}/.env"
+  fi
+
+  if [[ ! $PRODUCTION ]] && [[ $DEVELOPMENT ]]; then
+    sed -i -E -e 's/^ *?#? *?WP_ENV=(development|production)/WP_ENV=development/' \
+      -e 's/^ *?#? *?WP_CACHE=(true|false)/WP_CACHE=true/' \
+      -e 's/^ *?#? *?WP_ENVIRONMENT_TYPE=(development|production)/WP_ENVIRONMENT_TYPE=development/' \
+      -e 's/^ *?#? *?WP_DEBUG=(true|false)/WP_DEBUG=true/' \
+      -e 's/^ *?#? *?WP_DEBUG_DISPLAY=(true|false)/WP_DEBUG_DISPLAY=true/' \
+      -e 's/^ *?#? *?SAVEQUERIES=(true|false)/SAVEQUERIES=true/' \
+      -e 's/^ *?#? *?DISALLOW_FILE_EDIT=(true|false)/DISALLOW_FILE_EDIT=false/' \
+      -e 's/^ *?#? *?DISALLOW_UNFILTERED_HTML=(true|false)/DISALLOW_UNFILTERED_HTML=true/' \
+      -e 's/^ *?#? *?ALLOW_UNFILTERED_UPLOADS=(false|true)/ALLOW_UNFILTERED_UPLOADS=true/' \
+      -e 's/^ *?#? *?WP_HTTP_BLOCK_EXTERNAL=(true|false)/WP_HTTP_BLOCK_EXTERNAL=false/' \
+      -e 's/^ *?#? *?FS_CHMOD_DIR=2775/FS_CHMOD_DIR=2775/' \
+      -e 's/^ *?#? *?FS_CHMOD_FILE=2664/FS_CHMOD_FILE=2664/' \
+      -e 's/^ *?#? *?FS_METHOD=direct/FS_METHOD=direct/' \
+      -e 's/^ *?#? *?DISABLE_WP_CRON=(true|false)/DISABLE_WP_CRON=true/' \
+      -e 's/^ *?#? *?WP_MEMORY_LIMIT=64M/WP_MEMORY_LIMIT=64M/' \
+      -e 's/^ *?#? *?WP_MAX_MEMORY_LIMIT=128M/WP_MAX_MEMORY_LIMIT=128M/' \
+      -e 's/^ *?#? *?# *?AUTO_LOGIN_USER/AUTO_LOGIN_USER/' \
+      "${SITESDIR}/${DOCROOT}/.env"
+  fi
+
+  $progname flush-env "$DOCROOT"
+
+  return
 }
 export -f sub_env
 
@@ -2419,20 +2432,20 @@ export -f sub_env
 #  sub_command handling
 #-------------------------
 case $subcommand in
-    "" | "-h" | "--help" | "help")
-        sub_default
-        ;;
-    *)
-        shift
-        if [[ "$(type -t "sub_${subcommand}")" == 'function' ]]; then
-            "sub_${subcommand}" "$@"
-            exit $?
-        else
-            _e "Error: '${subcommand}' is not a known subcommand." >&2
-            _e "Run '${progname} --help' for a list of known subcommands." >&2
-            exit 1
-        fi
-        ;;
+"" | "-h" | "--help" | "help")
+  sub_default
+  ;;
+*)
+  shift
+  if [[ "$(type -t "sub_${subcommand}")" == 'function' ]]; then
+    "sub_${subcommand}" "$@"
+    exit $?
+  else
+    _e "Error: '${subcommand}' is not a known subcommand." >&2
+    _e "Run '${progname} --help' for a list of known subcommands." >&2
+    exit 1
+  fi
+  ;;
 esac
 
 # function sub_functionName(){
