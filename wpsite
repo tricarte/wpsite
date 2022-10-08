@@ -2319,6 +2319,8 @@ function sub_install() {
     (cd "${SITESDIR}/${DOCROOT}" && $progname env --production)
   fi
 
+  rm -f "${SITESDIR}/${DOCROOT}/public/cms/{license.txt,readme.html,wp-config-sample.php}"
+
   # FIXME: Inform about DB credentials
   _w ""
   _w "WordPress installation finished."
