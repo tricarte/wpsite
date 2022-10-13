@@ -1720,7 +1720,7 @@ function sub_settings() {
 Usage: ${progname} settings <site_name>
 
        Interactively change necessary WP settings
-       which are generically set at the site installation.
+       which are generically set at the time of site installation.
 "
     return
   fi
