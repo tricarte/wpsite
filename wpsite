@@ -2256,7 +2256,8 @@ function sub_install() {
         wpready-playground \
         show-hooks \
         wp-mailhog-smtp \
-        rewrite-rules-inspector
+        rewrite-rules-inspector \
+        wp-console
     fi
 
     $WP --path="${SITESDIR}/${DOCROOT}/public/cms" \
