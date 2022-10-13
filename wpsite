@@ -2241,6 +2241,7 @@ function sub_install() {
       create-block-theme \
       async-javascript \
       reusable-blocks-extended \
+      lorem-ipsum-blocks \
       gutenberg
 
     if [[ ! $PRODUCTION ]]; then
