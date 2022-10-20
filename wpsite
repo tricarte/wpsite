@@ -31,6 +31,9 @@ else
 # DBHOST=\"127.0.0.1\"
 # DBPORT=\"3306\"
 
+# PHP CLI Version
+# PHPV="8.1"
+
 # Where to host sites
 # SITESDIR=\"\$HOME/sites\"
 
@@ -67,6 +70,11 @@ if [[ -z $DBPASS ]]; then DBPASS="password"; fi
 # MySQL/MariaDB Host Settings
 if [[ -z $DBHOST ]]; then DBHOST="127.0.0.1"; fi
 if [[ -z $DBPORT ]]; then DBPORT="3306"; fi
+
+# PHP CLI Version
+if [[ -z $PHPV ]]; then
+    PHPV=$(php -r "printf('%d.%d', PHP_MAJOR_VERSION, PHP_MINOR_VERSION);");
+fi
 
 # Where to host sites
 if [[ -z $SITESDIR ]]; then SITESDIR="$HOME/sites"; fi
@@ -121,8 +129,6 @@ _s() { _a "${green}$1${normal}"; }   # Success
 # Prerequisites
 #--------------------------
 
-# PHPV="7.4"
-PHPV="8.1"
 PHPBIN=$(command -v "php${PHPV}")
 if [[ ! $PHPBIN ]]; then
   echo "This script requires PHP ${PHPV}."
