@@ -67,8 +67,12 @@ bring up the most recently created site's admin dashboard. `wpsite delete last
 
 ## User credentials
 
-Username: "usr" + sitename. For example for a site name "test1", the username
+You can login by just pressing the 'Log In' button.
+
+If you need login credentials:
+
+* Username: "usr" + sitename. For example for a site name "test1", the username
 will be "usrtest1".
 
-Password: "pss" + sitename. For example for a site name "test1", the password
+* Password: "pss" + sitename. For example for a site name "test1", the password
 will be "psstest1"".
