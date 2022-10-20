@@ -2438,6 +2438,28 @@ Usage: ${progname} env <site_name> [--production|--development]
 }
 export -f sub_env
 
+function sub_upgrade() {
+    if [[ $SUBHELP ]]; then
+            _w "Usage: $progname upgrade"
+            _w ""
+            _w "       Upgrade wpsite script."
+            _w "       It simply git pulls the github repository."
+            _w ""
+            return
+    fi
+
+    callable_type=$(type -t "$progname")
+    if [[ $callable_type == 'file' ]]; then
+        ROOT=$(readlink -f "$(type -P "$progname")")
+        if [[ -d "$(dirname "$ROOT")/.git" ]]; then
+            $GIT pull
+        fi
+    fi
+
+    return
+}
+export -f sub_upgrade
+
 #-------------------------
 #  sub_command handling
 #-------------------------
@@ -2457,6 +2479,7 @@ case $subcommand in
   fi
   ;;
 esac
+
 
 # function sub_functionName(){
 #     if [[ $SUBHELP ]]; then

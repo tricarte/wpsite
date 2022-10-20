@@ -59,6 +59,7 @@ sudo ln -s "$HOME/bin/wpsite" "/usr/local/bin/wps"
 | config         | Create .wpsiterc file in $HOME.|
 | testdb         | Make a test connection to the database server.|
 | env            | Set WP environment to development or production.|
+| upgrade        | Just a fancy way of `git pull`'ing of this repository to upgrade.|
 
 Some commands recognize the "last" keyword. For example `wpsite last` will
 bring up the most recently created site's admin dashboard. `wpsite delete last

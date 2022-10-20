@@ -21,12 +21,12 @@ _pbt_complete()
   prev=${COMP_WORDS[COMP_CWORD-1]}
 
   if [ "$COMP_CWORD" -eq 1 ]; then
-    COMPREPLY=( $(compgen -W "create backup delete restore rename update lang list quick admin boilerplate clone-repo last fm install-theme install-plugin woo settings flush-env config testdb env" -- $cur) )
+    COMPREPLY=( $(compgen -W "create backup delete restore rename update lang list quick admin boilerplate clone-repo last fm install-theme install-plugin woo settings flush-env config testdb env upgrade" -- $cur) )
   elif [ "$COMP_CWORD" -eq 2 ]; then
     case "$prev" in
         # FIXME: This does not handle "wpsite delete site1 site2"
         # site2 will not be completed.
-      "delete"|"backup"|"update"|"lang"|"admin"|"fm"|"rename"|"install-theme"|"install-plugin"|"flush-env"|"settings")
+      "delete"|"backup"|"lang"|"admin"|"fm"|"rename"|"install-theme"|"install-plugin"|"flush-env"|"settings")
           FD=$(command -v fd)
           if [ ! $? ]; then
               COMPREPLY=($( compgen -W "$($FD wpstarter.json --max-depth 2 --type f --base-directory $SITESDIR --color never --exec dirname)" -- $cur ) )
