@@ -2240,7 +2240,6 @@ function sub_install() {
       rollback-update-failure \
       reveal-ids-for-wp-admin-25 \
       clarity-ad-blocker \
-      apcu-manager \
       surge \
       fluent-smtp \
       log-http-requests \
@@ -2249,6 +2248,13 @@ function sub_install() {
       reusable-blocks-extended \
       lorem-ipsum-blocks \
       gutenberg
+
+    # FIXME: Until apcu-manager gets a fix
+    # Activate apcu-manager only with php7.4
+    if [[ -n $(command -v php7.4) ]]; then
+        $(command -v php7.4) "$(command -v wp)" --path="${SITESDIR}/${DOCROOT}/public/cms" \
+            --skip-plugins plugin activate apcu-manager
+    fi
 
     if [[ ! $PRODUCTION ]]; then
       $WP --path="${SITESDIR}/${DOCROOT}/public/cms" \
