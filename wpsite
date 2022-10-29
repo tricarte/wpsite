@@ -73,7 +73,7 @@ if [[ -z $DBPORT ]]; then DBPORT="3306"; fi
 
 # PHP CLI Version
 if [[ -z $PHPV ]]; then
-    PHPV=$(php -r "printf('%d.%d', PHP_MAJOR_VERSION, PHP_MINOR_VERSION);");
+  PHPV=$(php -r "printf('%d.%d', PHP_MAJOR_VERSION, PHP_MINOR_VERSION);")
 fi
 
 # Where to host sites
@@ -253,20 +253,30 @@ function createTmpDir() {
     }
 }
 
-#------------------------------------------------
-# Used by sub_restore(), sub_create(), sub_last()
-#------------------------------------------------
+#-------------------------------------------------------------
+# Used by sub_restore(), sub_create(), sub_last(), sub_admin()
+#-------------------------------------------------------------
 function openBrowser() {
+  REST=$2
+
   if [[ $NOTIFYBIN ]]; then
     $NOTIFYBIN -a WPSITE "Opening ${1} in browser..."
   fi
 
   if [[ -n "$XDG_CURRENT_DESKTOP" ]]; then
-    URL=$(
-      $WP --skip-plugins \
-        --path="${SITESDIR}/${1}/public/cms" \
-        eval "echo get_dashboard_url();"
-    )
+    if [[ $REST == '--rest' ]]; then
+      URL=$(
+        $WP --skip-plugins \
+          --path="${SITESDIR}/${1}/public/cms" \
+          eval "echo get_rest_url( null, '/', 'rest' );"
+      )
+    else
+      URL=$(
+        $WP --skip-plugins \
+          --path="${SITESDIR}/${1}/public/cms" \
+          eval "echo get_dashboard_url();"
+      )
+    fi
 
     urlRegex='^http[s]?://'
     if [[ $URL =~ $urlRegex ]]; then
@@ -1480,6 +1490,61 @@ Usage: ${progname} admin <site_name>
 }
 export -f sub_admin
 
+#-------------------------------------------
+# Opens the site's rest base URL in web browser
+# Arguments:
+#   "last" or a site name
+#-------------------------------------------
+function sub_rest() {
+  if [[ $SUBHELP ]]; then
+    _w "
+Usage: ${progname} rest <site_name>
+
+       Open specified site's rest base URL in browser.
+       It will be searched in \"${SITESDIR}\".
+"
+    return
+  fi
+
+  DOCROOT="$1"
+
+  if [[ $DOCROOT == "last" ]]; then
+    DOCROOT="$(findLastSite)"
+  fi
+
+  # If number of arguments is 0 and current directory is a
+  # wpstarter installation, then use as $DOCROOT
+  if [[ $# == 0 ]]; then
+    fileExists=$(isWPStarter)
+    if [[ -n $fileExists ]]; then
+      DOCROOT=$(basename "$fileExists")
+      if [[ $fileExists != "$SITESDIR"* ]]; then
+        SITESDIR=$(dirname "$fileExists")
+      fi
+    fi
+  elif [[ -z $DOCROOT ]]; then
+    _e "Err: Specify a directory name to open."
+    _e "See ${progname} admin -h for help."
+    return 1
+  fi
+
+  # Exit if directory does not exist.
+  if [[ ! -d "${SITESDIR}/${DOCROOT}" ]]; then
+    _e "Err: Directory does not exist. It was searched in \"${SITESDIR}\"."
+    return 1
+  fi
+
+  # Check if this is a wpstarter project
+  if [[ ! -f "${SITESDIR}/${DOCROOT}/wpstarter.json" ]]; then
+    _e "This may not be a wpstarter project. Aborting..."
+    return 1
+  fi
+
+  openBrowser "$DOCROOT" --rest
+  return
+}
+export -f sub_rest
+
 function sub_last() {
   if [[ $SUBHELP ]]; then
     _w "
@@ -2252,8 +2317,8 @@ function sub_install() {
     # FIXME: Until apcu-manager gets a fix
     # Activate apcu-manager only with php7.4
     if [[ -n $(command -v php7.4) ]]; then
-        $(command -v php7.4) "$(command -v wp)" --path="${SITESDIR}/${DOCROOT}/public/cms" \
-            --skip-plugins plugin activate apcu-manager
+      $(command -v php7.4) "$(command -v wp)" --path="${SITESDIR}/${DOCROOT}/public/cms" \
+        --skip-plugins plugin activate apcu-manager
     fi
 
     if [[ ! $PRODUCTION ]]; then
@@ -2445,24 +2510,24 @@ Usage: ${progname} env <site_name> [--production|--development]
 export -f sub_env
 
 function sub_upgrade() {
-    if [[ $SUBHELP ]]; then
-            _w "Usage: $progname upgrade"
-            _w ""
-            _w "       Upgrade wpsite script."
-            _w "       It simply git pulls the github repository."
-            _w ""
-            return
-    fi
-
-    callable_type=$(type -t "$progname")
-    if [[ $callable_type == 'file' ]]; then
-        ROOT=$(readlink -f "$(type -P "$progname")")
-        if [[ -d "$(dirname "$ROOT")/.git" ]]; then
-            $GIT pull
-        fi
-    fi
-
+  if [[ $SUBHELP ]]; then
+    _w "Usage: $progname upgrade"
+    _w ""
+    _w "       Upgrade wpsite script."
+    _w "       It simply git pulls the github repository."
+    _w ""
     return
+  fi
+
+  callable_type=$(type -t "$progname")
+  if [[ $callable_type == 'file' ]]; then
+    ROOT=$(readlink -f "$(type -P "$progname")")
+    if [[ -d "$(dirname "$ROOT")/.git" ]]; then
+      $GIT pull
+    fi
+  fi
+
+  return
 }
 export -f sub_upgrade
 
@@ -2485,7 +2550,6 @@ case $subcommand in
   fi
   ;;
 esac
-
 
 # function sub_functionName(){
 #     if [[ $SUBHELP ]]; then
