@@ -339,14 +339,25 @@ function deleteSite() {
 #   Only the site name not the whole path.
 #----------------------------------------------------------
 function findLastSite() {
-  SITE=$(
-    find "$SITESDIR"/ \
-      -maxdepth 2 \
-      -type f \
-      -name wpstarter.json \
-      -printf "%CY-%Cm-%Cd %CT %h\n" |
-      sort -r | head -n1 | xargs -I '{}' basename '{}'
-  )
+
+  FD=$(command -v fd)
+  if [[ $FD ]]; then
+    SITE=$(
+      $FD wpstarter.json --exact-depth 2 \
+        --type f -a --base-directory "$SITESDIR" \
+        --color never --exec-batch ls -t -Q -1 | head -n1 |
+        xargs -I '{}' dirname '{}' | xargs -I '{}' basename '{}'
+    )
+  else
+    SITE=$(
+      find "$SITESDIR"/ \
+        -maxdepth 2 \
+        -type f \
+        -name wpstarter.json \
+        -printf "%CY-%Cm-%Cd %CT %h\n" |
+        sort -r | head -n1 | xargs -I '{}' basename '{}'
+    )
+  fi
 
   echo "$SITE"
 }
