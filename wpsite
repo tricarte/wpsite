@@ -159,6 +159,7 @@ else
   exit 1
 fi
 
+# Use parallel compression if available
 PIGZ=$(command -v pigz)
 if [[ $PIGZ ]]; then
   TAR="tar -I ${PIGZ} -cf"
@@ -527,9 +528,10 @@ Usage: ${progname} list
   FD=$(command -v fd)
   if [[ $FD ]]; then
     sitesList=$(
-      $FD wpstarter.json --max-depth 2 \
+      $FD wpstarter.json --exact-depth 2 \
         --type f -a --base-directory "$SITESDIR" \
-        --color never --exec dirname | xargs -I '{}' basename '{}'
+        --color never --exec dirname |
+        xargs -I '{}' basename '{}' | sort | column
     )
   else
     sitesList=$(
