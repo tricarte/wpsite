@@ -347,7 +347,7 @@ function findLastSite() {
       $FD wpstarter.json --exact-depth 2 \
         --type f -a --base-directory "$SITESDIR" \
         --color never --exec-batch ls -t -Q -1 | head -n1 |
-        xargs -I '{}' dirname '{}' | xargs -I '{}' basename '{}'
+        xargs dirname | xargs basename
     )
   else
     SITE=$(
@@ -356,7 +356,7 @@ function findLastSite() {
         -type f \
         -name wpstarter.json \
         -printf "%CY-%Cm-%Cd %CT %h\n" |
-        sort -r | head -n1 | xargs -I '{}' basename '{}'
+        sort -r | head -n1 | xargs basename
     )
   fi
 
@@ -634,29 +634,38 @@ will be updated! Proceed?  (y/n) (Default No): " -r
     exit 1
   fi
 
-  createTmpDir
+  # createTmpDir
+  #
+  # cp "${WPSTARTERDIR}/composer.lock" "${tmpDir}/composer.lock"
 
-  cp "${WPSTARTERDIR}/composer.lock" "${tmpDir}/composer.lock"
+  _w "Checking updates..."
+  UPDATES=$(
+    $COMPOSERBIN --working-dir="${WPSTARTERDIR}" update --dry-run 2>&1 |
+      sed -ne '/Package operations/,$ p' |
+      grep "Upgrading" |
+      awk '{ print substr ($0, 15 ) }'
+  )
 
-  _w "Updating composer packages..."
-  $COMPOSERBIN --working-dir="${WPSTARTERDIR}" update -q || exit
+  if [[ -n $UPDATES ]]; then
+    _w "Updating composer packages..."
+    $COMPOSERBIN --working-dir="${WPSTARTERDIR}" update -q || exit
 
-  if cmp -s "${WPSTARTERDIR}/composer.lock" "${tmpDir}/composer.lock"; then
-    _w "No updates are available."
-    return
-  else
     end=$SECONDS
-    _w "Composer update took $((end - start)) seconds to finish."
     $GIT --git-dir="${WPSTARTERDIR}/.git" \
       --work-tree="${WPSTARTERDIR}" add composer.lock
     $GIT --git-dir="${WPSTARTERDIR}/.git" \
-      --work-tree="${WPSTARTERDIR}" commit -m"composer packages updated."
+      --work-tree="${WPSTARTERDIR}" commit -m"composer packages updated." \
+      -m"$UPDATES"
+    _w "Composer update took $((end - start)) seconds to finish."
+
     _w "$WPSTARTERDIR updated.
 
 Now creating a boilerplate site based on the updated repository
 to be later used with ${purple}\"${progname} quick\"${normal}.
 "
     $progname boilerplate
+  else
+    _w "No updates are available."
   fi
 
   return
