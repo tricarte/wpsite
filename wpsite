@@ -32,7 +32,7 @@ else
 # DBPORT=\"3306\"
 
 # PHP CLI Version
-# PHPV="8.1"
+# PHPV=8.1
 
 # Where to host sites
 # SITESDIR=\"\$HOME/sites\"
@@ -600,7 +600,6 @@ to create sites based on that template."
 }
 export -f sub_boilerplate
 
-# TODO: Add which packages are updated to the commit message.
 function sub_update() {
   if [[ $SUBHELP ]]; then
     _w "
@@ -2209,6 +2208,7 @@ function sub_install() {
   fi
 
   if [[ $PRODUCTION ]]; then
+    # FIXME: Why can't we have local test sites with dot in their names?
     # If the given site name does not contain dot, indicating it's a not real
     # production domain name, append '.test' to WP_HOME if --production is given
     # and disable https.
@@ -2502,6 +2502,18 @@ Usage: ${progname} env <site_name> [--production|--development]
       -e 's/^ *?#? *?WP_MAX_MEMORY_LIMIT=128M/WP_MAX_MEMORY_LIMIT=128M/' \
       -e 's/^ *?#? *?AUTO_LOGIN_USER/#AUTO_LOGIN_USER/' \
       "${SITESDIR}/${DOCROOT}/.env"
+
+    $WP --path="${SITESDIR}/${DOCROOT}/public/cms" \
+      --skip-plugins plugin deactivate \
+      wpready-playground \
+      query-monitor \
+      bulk-delete \
+      wayfinder \
+      block-xray-attributes \
+      show-hooks \
+      wp-mailhog-smtp \
+      rewrite-rules-inspector \
+      wp-console
   fi
 
   if [[ ! $PRODUCTION ]] && [[ $DEVELOPMENT ]]; then
@@ -2523,6 +2535,18 @@ Usage: ${progname} env <site_name> [--production|--development]
       -e 's/^ *?#? *?WP_MAX_MEMORY_LIMIT=128M/WP_MAX_MEMORY_LIMIT=128M/' \
       -e 's/^ *?#? *?# *?AUTO_LOGIN_USER/AUTO_LOGIN_USER/' \
       "${SITESDIR}/${DOCROOT}/.env"
+
+    $WP --path="${SITESDIR}/${DOCROOT}/public/cms" \
+      --skip-plugins plugin activate \
+      wpready-playground \
+      query-monitor \
+      bulk-delete \
+      wayfinder \
+      block-xray-attributes \
+      show-hooks \
+      wp-mailhog-smtp \
+      rewrite-rules-inspector \
+      wp-console
   fi
 
   $progname flush-env "$DOCROOT"
