@@ -2168,6 +2168,7 @@ function sub_install() {
   if ! checkDBCredentials wpstarter; then
     sed -i -e "/^DB_USER=/c\DB_USER=${DBUSER}" "${SITESDIR}/${DOCROOT}/.env"
     sed -i -e "/^DB_PASSWORD=/c\DB_PASSWORD=${DBPASS}" "${SITESDIR}/${DOCROOT}/.env"
+    sed -i -e "/^DB_HOST=/c\DB_HOST=${DBHOST}" "${SITESDIR}/${DOCROOT}/.env"
   fi
 
   if [[ $PRODUCTION ]]; then
