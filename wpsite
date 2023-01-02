@@ -444,6 +444,15 @@ while (("$#")); do
   --path)
     if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
       SITESDIR_CUSTOM=$2
+      # SITESDIR="${SITESDIR_CUSTOM}"
+      if [[ -n $SITESDIR_CUSTOM ]]; then
+        if [[ -d "$SITESDIR_CUSTOM" ]] && [[ -w "$SITESDIR_CUSTOM" ]]; then
+            SITESDIR="$(dirname "$SITESDIR_CUSTOM")"/"$(basename "$SITESDIR_CUSTOM")"
+        else
+            _e "\"${SITESDIR_CUSTOM}\" is not writable or does not exist."
+            exit 1
+        fi
+      fi
       shift 2
     else
       _e "Error: Argument for $1 is missing" >&2
@@ -568,15 +577,15 @@ Usage: ${progname} boilerplate
   fi
 
   if [[ -d "${SITESDIR}/boiler" ]]; then
-    $progname delete boiler -y -q
+    $progname delete boiler -y -q --path "${SITESDIR}"
   fi
   _w "Temporary site ${purple}\"boiler\"${normal} is being created..."
   # TODO: dev/null thing
-  $progname create boiler -n
+  $progname create boiler -n --path "${SITESDIR}"
   _w "Backing up ${purple}\"boiler\"${normal} for later use..."
-  $progname backup boiler
+  $progname backup boiler --path "${SITESDIR}"
   _w "Removing temporary site..."
-  $progname delete boiler -y -q
+  $progname delete boiler -y -q --path "${SITESDIR}"
 
   # Delete everything but the last backup.
   _w "Removing older versions of the boilerplate from ${purple}\"${BACKUPSDIR}/boiler\"${normal}..."
@@ -919,11 +928,11 @@ Renaming ${DOCROOT} to ${NEWDOCROOT}.
 Please wait..."
 
   printf "(Step 1/4) Cloning existing installation...\r"
-  $progname backup "$DOCROOT" >/dev/null 2>&1
+  $progname backup "$DOCROOT" --path "${SITESDIR}" >/dev/null 2>&1
   printf "(Step 2/4) Renaming...\033[K\r"
-  $progname restore "$DOCROOT" "$NEWDOCROOT" -n >/dev/null 2>&1
+  $progname restore "$DOCROOT" "$NEWDOCROOT" -n --path "${SITESDIR}" >/dev/null 2>&1
   printf "(Step 3/4) Deleting old installation...\033[K\r"
-  $progname delete "$DOCROOT" -y -q >/dev/null 2>&1
+  $progname delete "$DOCROOT" --path "${SITESDIR}" -y -q >/dev/null 2>&1
 
   # Delete the created backup for this process
   printf "(Step 4/4) Removing artifacts...\033[K\n"
@@ -1101,9 +1110,9 @@ Usage: ${progname} delete <site_name1> <site_name2> --path search-path
 
     if [[ -d "${SITESDIR}/${LAST_SITE}" ]]; then
       if [[ $PROCEED ]]; then
-        $progname delete "$LAST_SITE" -y
+        $progname delete "$LAST_SITE" --path "${SITESDIR}" -y
       else
-        $progname delete "$LAST_SITE"
+        $progname delete "$LAST_SITE" --path "${SITESDIR}"
       fi
     fi
 
@@ -1294,7 +1303,7 @@ composer wpstarter" >"${SITESDIR}/${DOCROOT}/.git/hooks/post-merge"
   chmod +x "${SITESDIR}/${DOCROOT}/.git/hooks/post-merge"
 
   $COMPOSERBIN --working-dir="${SITESDIR}/${DOCROOT}" install || exit
-  sub_install "$DOCROOT" # Most of the installation magic happens here
+  sub_install "$DOCROOT" --path "${SITESDIR}" # Most of the installation magic happens here
 
   if [[ $VALET ]]; then
     (cd "${SITESDIR}/${DOCROOT}/public" && $VALET link "$DOCROOT" >/dev/null 2>&1)
@@ -1434,18 +1443,18 @@ Usage: ${progname} quick [site_name] [-n|--no-browse] [--with-plugin plugin_slug
     $NOTIFYBIN -a WPSITE "Site ${DOCROOT} is being created." "Please wait..."
   fi
 
-  $progname restore boiler $DOCROOT -n
+  $progname restore boiler $DOCROOT --path "${SITESDIR}" -n
 
   if [[ -n "$INSTALL_PLUGIN" ]]; then
-    $progname install-plugin "$DOCROOT" "$INSTALL_PLUGIN"
+    $progname install-plugin "$DOCROOT" "$INSTALL_PLUGIN" --path "${SITESDIR}"
   fi
 
   if [[ -n "$INSTALL_THEME" ]]; then
-    $progname install-theme "$DOCROOT" "$INSTALL_THEME"
+    $progname install-theme "$DOCROOT" "$INSTALL_THEME" --path "${SITESDIR}"
   fi
 
   if [[ ! $NOBROWSE ]]; then
-    $progname admin "$DOCROOT"
+    $progname admin "$DOCROOT" --path "${SITESDIR}"
     return
   fi
 
@@ -1801,7 +1810,7 @@ Usage: ${progname} woo
 
   DOCROOT=$RANDOM
 
-  $progname quick -n --with-plugin woocommerce --with-theme storefront
+  $progname quick -n --with-plugin woocommerce --with-theme storefront --path "${SITESDIR}"
 
   return
 }
@@ -2419,7 +2428,7 @@ function sub_install() {
     $WP --path="${SITESDIR}/${DOCROOT}/public/cms" --skip-plugins \
       plugin activate patchstack
     # Convert environment settings to production
-    (cd "${SITESDIR}/${DOCROOT}" && $progname env --production)
+    (cd "${SITESDIR}/${DOCROOT}" && $progname env --production --path "${SITESDIR}")
   fi
 
   rm -f "${SITESDIR}/${DOCROOT}/public/cms/{license.txt,readme.html,wp-config-sample.php}"
@@ -2551,7 +2560,7 @@ Usage: ${progname} env <site_name> [--production|--development]
       wp-console
   fi
 
-  $progname flush-env "$DOCROOT"
+  $progname flush-env "$DOCROOT" --path "${SITESDIR}"
 
   return
 }
