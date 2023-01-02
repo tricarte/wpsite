@@ -1211,6 +1211,7 @@ Usage: ${red}${progname} create <site_name>
 Cloning from github...
 "
     $progname clone-repo
+    exit
   fi
 
   if [[ $PRODUCTION ]] && [[ $BARE ]]; then
