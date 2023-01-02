@@ -28,7 +28,7 @@ else
 # DBPASS=\"password\"
 
 # MySQL/MariaDB Host Settings
-# DBHOST=\"localhost\"
+# DBHOST=\"127.0.0.1\"
 # DBPORT=\"3306\"
 
 # PHP CLI Version
@@ -68,7 +68,7 @@ if [[ -z $DBUSER ]]; then DBUSER="admin"; fi
 if [[ -z $DBPASS ]]; then DBPASS="password"; fi
 
 # MySQL/MariaDB Host Settings
-if [[ -z $DBHOST ]]; then DBHOST="localhost"; fi
+if [[ -z $DBHOST ]]; then DBHOST="127.0.0.1"; fi
 if [[ -z $DBPORT ]]; then DBPORT="3306"; fi
 
 # PHP CLI Version
@@ -312,7 +312,7 @@ function deleteSite() {
   )
   if [[ -n $DELETE_USER ]]; then
     $MYSQLBIN -P${DBPORT} -h${DBHOST} -u${DB_USER} -p${DB_PASSWORD} \
-      -e "DROP USER '${DELETE_USER}'@'localhost';"
+      -e "DROP USER '${DELETE_USER}'@'${DBHOST}';"
     $MYSQLBIN -P${DBPORT} -h${DBHOST} -u${DB_USER} -p${DB_PASSWORD} \
       -e "FLUSH PRIVILEGES;"
   fi
@@ -2198,10 +2198,10 @@ function sub_install() {
     )"
     $MYSQLBIN -u $DB_USER \
       -p${DB_PASSWORD} \
-      -e"CREATE USER '${NEW_DB_USER}'@'localhost' IDENTIFIED BY '${NEW_DB_PASSWORD}';"
+      -e"CREATE USER '${NEW_DB_USER}'@'${DBHOST}' IDENTIFIED BY '${NEW_DB_PASSWORD}';"
     $MYSQLBIN -u $DB_USER \
       -p${DB_PASSWORD} \
-      -e"GRANT ALL PRIVILEGES ON \`${DOCROOT}\`.* TO '${NEW_DB_USER}'@'localhost';"
+      -e"GRANT ALL PRIVILEGES ON \`${DOCROOT}\`.* TO '${NEW_DB_USER}'@'${DBHOST}';"
     $MYSQLBIN -u $DB_USER -p${DB_PASSWORD} -e"FLUSH PRIVILEGES;"
 
     # Now change .env with new values
