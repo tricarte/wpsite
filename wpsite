@@ -884,7 +884,7 @@ Usage: ${progname} restore <site_name> [new_site_name] [-n|--no-browse]
         # chmod -R o+w "/home/$(whoami)/sites/$SITENAME/public/content"
         if id -nG | grep www-data >/dev/null 2>&1; then
           chown -R "$(whoami)":www-data "${SITESDIR}/${NEWDOCROOT}/public/content"
-          chmod -R 775 "$(whoami)":www-data "${SITESDIR}/${NEWDOCROOT}/public/content"
+          chmod -R 775 "${SITESDIR}/${NEWDOCROOT}/public/content"
         else
           _e "Trying to take ownership to the public/content directory failed."
           _e "www-data group does not exist or \"${USER}\" is not a member of it."
@@ -949,7 +949,7 @@ Usage: ${progname} restore <site_name> [new_site_name] [-n|--no-browse]
         # chmod -R o+w "/home/$(whoami)/sites/$SITENAME/public/content"
         if id -nG | grep www-data >/dev/null 2>&1; then
           chown -R "$(whoami)":www-data "${SITESDIR}/${DOCROOT}/public/content"
-          chmod -R 775 "$(whoami)":www-data "${SITESDIR}/${DOCROOT}/public/content"
+          chmod -R 775 "${SITESDIR}/${DOCROOT}/public/content"
         else
           _e "Trying to take ownership to the public/content directory failed."
           _e "www-data group does not exist or \"${USER}\" is not a member of it."
@@ -2402,7 +2402,7 @@ function sub_install() {
       # chmod -R o+w "/home/$(whoami)/sites/$SITENAME/public/content"
       if id -nG | grep www-data >/dev/null 2>&1; then
         chown -R "$(whoami)":www-data "${SITESDIR}/${DOCROOT}/public/content"
-        chmod -R 775 "$(whoami)":www-data "${SITESDIR}/${DOCROOT}/public/content"
+        chmod -R 775 "${SITESDIR}/${DOCROOT}/public/content"
       else
         _e "www-data group does not exist or \"${USER}\" is not a member of it."
       fi
