@@ -808,7 +808,7 @@ Usage: ${progname} restore <site_name> [new_site_name] [-n|--no-browse]
     ORG_DB_HOST=$(grep -E ^DB_HOST= "${SITESDIR}/${NEWDOCROOT}/.env" | cut -d'=' -f2)
 
     WP_HOME=$(grep -E ^WP_HOME= "${SITESDIR}/${NEWDOCROOT}/.env" | cut -d'=' -f2)
-    PROTOCOL=$(echo $WP_HOME | cut -d':' -f1)
+    PROTOCOL=$(echo "${WP_HOME}" | cut -d':' -f1)
     if [[ $PROTOCOL == 'http' ]]; then
       replace -s "WP_HOME=${PROTOCOL}://${DOCROOT}" "WP_HOME=${PROTOCOL}://${NEWDOCROOT}" -- "${SITESDIR}/${NEWDOCROOT}/.env"
       replace -s "DB_NAME=${DOCROOT}" "DB_NAME=${NEWDOCROOT}" -- "${SITESDIR}/${NEWDOCROOT}/.env"
@@ -884,6 +884,7 @@ Usage: ${progname} restore <site_name> [new_site_name] [-n|--no-browse]
         # chmod -R o+w "/home/$(whoami)/sites/$SITENAME/public/content"
         if id -nG | grep www-data >/dev/null 2>&1; then
           chown -R "$(whoami)":www-data "${SITESDIR}/${NEWDOCROOT}/public/content"
+          chmod -R 775 "$(whoami)":www-data "${SITESDIR}/${NEWDOCROOT}/public/content"
         else
           _e "Trying to take ownership to the public/content directory failed."
           _e "www-data group does not exist or \"${USER}\" is not a member of it."
@@ -948,6 +949,7 @@ Usage: ${progname} restore <site_name> [new_site_name] [-n|--no-browse]
         # chmod -R o+w "/home/$(whoami)/sites/$SITENAME/public/content"
         if id -nG | grep www-data >/dev/null 2>&1; then
           chown -R "$(whoami)":www-data "${SITESDIR}/${DOCROOT}/public/content"
+          chmod -R 775 "$(whoami)":www-data "${SITESDIR}/${DOCROOT}/public/content"
         else
           _e "Trying to take ownership to the public/content directory failed."
           _e "www-data group does not exist or \"${USER}\" is not a member of it."
@@ -2400,6 +2402,7 @@ function sub_install() {
       # chmod -R o+w "/home/$(whoami)/sites/$SITENAME/public/content"
       if id -nG | grep www-data >/dev/null 2>&1; then
         chown -R "$(whoami)":www-data "${SITESDIR}/${DOCROOT}/public/content"
+        chmod -R 775 "$(whoami)":www-data "${SITESDIR}/${DOCROOT}/public/content"
       else
         _e "www-data group does not exist or \"${USER}\" is not a member of it."
       fi
