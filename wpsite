@@ -971,6 +971,16 @@ Usage: ${progname} restore <site_name> [new_site_name] [-n|--no-browse]
     FINALDIR=$DOCROOT
   fi
 
+  # Handle auto login user for dev sites
+  if [[ -n $NEWDOCROOT ]]; then
+    replace -s "usr${DOCROOT}" "usr${NEWDOCROOT}" -- \
+      "${SITESDIR}/${FINALDIR}/.env"
+  fi
+
+  if [[ -f "${SITESDIR}/${FINALDIR}/.env.cached.php" ]]; then
+      rm -f "${SITESDIR}/${FINALDIR}/.env.cached.php"
+  fi
+
   # To determine the most recently created site for "wpsite last"
   touch -m "${SITESDIR}/${FINALDIR}/wpstarter.json"
 
