@@ -518,6 +518,7 @@ Subcommands:
     ${purple}config${normal}          Create .wpsiterc file in $HOME.
     ${purple}testdb${normal}          Make a test connection to the database server.
     ${purple}env${normal}             Set WP environment to development or production.
+    ${purple}tmpadmin${normal}        Create a temporary admin user.
 
 For help with each subcommand run:
 ${purple}$progname <subcommand> -h|--help${normal}
@@ -883,10 +884,14 @@ Usage: ${progname} restore <site_name> [new_site_name] [-n|--no-browse]
       if [[ -d "${SITESDIR}/${NEWDOCROOT}/public/content" ]]; then
         # chmod -R o+w "/home/$(whoami)/sites/$SITENAME/public/content"
         if id -nG | grep www-data >/dev/null 2>&1; then
-          chown -R "$(whoami)":www-data "${SITESDIR}/${NEWDOCROOT}/public/content"
+          # chown -R "$(whoami)":www-data "${SITESDIR}/${NEWDOCROOT}/public/content"
           chmod -R 775 "${SITESDIR}/${NEWDOCROOT}/public/content"
+          chgrp -R www-data "${SITESDIR}/${NEWDOCROOT}/public/content"
+          chmod -R 775 "${SITESDIR}/${NEWDOCROOT}/public/content"
+          find "${SITESDIR}/${NEWDOCROOT}/public/content" -type d -exec chmod g=rwxs "{}" \;
+          find "${SITESDIR}/${NEWDOCROOT}/public/content" -type f -exec chmod g=rw "{}" \;
         else
-          _e "Trying to take ownership to the public/content directory failed."
+          _e "Trying to take ownership of the directory 'public/content' failed."
           _e "www-data group does not exist or \"${USER}\" is not a member of it."
         fi
       fi
@@ -948,8 +953,12 @@ Usage: ${progname} restore <site_name> [new_site_name] [-n|--no-browse]
       if [[ -d "${SITESDIR}/${DOCROOT}/public/content" ]]; then
         # chmod -R o+w "/home/$(whoami)/sites/$SITENAME/public/content"
         if id -nG | grep www-data >/dev/null 2>&1; then
-          chown -R "$(whoami)":www-data "${SITESDIR}/${DOCROOT}/public/content"
+          # chown -R "$(whoami)":www-data "${SITESDIR}/${DOCROOT}/public/content"
           chmod -R 775 "${SITESDIR}/${DOCROOT}/public/content"
+          chgrp -R www-data "${SITESDIR}/${DOCROOT}/public/content"
+          chmod -R 775 "${SITESDIR}/${DOCROOT}/public/content"
+          find "${SITESDIR}/${DOCROOT}/public/content" -type d -exec chmod g=rwxs "{}" \;
+          find "${SITESDIR}/${DOCROOT}/public/content" -type f -exec chmod g=rw "{}" \;
         else
           _e "Trying to take ownership to the public/content directory failed."
           _e "www-data group does not exist or \"${USER}\" is not a member of it."
@@ -978,7 +987,7 @@ Usage: ${progname} restore <site_name> [new_site_name] [-n|--no-browse]
   fi
 
   if [[ -f "${SITESDIR}/${FINALDIR}/.env.cached.php" ]]; then
-      rm -f "${SITESDIR}/${FINALDIR}/.env.cached.php"
+    rm -f "${SITESDIR}/${FINALDIR}/.env.cached.php"
   fi
 
   # To determine the most recently created site for "wpsite last"
@@ -2411,8 +2420,11 @@ function sub_install() {
     if [[ -d "${SITESDIR}/${DOCROOT}/public/content" ]]; then
       # chmod -R o+w "/home/$(whoami)/sites/$SITENAME/public/content"
       if id -nG | grep www-data >/dev/null 2>&1; then
-        chown -R "$(whoami)":www-data "${SITESDIR}/${DOCROOT}/public/content"
+        # chown -R "$(whoami)":www-data "${SITESDIR}/${DOCROOT}/public/content"
+        chgrp -R www-data "${SITESDIR}/${DOCROOT}/public/content"
         chmod -R 775 "${SITESDIR}/${DOCROOT}/public/content"
+        find "${SITESDIR}/${DOCROOT}/public/content" -type d -exec chmod g=rwxs "{}" \;
+        find "${SITESDIR}/${DOCROOT}/public/content" -type f -exec chmod g=rw "{}" \;
       else
         _e "www-data group does not exist or \"${USER}\" is not a member of it."
       fi
@@ -2738,6 +2750,48 @@ function sub_upgrade() {
   return
 }
 export -f sub_upgrade
+
+function sub_tmpadmin() {
+  if [[ $SUBHELP ]]; then
+    _w "Usage: $progname function_name"
+    _w ""
+    _w "       Create a temporary admin user."
+    _w ""
+    return
+  fi
+
+  DOCROOT="$1"
+
+  if [[ ! -d "$SITESDIR/$DOCROOT" ]]; then
+    _e "Err: \"$DOCROOT\" does not exist."
+    return 1
+  fi
+
+  if [[ ! -f "${SITESDIR}/${DOCROOT}/wpstarter.json" ]]; then
+    _e "Err: ${DOCROOT} is not a WP installation"
+    _e "that is installed via wpstarter."
+    return 1
+  fi
+
+  RAND="${RANDOM}"
+  ADMIN_USER="usr-${RAND}-${DOCROOT}"
+  ADMIN_PASS="pss-${RAND}-${DOCROOT}"
+  new_user_id=$($WP --skip-plugins --path="${SITESDIR}/${DOCROOT}/public/cms" \
+    user create "${ADMIN_USER}" "${RANDOM}@example.com" \
+    --role=administrator --user_pass="${ADMIN_PASS}" --porcelain)
+
+  if [[ -n $new_user_id ]]; then
+    _w "A new admin is created:"
+    _w "Username: ${ADMIN_USER}"
+    _w "Password: ${ADMIN_PASS}"
+  else
+    _e "User could not be created."
+    return 1
+  fi
+
+  return
+}
+export -f sub_tmpadmin
 
 #-------------------------
 #  sub_command handling

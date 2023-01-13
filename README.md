@@ -61,6 +61,7 @@ sudo ln -s "$HOME/bin/wpsite" "/usr/local/bin/wps"
 | env            | Set WP environment to development or production.|
 | upgrade        | Just a fancy way of `git pull`'ing of this repository to upgrade the script.|
 | rest           | Open site's rest base URL in browser.|
+| tmpadmin       | Create a temporary admin user.|
 
 Some commands recognize the "last" keyword. For example `wpsite admin last` will
 bring up the most recently created site's admin dashboard. `wpsite delete last
