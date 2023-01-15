@@ -882,7 +882,6 @@ Usage: ${progname} restore <site_name> [new_site_name] [-n|--no-browse]
 
       # Make $(whoami) the owner of public/content directory
       if [[ -d "${SITESDIR}/${NEWDOCROOT}/public/content" ]]; then
-        # chmod -R o+w "/home/$(whoami)/sites/$SITENAME/public/content"
         if id -nG | grep www-data >/dev/null 2>&1; then
           # chown -R "$(whoami)":www-data "${SITESDIR}/${NEWDOCROOT}/public/content"
           chmod -R 775 "${SITESDIR}/${NEWDOCROOT}/public/content"
@@ -951,7 +950,6 @@ Usage: ${progname} restore <site_name> [new_site_name] [-n|--no-browse]
 
       # Make $(whoami) the owner of public/content directory
       if [[ -d "${SITESDIR}/${DOCROOT}/public/content" ]]; then
-        # chmod -R o+w "/home/$(whoami)/sites/$SITENAME/public/content"
         if id -nG | grep www-data >/dev/null 2>&1; then
           # chown -R "$(whoami)":www-data "${SITESDIR}/${DOCROOT}/public/content"
           chmod -R 775 "${SITESDIR}/${DOCROOT}/public/content"
@@ -2324,11 +2322,17 @@ function sub_install() {
   if [[ ! -f "${SITESDIR}/${DOCROOT}/.env" ]]; then
     cp "${SITESDIR}/${DOCROOT}/custom-templates/.env.example" \
       "${SITESDIR}/${DOCROOT}/.env" || exit
-    # SITENAME=${PWD##*/}
-    SITENAME=$DOCROOT
     if grep directory-basename "${SITESDIR}/${DOCROOT}/.env" >/dev/null 2>&1; then
       replace -s directory-basename "$DOCROOT" -- "${SITESDIR}/${DOCROOT}/.env"
     fi
+  fi
+
+  # Move .user.ini template
+  if [[ ! -f "${SITESDIR}/${DOCROOT}/.user.ini" ]]; then
+    cp "${SITESDIR}/${DOCROOT}/custom-templates/.user.ini" \
+      "${SITESDIR}/${DOCROOT}/public/.user.ini" || exit
+
+    replace -s change_me_basedir "${SITESDIR}/${DOCROOT}" -- "${SITESDIR}/${DOCROOT}/public/.user.ini"
   fi
 
   # If db credentials in wpstarter repo does not work
@@ -2418,7 +2422,6 @@ function sub_install() {
   # Make content directory group owned by www-data
   if [[ $PRODUCTION ]]; then
     if [[ -d "${SITESDIR}/${DOCROOT}/public/content" ]]; then
-      # chmod -R o+w "/home/$(whoami)/sites/$SITENAME/public/content"
       if id -nG | grep www-data >/dev/null 2>&1; then
         # chown -R "$(whoami)":www-data "${SITESDIR}/${DOCROOT}/public/content"
         chgrp -R www-data "${SITESDIR}/${DOCROOT}/public/content"
