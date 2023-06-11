@@ -2244,6 +2244,7 @@ Usage: ${progname} flush-env <site_name>
     return 1
   fi
 
+  # TODO: composer wpstarter flush-env-cache now works
   if [[ -f "${SITESDIR}/${DOCROOT}/.env.cached.php" ]]; then
     rm -f "${SITESDIR}/${DOCROOT}/.env.cached.php"
     $WP --skip-plugins --skip-packages \
@@ -2496,7 +2497,6 @@ function sub_install() {
       custom-post-type-permalinks \
       duplicate-post \
       pre-publish-checklist \
-      widget-shortcode \
       passwords-evolved \
       admin-menu-search \
       rest-api-toolbox \
