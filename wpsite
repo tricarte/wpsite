@@ -651,7 +651,7 @@ will be updated! Proceed?  (y/n) (Default No): " -r
 
   _w "Checking updates..."
   UPDATES=$(
-    $COMPOSERBIN --working-dir="${WPSTARTERDIR}" update --dry-run 2>&1 |
+    $COMPOSERBIN --working-dir="${WPSTARTERDIR}" update --ignore-platform-reqs --dry-run 2>&1 |
       sed -ne '/Package operations/,$ p' |
       grep "Upgrading" |
       awk '{ print substr ($0, 15 ) }'
@@ -659,7 +659,7 @@ will be updated! Proceed?  (y/n) (Default No): " -r
 
   if [[ -n $UPDATES ]]; then
     _w "Updating composer packages..."
-    $COMPOSERBIN --working-dir="${WPSTARTERDIR}" update -q || exit
+    $COMPOSERBIN --working-dir="${WPSTARTERDIR}" update --ignore-platform-reqs -q || exit
 
     end=$SECONDS
     $GIT --git-dir="${WPSTARTERDIR}/.git" \
